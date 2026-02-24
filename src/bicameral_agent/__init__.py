@@ -15,10 +15,12 @@ from bicameral_agent.serialization import (
     episodes_from_parquet,
     episodes_to_parquet,
 )
+from bicameral_agent.logger import ConversationLogger
 from bicameral_agent.validation import EpisodeValidator, ValidationResult
 
 __all__ = [
     "ContextInjection",
+    "ConversationLogger",
     "Episode",
     "EpisodeOutcome",
     "EpisodeValidator",
