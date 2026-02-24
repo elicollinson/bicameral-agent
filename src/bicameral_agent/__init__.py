@@ -18,17 +18,24 @@ from bicameral_agent.serialization import (
 from bicameral_agent.logger import ConversationLogger
 from bicameral_agent.replay import DecisionPoint, EpisodeReplayer, ReplayState
 from bicameral_agent.validation import EpisodeValidator, ValidationResult
+from bicameral_agent.embeddings import Embedder, FastEmbedEmbedder, HashEmbedder
+from bicameral_agent.encoder import FEATURE_DIM, StateEncoder
 
 __all__ = [
     "ContextInjection",
     "ConversationLogger",
     "DecisionPoint",
+    "Embedder",
     "Episode",
     "EpisodeOutcome",
     "EpisodeReplayer",
     "EpisodeValidator",
+    "FEATURE_DIM",
+    "FastEmbedEmbedder",
+    "HashEmbedder",
     "Message",
     "ReplayState",
+    "StateEncoder",
     "ToolInvocation",
     "UserEvent",
     "UserEventType",

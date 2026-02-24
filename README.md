@@ -98,6 +98,32 @@ ruff check src/ tests/
 pytest --cov=bicameral_agent
 ```
 
+## State Encoder
+
+The `StateEncoder` compresses conversation state into a fixed 53-dimensional feature vector for the MCTS controller. The layout:
+
+| Index | Feature | Dims |
+|-------|---------|------|
+| 0 | turn_number | 1 |
+| 1 | total_tokens_so_far | 1 |
+| 2–33 | topic_embedding | 32 |
+| 34 | estimated_confidence | 1 |
+| 35–38 | last_tool_invoked (one-hot) | 4 |
+| 39 | turns_since_last_tool | 1 |
+| 40 | user_stop_count | 1 |
+| 41–45 | last_followup_type (one-hot) | 5 |
+| 46–48 | response_latency_bucket (one-hot) | 3 |
+| 49 | message_length_ratio | 1 |
+| 50–52 | sentiment_shift (one-hot) | 3 |
+
+By default, topic embeddings use a deterministic SHAKE-256 hash. For semantic embeddings, install the optional ML extra:
+
+```bash
+uv pip install -e ".[ml]"
+```
+
+This adds `fastembed` with the `all-MiniLM-L6-v2` ONNX model (~150MB).
+
 ## Project Structure
 
 ```
