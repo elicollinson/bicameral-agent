@@ -6,6 +6,7 @@ import pytest
 
 from bicameral_agent.embeddings import HashEmbedder
 from bicameral_agent.encoder import StateEncoder
+from bicameral_agent.queue import ContextQueue, Priority, QueueItem
 from bicameral_agent.schema import (
     ContextInjection,
     Episode,
@@ -119,3 +120,35 @@ def simple_conversation():
         )
     ]
     return messages, events, tools
+
+
+@pytest.fixture
+def make_queue_item():
+    """Factory fixture: create a QueueItem with defaults."""
+
+    def _make(
+        content="test context",
+        priority=Priority.MEDIUM,
+        source_tool_id="tool-1",
+        token_count=10,
+        expiry_turns=10,
+        dedup_key=None,
+        enqueued_at_turn=0,
+    ):
+        return QueueItem(
+            content=content,
+            priority=priority,
+            source_tool_id=source_tool_id,
+            token_count=token_count,
+            expiry_turns=expiry_turns,
+            dedup_key=dedup_key,
+            enqueued_at_turn=enqueued_at_turn,
+        )
+
+    return _make
+
+
+@pytest.fixture
+def empty_queue():
+    """An empty ContextQueue."""
+    return ContextQueue()
