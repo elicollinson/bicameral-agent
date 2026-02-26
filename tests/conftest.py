@@ -18,6 +18,7 @@ from bicameral_agent.schema import (
     UserEvent,
     UserEventType,
 )
+from bicameral_agent.token_estimator import TokenEstimator
 
 
 @pytest.fixture
@@ -170,3 +171,9 @@ def trained_latency_model():
         true_duration = max(200.0 + 0.01 * inp + 15.0 * out + rng.normal(0, 100), 1.0)
         model.observe(inp, out, true_duration)
     return model
+
+
+@pytest.fixture
+def token_estimator():
+    """A fresh TokenEstimator with no observations."""
+    return TokenEstimator()

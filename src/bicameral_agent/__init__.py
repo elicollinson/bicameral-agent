@@ -22,9 +22,11 @@ from bicameral_agent.validation import EpisodeValidator, ValidationResult
 from bicameral_agent.embeddings import Embedder, FastEmbedEmbedder, HashEmbedder
 from bicameral_agent.encoder import FEATURE_DIM, StateEncoder
 from bicameral_agent.latency import APILatencyModel, LatencyEstimate
+from bicameral_agent.token_estimator import ContextFeatures, TokenEstimate, TokenEstimator
 
 __all__ = [
     "APILatencyModel",
+    "ContextFeatures",
     "ContextInjection",
     "ContextQueue",
     "ConversationLogger",
@@ -45,6 +47,8 @@ __all__ = [
     "QueueState",
     "ReplayState",
     "StateEncoder",
+    "TokenEstimate",
+    "TokenEstimator",
     "ToolInvocation",
     "UserEvent",
     "UserEventType",
