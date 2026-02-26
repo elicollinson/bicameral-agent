@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from bicameral_agent.queue import ContextQueue, Priority, QueueItem
+from bicameral_agent.queue import ContextQueue, InterruptConfig, Priority, QueueItem
 
 
 class TestPriorityEnum:
@@ -367,3 +367,162 @@ class TestEstimatedNextArrival:
             empty_queue.enqueue(make_queue_item())
         state = empty_queue.get_state()
         assert state.estimated_next_arrival >= 0.0
+
+
+class TestDrainAtBreakpoint:
+    """AC: drain_at_breakpoint formatting and behavior."""
+
+    def test_three_items_formatted_correctly(self, empty_queue, make_queue_item):
+        """Enqueue 3 items, drain produces correctly formatted bundle with proper ordering."""
+        empty_queue.enqueue(make_queue_item(
+            content="low info", priority=Priority.LOW, source_tool_id="scanner",
+        ))
+        empty_queue.enqueue(make_queue_item(
+            content="critical alert", priority=Priority.CRITICAL, source_tool_id="auditor",
+        ))
+        empty_queue.enqueue(make_queue_item(
+            content="medium note", priority=Priority.MEDIUM, source_tool_id="refresher",
+        ))
+
+        result = empty_queue.drain_at_breakpoint()
+        expected = (
+            "--- Context updates (3 items) ---\n"
+            "[auditor] critical alert\n"
+            "[refresher] medium note\n"
+            "[scanner] low info"
+        )
+        assert result == expected
+
+    def test_single_item_bundle(self, empty_queue, make_queue_item):
+        empty_queue.enqueue(make_queue_item(
+            content="only item", priority=Priority.HIGH, source_tool_id="tool-a",
+        ))
+        result = empty_queue.drain_at_breakpoint()
+        expected = (
+            "--- Context updates (1 items) ---\n"
+            "[tool-a] only item"
+        )
+        assert result == expected
+
+    def test_same_priority_fifo_in_bundle(self, empty_queue, make_queue_item):
+        """Items with same priority maintain FIFO order in bundle."""
+        empty_queue.enqueue(make_queue_item(
+            content="first", priority=Priority.HIGH, source_tool_id="t1",
+        ))
+        empty_queue.enqueue(make_queue_item(
+            content="second", priority=Priority.HIGH, source_tool_id="t2",
+        ))
+        empty_queue.enqueue(make_queue_item(
+            content="third", priority=Priority.HIGH, source_tool_id="t3",
+        ))
+        result = empty_queue.drain_at_breakpoint()
+        expected = (
+            "--- Context updates (3 items) ---\n"
+            "[t1] first\n"
+            "[t2] second\n"
+            "[t3] third"
+        )
+        assert result == expected
+
+    def test_empty_queue_returns_none(self, empty_queue):
+        assert empty_queue.drain_at_breakpoint() is None
+
+    def test_drain_clears_queue(self, empty_queue, make_queue_item):
+        empty_queue.enqueue(make_queue_item())
+        empty_queue.drain_at_breakpoint()
+        assert empty_queue.get_state().depth == 0
+
+
+class TestDrainAtBreakpointPerformance:
+    """AC: empty queue drain returns None in < 1ms (benchmark 10,000 calls)."""
+
+    def test_empty_drain_fast(self, empty_queue):
+        empty_queue.drain_at_breakpoint()  # warm up
+        start = time.perf_counter()
+        for _ in range(10_000):
+            empty_queue.drain_at_breakpoint()
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        avg_ms = elapsed_ms / 10_000
+        assert avg_ms < 1.0, f"drain_at_breakpoint() avg {avg_ms:.4f}ms (limit: 1ms)"
+
+
+class TestInterruptThreshold:
+    """AC: interrupt threshold triggers correctly for each mode."""
+
+    def test_count_threshold_five_triggers(self, empty_queue, make_queue_item):
+        for i in range(5):
+            empty_queue.enqueue(make_queue_item(content=f"item {i}"))
+        assert empty_queue.check_interrupt_threshold(InterruptConfig()) is True
+
+    def test_count_threshold_four_does_not_trigger(self, empty_queue, make_queue_item):
+        for i in range(4):
+            empty_queue.enqueue(make_queue_item(content=f"item {i}"))
+        assert empty_queue.check_interrupt_threshold(InterruptConfig()) is False
+
+    def test_priority_critical_triggers(self, empty_queue, make_queue_item):
+        empty_queue.enqueue(make_queue_item(priority=Priority.CRITICAL))
+        assert empty_queue.check_interrupt_threshold(InterruptConfig()) is True
+
+    def test_priority_high_does_not_trigger(self, empty_queue, make_queue_item):
+        empty_queue.enqueue(make_queue_item(priority=Priority.HIGH))
+        assert empty_queue.check_interrupt_threshold(InterruptConfig()) is False
+
+    def test_token_threshold_1000_triggers(self, empty_queue, make_queue_item):
+        empty_queue.enqueue(make_queue_item(token_count=1000))
+        assert empty_queue.check_interrupt_threshold(InterruptConfig()) is True
+
+    def test_token_threshold_999_does_not_trigger(self, empty_queue, make_queue_item):
+        empty_queue.enqueue(make_queue_item(token_count=999))
+        assert empty_queue.check_interrupt_threshold(InterruptConfig()) is False
+
+    def test_empty_queue_does_not_trigger(self, empty_queue):
+        assert empty_queue.check_interrupt_threshold(InterruptConfig()) is False
+
+    def test_custom_thresholds(self, empty_queue, make_queue_item):
+        config = InterruptConfig(count_threshold=2, priority_threshold=Priority.HIGH, token_threshold=50)
+        empty_queue.enqueue(make_queue_item(priority=Priority.HIGH))
+        assert empty_queue.check_interrupt_threshold(config) is True
+
+
+class TestFreezeUnfreeze:
+    """AC: while frozen, check_interrupt_threshold always returns False."""
+
+    def test_frozen_suppresses_all_thresholds(self, empty_queue, make_queue_item):
+        # Exceed all thresholds
+        for i in range(10):
+            empty_queue.enqueue(make_queue_item(
+                content=f"item {i}",
+                priority=Priority.CRITICAL,
+                token_count=500,
+            ))
+        empty_queue.freeze()
+        assert empty_queue.check_interrupt_threshold(InterruptConfig()) is False
+
+    def test_unfreeze_restores_checks(self, empty_queue, make_queue_item):
+        for i in range(10):
+            empty_queue.enqueue(make_queue_item(
+                content=f"item {i}",
+                priority=Priority.CRITICAL,
+                token_count=500,
+            ))
+        empty_queue.freeze()
+        assert empty_queue.check_interrupt_threshold(InterruptConfig()) is False
+        empty_queue.unfreeze()
+        assert empty_queue.check_interrupt_threshold(InterruptConfig()) is True
+
+
+class TestWastedTokens:
+    """AC: wasted token tracking for interrupt cost accounting."""
+
+    def test_initial_wasted_tokens_zero(self, empty_queue):
+        assert empty_queue.wasted_tokens == 0
+
+    def test_report_wasted_tokens(self, empty_queue):
+        empty_queue.report_wasted_tokens(150)
+        assert empty_queue.wasted_tokens == 150
+
+    def test_multiple_reports_accumulate(self, empty_queue):
+        empty_queue.report_wasted_tokens(100)
+        empty_queue.report_wasted_tokens(50)
+        empty_queue.report_wasted_tokens(200)
+        assert empty_queue.wasted_tokens == 350

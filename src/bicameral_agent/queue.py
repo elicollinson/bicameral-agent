@@ -96,6 +96,24 @@ class QueueState:
     """Estimated seconds until the next enqueue, based on arrival rate EMA."""
 
 
+@dataclass(frozen=True, slots=True)
+class InterruptConfig:
+    """Configuration for interrupt threshold checks.
+
+    Defines the thresholds at which the queue should signal the conscious
+    loop to interrupt the current generation and retry with injected context.
+    """
+
+    count_threshold: int = 5
+    """Interrupt if queue depth reaches this count."""
+
+    priority_threshold: Priority = Priority.CRITICAL
+    """Interrupt if any item has at least this priority."""
+
+    token_threshold: int = 1000
+    """Interrupt if total pending tokens reach this count."""
+
+
 class ContextQueue:
     """Thread-safe priority queue for context injections.
 
@@ -114,6 +132,8 @@ class ContextQueue:
         self._last_enqueue_time: Optional[float] = None
         self._arrival_interval_ema: float = 0.0
         self._enqueue_count: int = 0
+        self._frozen: bool = False
+        self._wasted_tokens: int = 0
 
     def enqueue(self, item: QueueItem) -> None:
         """Add an item to the queue, handling deduplication.
@@ -261,3 +281,84 @@ class ContextQueue:
                 pending_tool_count=len(tool_ids),
                 estimated_next_arrival=self._arrival_interval_ema,
             )
+
+    def drain_at_breakpoint(self) -> Optional[str]:
+        """Dequeue all items and return a formatted bundle string.
+
+        Used at natural breakpoints in the conscious loop to inject all
+        pending context. Returns None if the queue is empty.
+
+        Returns:
+            A formatted string with a header and one line per item,
+            ordered by priority descending, or None if empty.
+        """
+        items = self.dequeue_all()
+        if not items:
+            return None
+
+        lines = [f"--- Context updates ({len(items)} items) ---"]
+        for item in items:
+            lines.append(f"[{item.source_tool_id}] {item.content}")
+        return "\n".join(lines)
+
+    def check_interrupt_threshold(self, config: InterruptConfig) -> bool:
+        """Check whether the queue state exceeds any interrupt threshold.
+
+        Used by the conscious loop to decide whether to abort the current
+        generation and retry with injected context.
+
+        Args:
+            config: Threshold configuration to check against.
+
+        Returns:
+            True if any threshold is exceeded and the queue is not frozen.
+        """
+        with self._lock:
+            if self._frozen:
+                return False
+            if not self._items:
+                return False
+
+            depth = len(self._items)
+            if depth >= config.count_threshold:
+                return True
+
+            for item in self._items.values():
+                if item.priority >= config.priority_threshold:
+                    return True
+
+            token_total = sum(item.token_count for item in self._items.values())
+            if token_total >= config.token_threshold:
+                return True
+
+            return False
+
+    def freeze(self) -> None:
+        """Freeze the queue to suppress interrupt threshold checks.
+
+        While frozen, check_interrupt_threshold() always returns False.
+        Used during the retry step after an interrupt to prevent
+        degenerate loops.
+        """
+        with self._lock:
+            self._frozen = True
+
+    def unfreeze(self) -> None:
+        """Unfreeze the queue to re-enable interrupt threshold checks."""
+        with self._lock:
+            self._frozen = False
+
+    def report_wasted_tokens(self, token_count: int) -> None:
+        """Record tokens wasted when an interrupt discards a partial generation.
+
+        Args:
+            token_count: Number of tokens in the discarded partial generation.
+        """
+        with self._lock:
+            self._wasted_tokens += token_count
+
+    @property
+    def wasted_tokens(self) -> int:
+        """Total tokens wasted across all interrupts."""
+        with self._lock:
+            return self._wasted_tokens

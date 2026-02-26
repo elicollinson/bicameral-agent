@@ -16,7 +16,7 @@ from bicameral_agent.serialization import (
     episodes_to_parquet,
 )
 from bicameral_agent.logger import ConversationLogger
-from bicameral_agent.queue import ContextQueue, Priority, QueueItem, QueueState
+from bicameral_agent.queue import ContextQueue, InterruptConfig, Priority, QueueItem, QueueState
 from bicameral_agent.replay import DecisionPoint, EpisodeReplayer, ReplayState
 from bicameral_agent.validation import EpisodeValidator, ValidationResult
 from bicameral_agent.embeddings import Embedder, FastEmbedEmbedder, HashEmbedder
@@ -35,6 +35,7 @@ __all__ = [
     "FEATURE_DIM",
     "FastEmbedEmbedder",
     "HashEmbedder",
+    "InterruptConfig",
     "Message",
     "Priority",
     "QueueItem",
