@@ -12,7 +12,6 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -58,7 +57,7 @@ class QueueItem(BaseModel):
     expiry_turns: int = Field(default=10, ge=1)
     """Number of turns after which this item expires."""
 
-    dedup_key: Optional[str] = None
+    dedup_key: str | None = None
     """Optional key for deduplication. Items with the same dedup_key
     are deduplicated: newer or higher-priority replaces older."""
 
@@ -83,7 +82,7 @@ class QueueState:
     token_total: int
     """Sum of token_count across all queued items."""
 
-    max_priority: Optional[Priority]
+    max_priority: Priority | None
     """Highest priority among queued items, or None if empty."""
 
     time_since_last_drain: float
@@ -129,7 +128,7 @@ class ContextQueue:
         self._dedup_index: dict[str, str] = {}
         self._lock = threading.Lock()
         self._last_drain_time: float = time.monotonic()
-        self._last_enqueue_time: Optional[float] = None
+        self._last_enqueue_time: float | None = None
         self._arrival_interval_ema: float = 0.0
         self._enqueue_count: int = 0
         self._frozen: bool = False
@@ -221,14 +220,14 @@ class ContextQueue:
         """
         expired: list[QueueItem] = []
         with self._lock:
-            stale_ids: list[str] = []
-            for item_id, item in self._items.items():
-                if current_turn - item.enqueued_at_turn >= item.expiry_turns:
-                    stale_ids.append(item_id)
-                    expired.append(item)
-
+            stale_ids = [
+                item_id
+                for item_id, item in self._items.items()
+                if current_turn - item.enqueued_at_turn >= item.expiry_turns
+            ]
             for item_id in stale_ids:
                 item = self._items.pop(item_id)
+                expired.append(item)
                 if (
                     item.dedup_key is not None
                     and self._dedup_index.get(item.dedup_key) == item_id
@@ -257,32 +256,17 @@ class ContextQueue:
             time since last drain, pending tool count, and estimated next arrival.
         """
         with self._lock:
-            if not self._items:
-                return QueueState(
-                    depth=0,
-                    token_total=0,
-                    max_priority=None,
-                    time_since_last_drain=time.monotonic() - self._last_drain_time,
-                    pending_tool_count=0,
-                    estimated_next_arrival=self._arrival_interval_ema,
-                )
-
-            items = self._items.values()
-            depth = len(self._items)
-            token_total = sum(item.token_count for item in items)
-            max_priority = max(item.priority for item in items)
-            tool_ids = {item.source_tool_id for item in items}
-
+            items = list(self._items.values())
             return QueueState(
-                depth=depth,
-                token_total=token_total,
-                max_priority=max_priority,
+                depth=len(items),
+                token_total=sum(item.token_count for item in items),
+                max_priority=max((item.priority for item in items), default=None),
                 time_since_last_drain=time.monotonic() - self._last_drain_time,
-                pending_tool_count=len(tool_ids),
+                pending_tool_count=len({item.source_tool_id for item in items}),
                 estimated_next_arrival=self._arrival_interval_ema,
             )
 
-    def drain_at_breakpoint(self) -> Optional[str]:
+    def drain_at_breakpoint(self) -> str | None:
         """Dequeue all items and return a formatted bundle string.
 
         Used at natural breakpoints in the conscious loop to inject all
@@ -314,24 +298,17 @@ class ContextQueue:
             True if any threshold is exceeded and the queue is not frozen.
         """
         with self._lock:
-            if self._frozen:
-                return False
-            if not self._items:
+            if self._frozen or not self._items:
                 return False
 
-            depth = len(self._items)
-            if depth >= config.count_threshold:
+            if len(self._items) >= config.count_threshold:
                 return True
 
-            for item in self._items.values():
-                if item.priority >= config.priority_threshold:
-                    return True
+            if any(item.priority >= config.priority_threshold for item in self._items.values()):
+                return True
 
             token_total = sum(item.token_count for item in self._items.values())
-            if token_total >= config.token_threshold:
-                return True
-
-            return False
+            return token_total >= config.token_threshold
 
     def freeze(self) -> None:
         """Freeze the queue to suppress interrupt threshold checks.

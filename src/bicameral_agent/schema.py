@@ -8,8 +8,6 @@ from __future__ import annotations
 
 import enum
 import uuid
-from typing import Optional
-
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -88,7 +86,7 @@ class ContextInjection(BaseModel):
     consumed: bool = False
     """Whether the agent consumed this injection."""
 
-    consumed_at_turn: Optional[int] = Field(default=None, ge=0)
+    consumed_at_turn: int | None = Field(default=None, ge=0)
     """The turn number at which this injection was consumed, if applicable."""
 
 
@@ -135,7 +133,7 @@ class EpisodeOutcome(BaseModel):
     about the episode's resource usage and optional quality assessment.
     """
 
-    quality_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    quality_score: float | None = Field(default=None, ge=0.0, le=1.0)
     """Quality score in [0.0, 1.0], or None if not yet scored."""
 
     total_tokens: int = Field(ge=0)

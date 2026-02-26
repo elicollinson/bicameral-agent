@@ -44,7 +44,7 @@ class ConversationLogger:
 
         self._lock = threading.Lock()
         self._finalized = False
-        self._metadata: dict = metadata if metadata is not None else {}
+        self._metadata: dict = metadata or {}
 
     def _now_ms(self) -> int:
         return self._epoch_ms + (time.monotonic_ns() - self._mono_origin_ns) // 1_000_000
@@ -89,7 +89,7 @@ class ConversationLogger:
                 UserEvent(
                     event_type=event_type,
                     timestamp_ms=ts,
-                    metadata=metadata if metadata is not None else {},
+                    metadata=metadata or {},
                 )
             )
 

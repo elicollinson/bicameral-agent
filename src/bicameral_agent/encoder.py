@@ -28,8 +28,6 @@ values deterministically bounded to [0, 1].
 
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 
 from bicameral_agent.embeddings import Embedder, get_default_embedder
@@ -147,7 +145,7 @@ class StateEncoder:
         (``FastEmbedEmbedder`` if installed, otherwise ``HashEmbedder``).
     """
 
-    def __init__(self, embedder: Optional[Embedder] = None) -> None:
+    def __init__(self, embedder: Embedder | None = None) -> None:
         self._embedder: Embedder = embedder if embedder is not None else get_default_embedder()
 
     # ------------------------------------------------------------------
@@ -228,7 +226,7 @@ class StateEncoder:
     @staticmethod
     def _last_message_by_role(
         messages: list[Message], role: str
-    ) -> Optional[Message]:
+    ) -> Message | None:
         """Return the most recent message with the given *role*, or None."""
         for msg in reversed(messages):
             if msg.role == role:
@@ -242,11 +240,7 @@ class StateEncoder:
         Returns ``1.0 - min(hedge_count / word_count, 1.0)``.
         Defaults to 0.5 when there is no assistant message.
         """
-        last_assistant = None
-        for msg in reversed(messages):
-            if msg.role == "assistant":
-                last_assistant = msg
-                break
+        last_assistant = StateEncoder._last_message_by_role(messages, "assistant")
         if last_assistant is None:
             return 0.5
 
@@ -305,26 +299,22 @@ class StateEncoder:
         """
         out = np.zeros(5, dtype=np.float32)
 
-        # Find the last follow-up user message
         followup_times = {
             e.timestamp_ms for e in user_events if e.event_type == UserEventType.FOLLOW_UP
         }
         if not followup_times:
             return out
 
-        # Find the user message closest to the last follow-up event
+        # Find the user message closest to the last follow-up event, or fall back
+        # to the last user message overall
         last_followup_ts = max(followup_times)
         followup_msg = None
         for msg in reversed(messages):
             if msg.role == "user" and msg.timestamp_ms >= last_followup_ts:
                 followup_msg = msg
                 break
-        # Fall back: use the last user message
         if followup_msg is None:
-            for msg in reversed(messages):
-                if msg.role == "user":
-                    followup_msg = msg
-                    break
+            followup_msg = StateEncoder._last_message_by_role(messages, "user")
         if followup_msg is None:
             return out
 
@@ -343,15 +333,10 @@ class StateEncoder:
         return out
 
     @staticmethod
-    def _compute_latency_bucket(messages: list[Message]) -> np.ndarray:
-        """One-hot encode response latency: fast(<2s), normal(2–10s), slow(>10s).
-
-        Measures the time between the last user message and the last
-        assistant message.  If either is missing, returns the "normal"
-        bucket as default.
-        """
-        out = np.zeros(3, dtype=np.float32)
-
+    def _last_user_and_assistant(
+        messages: list[Message],
+    ) -> tuple[Message | None, Message | None]:
+        """Return the last user and last assistant messages, scanning once."""
         last_user = None
         last_assistant = None
         for msg in reversed(messages):
@@ -361,6 +346,18 @@ class StateEncoder:
                 last_assistant = msg
             if last_user is not None and last_assistant is not None:
                 break
+        return last_user, last_assistant
+
+    @staticmethod
+    def _compute_latency_bucket(messages: list[Message]) -> np.ndarray:
+        """One-hot encode response latency: fast(<2s), normal(2-10s), slow(>10s).
+
+        Measures the time between the last user message and the last
+        assistant message.  If either is missing, returns the "normal"
+        bucket as default.
+        """
+        out = np.zeros(3, dtype=np.float32)
+        last_user, last_assistant = StateEncoder._last_user_and_assistant(messages)
 
         if last_user is None or last_assistant is None:
             out[1] = 1.0  # default: normal
@@ -386,15 +383,7 @@ class StateEncoder:
 
         Returns 0 if either message is missing.  Capped and normalized.
         """
-        last_user = None
-        last_assistant = None
-        for msg in reversed(messages):
-            if msg.role == "user" and last_user is None:
-                last_user = msg
-            elif msg.role == "assistant" and last_assistant is None:
-                last_assistant = msg
-            if last_user is not None and last_assistant is not None:
-                break
+        last_user, last_assistant = StateEncoder._last_user_and_assistant(messages)
 
         if last_user is None or last_assistant is None:
             return 0.0

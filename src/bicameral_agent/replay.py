@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import bisect
 from collections.abc import Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from bicameral_agent.schema import (
     ContextInjection,

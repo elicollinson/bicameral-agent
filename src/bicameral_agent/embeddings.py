@@ -66,15 +66,12 @@ class FastEmbedEmbedder:
         self._model_name = model_name
         self._model = None
 
-    def _load_model(self):
-        from fastembed import TextEmbedding  # type: ignore[import-untyped]
-
-        self._model = TextEmbedding(model_name=self._model_name)
-
     def embed(self, text: str) -> np.ndarray:
         """Embed *text* into a 32-dimensional unit vector (float32)."""
         if self._model is None:
-            self._load_model()
+            from fastembed import TextEmbedding  # type: ignore[import-untyped]
+
+            self._model = TextEmbedding(model_name=self._model_name)
         embeddings = list(self._model.embed([text]))
         vec = np.array(embeddings[0], dtype=np.float32)[:32]
         norm = np.linalg.norm(vec)
