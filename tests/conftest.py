@@ -2,10 +2,12 @@
 
 import uuid
 
+import numpy as np
 import pytest
 
 from bicameral_agent.embeddings import HashEmbedder
 from bicameral_agent.encoder import StateEncoder
+from bicameral_agent.latency import APILatencyModel
 from bicameral_agent.queue import ContextQueue, Priority, QueueItem
 from bicameral_agent.schema import (
     ContextInjection,
@@ -152,3 +154,19 @@ def make_queue_item():
 def empty_queue():
     """An empty ContextQueue."""
     return ContextQueue()
+
+
+@pytest.fixture
+def trained_latency_model():
+    """An APILatencyModel with 50 synthetic observations.
+
+    Synthetic model: duration = 200 + 0.01*inp + 15*out + N(0, 100).
+    """
+    model = APILatencyModel()
+    rng = np.random.default_rng(42)
+    for _ in range(50):
+        inp = int(rng.integers(100, 5000))
+        out = int(rng.integers(50, 2000))
+        true_duration = max(200.0 + 0.01 * inp + 15.0 * out + rng.normal(0, 100), 1.0)
+        model.observe(inp, out, true_duration)
+    return model

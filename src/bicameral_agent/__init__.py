@@ -21,8 +21,10 @@ from bicameral_agent.replay import DecisionPoint, EpisodeReplayer, ReplayState
 from bicameral_agent.validation import EpisodeValidator, ValidationResult
 from bicameral_agent.embeddings import Embedder, FastEmbedEmbedder, HashEmbedder
 from bicameral_agent.encoder import FEATURE_DIM, StateEncoder
+from bicameral_agent.latency import APILatencyModel, LatencyEstimate
 
 __all__ = [
+    "APILatencyModel",
     "ContextInjection",
     "ContextQueue",
     "ConversationLogger",
@@ -36,6 +38,7 @@ __all__ = [
     "FastEmbedEmbedder",
     "HashEmbedder",
     "InterruptConfig",
+    "LatencyEstimate",
     "Message",
     "Priority",
     "QueueItem",
