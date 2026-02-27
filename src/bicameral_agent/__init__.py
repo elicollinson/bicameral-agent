@@ -23,6 +23,12 @@ from bicameral_agent.embeddings import Embedder, FastEmbedEmbedder, HashEmbedder
 from bicameral_agent.encoder import FEATURE_DIM, StateEncoder
 from bicameral_agent.latency import APILatencyModel, LatencyEstimate
 from bicameral_agent.token_estimator import ContextFeatures, TokenEstimate, TokenEstimator
+from bicameral_agent.tool_latency import (
+    CostEstimate,
+    SubCallPrediction,
+    ToolLatencyModel,
+    ToolPrediction,
+)
 
 __all__ = [
     "APILatencyModel",
@@ -30,6 +36,7 @@ __all__ = [
     "ContextInjection",
     "ContextQueue",
     "ConversationLogger",
+    "CostEstimate",
     "DecisionPoint",
     "Embedder",
     "Episode",
@@ -47,9 +54,12 @@ __all__ = [
     "QueueState",
     "ReplayState",
     "StateEncoder",
+    "SubCallPrediction",
     "TokenEstimate",
     "TokenEstimator",
     "ToolInvocation",
+    "ToolLatencyModel",
+    "ToolPrediction",
     "UserEvent",
     "UserEventType",
     "ValidationResult",

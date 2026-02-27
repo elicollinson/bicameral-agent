@@ -19,6 +19,7 @@ from bicameral_agent.schema import (
     UserEventType,
 )
 from bicameral_agent.token_estimator import TokenEstimator
+from bicameral_agent.tool_latency import ToolLatencyModel
 
 
 @pytest.fixture
@@ -177,3 +178,12 @@ def trained_latency_model():
 def token_estimator():
     """A fresh TokenEstimator with no observations."""
     return TokenEstimator()
+
+
+@pytest.fixture
+def tool_latency_model(token_estimator, trained_latency_model):
+    """A ToolLatencyModel composed from fresh token estimator and trained latency model."""
+    return ToolLatencyModel(
+        token_estimator=token_estimator,
+        latency_model=trained_latency_model,
+    )
