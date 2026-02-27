@@ -36,6 +36,7 @@ from bicameral_agent.dataset import (
     TaskDifficulty,
     TaskSplit,
 )
+from bicameral_agent.scorer import LexicalScorer, TaskScore, TaskScorer
 
 __all__ = [
     "APILatencyModel",
@@ -58,6 +59,7 @@ __all__ = [
     "HashEmbedder",
     "InterruptConfig",
     "LatencyEstimate",
+    "LexicalScorer",
     "Message",
     "Priority",
     "QueueItem",
@@ -68,6 +70,8 @@ __all__ = [
     "StateEncoder",
     "SubCallPrediction",
     "TaskDifficulty",
+    "TaskScore",
+    "TaskScorer",
     "TaskSplit",
     "TokenEstimate",
     "TokenEstimator",

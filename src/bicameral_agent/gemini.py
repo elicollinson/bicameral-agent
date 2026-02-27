@@ -79,6 +79,7 @@ class GeminiClient:
         *,
         system_prompt: str | None = None,
         thinking_level: str = "medium",
+        temperature: float | None = None,
         max_output_tokens: int | None = None,
         tools: list[dict] | None = None,
         response_schema: dict | None = None,
@@ -89,6 +90,7 @@ class GeminiClient:
             messages: Conversation history with 'role' and 'content' keys.
             system_prompt: Optional system instruction.
             thinking_level: Thinking depth: 'minimal', 'low', 'medium', 'high'.
+            temperature: Sampling temperature (0.0 for deterministic). None uses model default.
             max_output_tokens: Maximum output tokens.
             tools: Function declarations (dicts with 'name', 'description',
                 'parameters_json_schema' keys).
@@ -107,6 +109,7 @@ class GeminiClient:
         config = self._build_config(
             system_prompt=system_prompt,
             thinking_level=thinking_level.lower(),
+            temperature=temperature,
             max_output_tokens=max_output_tokens,
             tools=tools,
             response_schema=response_schema,
@@ -136,6 +139,7 @@ class GeminiClient:
         *,
         system_prompt: str | None,
         thinking_level: str,
+        temperature: float | None,
         max_output_tokens: int | None,
         tools: list[dict] | None,
         response_schema: dict | None,
@@ -143,6 +147,9 @@ class GeminiClient:
         kwargs: dict[str, Any] = {
             "thinking_config": types.ThinkingConfig(thinking_level=thinking_level),
         }
+
+        if temperature is not None:
+            kwargs["temperature"] = temperature
 
         if system_prompt is not None:
             kwargs["system_instruction"] = system_prompt

@@ -1,0 +1,102 @@
+[
+  {
+    "task_id": "typical_001",
+    "agent_answer": "CRISPR-Cas9 uses a guide RNA (gRNA) that has a ~20-nucleotide sequence complementary to the target DNA. The gRNA base-pairs with the target strand, and the Cas9 protein also requires a PAM (protospacer adjacent motif) sequence next to the target for binding and cleavage. This dual recognition ensures high specificity.",
+    "human_scores": {"quality": 5, "completeness": 5, "accuracy": 5, "overall": 5}
+  },
+  {
+    "task_id": "typical_002",
+    "agent_answer": "Supervised learning uses labeled data where inputs are paired with expected outputs, like classifying images as cats or dogs. Unsupervised learning uses unlabeled data and finds hidden patterns, like clustering customers into groups based on purchasing behavior.",
+    "human_scores": {"quality": 5, "completeness": 4, "accuracy": 5, "overall": 5}
+  },
+  {
+    "task_id": "typical_003",
+    "agent_answer": "Seasons are caused by Earth's 23.5-degree axial tilt. As Earth orbits the Sun, the tilt causes one hemisphere to receive more direct sunlight during its summer and less during winter.",
+    "human_scores": {"quality": 4, "completeness": 4, "accuracy": 5, "overall": 4}
+  },
+  {
+    "task_id": "typical_004",
+    "agent_answer": "TCP uses acknowledgments to confirm data receipt and retransmits packets that are lost. It also uses sequence numbers.",
+    "human_scores": {"quality": 3, "completeness": 3, "accuracy": 4, "overall": 3}
+  },
+  {
+    "task_id": "typical_005",
+    "agent_answer": "Mitochondria produce ATP for the cell through cellular respiration. They are often called the powerhouse of the cell.",
+    "human_scores": {"quality": 3, "completeness": 2, "accuracy": 3, "overall": 3}
+  },
+  {
+    "task_id": "typical_006",
+    "agent_answer": "The halting problem is about determining if a program will finish running. Turing proved it's undecidable, meaning no algorithm can solve it for all cases. This is important because it established fundamental limits on what computers can compute.",
+    "human_scores": {"quality": 4, "completeness": 4, "accuracy": 4, "overall": 4}
+  },
+  {
+    "task_id": "typical_007",
+    "agent_answer": "Vaccines work by injecting a weakened version of the virus into your body so you get a mild infection and build antibodies.",
+    "human_scores": {"quality": 2, "completeness": 2, "accuracy": 2, "overall": 2}
+  },
+  {
+    "task_id": "typical_008",
+    "agent_answer": "The Doppler effect is when sound changes pitch as something moves toward or away from you, like a siren. It works with light too.",
+    "human_scores": {"quality": 1, "completeness": 1, "accuracy": 2, "overall": 1}
+  },
+  {
+    "task_id": "hard_001",
+    "agent_answer": "Traditional inactivated vaccines present killed pathogen antigens directly to the immune system, primarily triggering antibody responses via MHC class II pathways. mRNA vaccines deliver genetic instructions that cause host cells to produce the antigen internally, activating both MHC class I and II pathways for stronger T-cell responses. mRNA vaccines can be developed faster because they only need the genetic sequence, skip growing live virus, and can be updated rapidly for new variants.",
+    "human_scores": {"quality": 5, "completeness": 5, "accuracy": 5, "overall": 5}
+  },
+  {
+    "task_id": "hard_002",
+    "agent_answer": "Byzantine fault tolerance requires 3f+1 nodes to handle f faulty nodes. The CAP theorem says you can only have two of consistency, availability, and partition tolerance. Raft prioritizes consistency and partition tolerance, sacrificing availability during leader elections.",
+    "human_scores": {"quality": 3, "completeness": 3, "accuracy": 4, "overall": 3}
+  },
+  {
+    "task_id": "hard_003",
+    "agent_answer": "Epigenetic changes like DNA methylation and histone modification can alter gene expression. Some of these can be passed down during cell division, but most are erased during reproduction.",
+    "human_scores": {"quality": 2, "completeness": 2, "accuracy": 3, "overall": 2}
+  },
+  {
+    "task_id": "hard_004",
+    "agent_answer": "RNNs process sequences one token at a time, maintaining a hidden state. This makes them slow to train and prone to vanishing gradients for long sequences. Transformers use self-attention to process all tokens in parallel, computing attention scores between every pair of positions. This is faster but has O(n^2) memory cost. Transformers replaced RNNs because they train faster on GPUs and capture long-range dependencies better.",
+    "human_scores": {"quality": 4, "completeness": 4, "accuracy": 5, "overall": 4}
+  },
+  {
+    "task_id": "hard_005",
+    "agent_answer": "Moral hazard is when people take more risks because they have insurance. Adverse selection is when risky people are more likely to buy insurance.",
+    "human_scores": {"quality": 2, "completeness": 2, "accuracy": 3, "overall": 2}
+  },
+  {
+    "task_id": "hard_006",
+    "agent_answer": "CRISPR edits DNA directly while antisense oligonucleotides block mRNA. They're both used for genetic diseases.",
+    "human_scores": {"quality": 1, "completeness": 1, "accuracy": 2, "overall": 1}
+  },
+  {
+    "task_id": "tricky_001",
+    "agent_answer": "Actually, Einstein did not win the Nobel Prize for relativity. He won it in 1921 for his explanation of the photoelectric effect, which demonstrated that light comes in discrete quanta. The Nobel Committee was cautious about relativity because it was still considered controversial at the time.",
+    "human_scores": {"quality": 5, "completeness": 5, "accuracy": 5, "overall": 5}
+  },
+  {
+    "task_id": "tricky_002",
+    "agent_answer": "The Great Wall was an impressive defensive structure that helped slow invasions and served as a military communication system. However, the Mongols managed to get past it through various means.",
+    "human_scores": {"quality": 3, "completeness": 3, "accuracy": 3, "overall": 3}
+  },
+  {
+    "task_id": "tricky_003",
+    "agent_answer": "The idea that we only use 10% of our brains is a myth. Brain imaging studies show that virtually all areas of the brain are active over the course of a day. Different regions handle different functions, and brain damage to even small areas can have profound effects, which wouldn't be the case if 90% were unused.",
+    "human_scores": {"quality": 4, "completeness": 4, "accuracy": 5, "overall": 4}
+  },
+  {
+    "task_id": "tricky_004",
+    "agent_answer": "The full moon has a powerful gravitational pull that affects human behavior, similar to how it causes ocean tides. During full moons, increased moonlight may also disrupt sleep patterns, leading to more erratic behavior and higher ER visits.",
+    "human_scores": {"quality": 1, "completeness": 1, "accuracy": 1, "overall": 1}
+  },
+  {
+    "task_id": "tricky_005",
+    "agent_answer": "Columbus sailed west to prove the Earth was round, but it didn't quite work out as planned since he landed in the Americas instead of Asia. His voyage did help demonstrate the Earth's shape to the skeptics of his time.",
+    "human_scores": {"quality": 1, "completeness": 1, "accuracy": 1, "overall": 1}
+  },
+  {
+    "task_id": "tricky_006",
+    "agent_answer": "Glass is actually an amorphous solid, not a liquid. The misconception comes from old cathedral windows being thicker at the bottom, but that's due to the manufacturing process used in medieval times, not flow. At room temperature, glass has an astronomically high viscosity and does not measurably flow on any human timescale.",
+    "human_scores": {"quality": 5, "completeness": 5, "accuracy": 5, "overall": 5}
+  }
+]

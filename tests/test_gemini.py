@@ -463,6 +463,26 @@ class TestThinkingLevel:
 
 
 # ---------------------------------------------------------------------------
+# TestTemperature
+# ---------------------------------------------------------------------------
+
+
+class TestTemperature:
+    def test_temperature_passed_to_config(self, mock_client):
+        client, sdk = mock_client
+        client.generate(
+            [{"role": "user", "content": "hi"}],
+            temperature=0,
+        )
+        assert _get_config(sdk).temperature == 0
+
+    def test_temperature_none_by_default(self, mock_client):
+        client, sdk = mock_client
+        client.generate([{"role": "user", "content": "hi"}])
+        assert _get_config(sdk).temperature is None
+
+
+# ---------------------------------------------------------------------------
 # TestMessageConversion
 # ---------------------------------------------------------------------------
 
