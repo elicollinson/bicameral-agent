@@ -29,9 +29,11 @@ from bicameral_agent.tool_latency import (
     ToolLatencyModel,
     ToolPrediction,
 )
+from bicameral_agent.gemini import ChatMessage, GeminiClient, GeminiResponse
 
 __all__ = [
     "APILatencyModel",
+    "ChatMessage",
     "ContextFeatures",
     "ContextInjection",
     "ContextQueue",
@@ -45,6 +47,8 @@ __all__ = [
     "EpisodeValidator",
     "FEATURE_DIM",
     "FastEmbedEmbedder",
+    "GeminiClient",
+    "GeminiResponse",
     "HashEmbedder",
     "InterruptConfig",
     "LatencyEstimate",
