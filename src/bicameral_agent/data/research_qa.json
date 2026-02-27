@@ -1,0 +1,1302 @@
+[
+  {
+    "task_id": "typical_001",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the primary mechanism by which CRISPR-Cas9 identifies its target DNA sequence?",
+    "gold_answer": "CRISPR-Cas9 identifies its target through complementary base pairing between a guide RNA (gRNA) and the target DNA strand. The gRNA contains a ~20-nucleotide sequence complementary to the target, and Cas9 only cleaves DNA when this match occurs adjacent to a protospacer adjacent motif (PAM) sequence, typically NGG for SpCas9.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Mentions gRNA complementary base pairing, PAM requirement, and specificity. 4: Mentions gRNA and PAM but lacks detail. 3: Mentions gRNA but not PAM. 2: Vague reference to RNA guidance. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "typical_002",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the difference between supervised and unsupervised learning in machine learning?",
+    "gold_answer": "Supervised learning trains models on labeled data where input-output pairs are provided, learning to map inputs to known outputs (e.g., classification, regression). Unsupervised learning works with unlabeled data, discovering hidden patterns or structure without predefined targets (e.g., clustering, dimensionality reduction).",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Clearly distinguishes both with examples and mentions labeled vs unlabeled data. 4: Correct distinction with one example type. 3: Correct but vague distinction. 2: Partially correct with confusion. 1: Incorrect or reversed definitions."
+  },
+  {
+    "task_id": "typical_003",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What causes the seasons on Earth?",
+    "gold_answer": "Earth's seasons are caused by its axial tilt of approximately 23.5 degrees relative to its orbital plane. As Earth orbits the Sun, this tilt causes different hemispheres to receive more direct sunlight at different times of year. The hemisphere tilted toward the Sun experiences summer with longer days and more direct solar radiation, while the opposite hemisphere experiences winter.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Mentions axial tilt, differential sunlight, and hemisphere effects. 4: Mentions tilt and sunlight variation. 3: Mentions tilt but incomplete explanation. 2: Mentions orbit but not tilt. 1: Attributes seasons to distance from Sun."
+  },
+  {
+    "task_id": "typical_004",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How does TCP ensure reliable data delivery over networks?",
+    "gold_answer": "TCP ensures reliability through several mechanisms: sequence numbers to order segments, acknowledgments (ACKs) to confirm receipt, retransmission of lost segments via timeouts, flow control using a sliding window to prevent receiver overload, and congestion control algorithms (slow start, congestion avoidance) to prevent network overload. It also uses checksums for error detection and a three-way handshake for connection establishment.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Mentions ACKs, retransmission, sequence numbers, and flow/congestion control. 4: Mentions at least 3 mechanisms. 3: Mentions ACKs and retransmission. 2: Only mentions one mechanism. 1: Incorrect or confuses with UDP."
+  },
+  {
+    "task_id": "typical_005",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the function of mitochondria in eukaryotic cells?",
+    "gold_answer": "Mitochondria are the primary site of aerobic cellular respiration, generating most of the cell's ATP through oxidative phosphorylation. They convert nutrients (primarily pyruvate from glycolysis) into ATP via the citric acid cycle and electron transport chain. Mitochondria also play roles in calcium signaling, apoptosis regulation, and contain their own circular DNA inherited maternally.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Mentions ATP production, oxidative phosphorylation, and at least one additional role. 4: Mentions ATP and electron transport chain. 3: Correctly identifies ATP production. 2: Vague 'powerhouse' reference only. 1: Incorrect function described."
+  },
+  {
+    "task_id": "typical_006",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the halting problem and why is it significant in computer science?",
+    "gold_answer": "The halting problem asks whether a general algorithm can determine, for any arbitrary program and input, whether that program will eventually halt or run forever. Alan Turing proved in 1936 that no such general algorithm exists, using a proof by contradiction. This is significant because it established fundamental limits on computability, showing that some problems are undecidable, and it laid groundwork for the theory of computation.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Defines the problem, mentions Turing's proof, and explains significance for computability. 4: Correct definition and undecidability. 3: Correct definition but weak on significance. 2: Partial understanding. 1: Incorrect definition."
+  },
+  {
+    "task_id": "typical_007",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How do vaccines stimulate immunity without causing disease?",
+    "gold_answer": "Vaccines introduce antigens (weakened/inactivated pathogens, protein subunits, or mRNA encoding viral proteins) that trigger an adaptive immune response without causing the actual disease. The immune system produces antibodies and memory B and T cells that recognize these antigens. Upon future exposure to the real pathogen, these memory cells mount a rapid, strong secondary immune response, preventing or reducing illness severity.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains antigen presentation, memory cell formation, and secondary response. 4: Mentions antigens and memory cells. 3: General concept of immune training. 2: Vague or partially incorrect. 1: Fundamental misunderstanding."
+  },
+  {
+    "task_id": "typical_008",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the significance of the Doppler effect in astronomy?",
+    "gold_answer": "The Doppler effect causes light from objects moving toward an observer to be blueshifted (shorter wavelength) and light from objects moving away to be redshifted (longer wavelength). In astronomy, this is used to measure radial velocities of stars and galaxies, detect exoplanets via stellar wobble, confirm the expansion of the universe (Hubble's observation of galactic redshift), and study binary star systems.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains redshift/blueshift and mentions at least 2 applications. 4: Correct explanation with 1 application. 3: Correct basic explanation. 2: Partial understanding. 1: Incorrect or only describes sound Doppler effect."
+  },
+  {
+    "task_id": "typical_009",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the difference between SQL and NoSQL databases?",
+    "gold_answer": "SQL databases are relational, storing data in structured tables with predefined schemas, using SQL for queries, and supporting ACID transactions. NoSQL databases use flexible schemas with various data models (document, key-value, column-family, graph), are designed for horizontal scaling, and may sacrifice some ACID properties for performance and availability (BASE model). SQL excels at complex queries and data integrity; NoSQL at scalability and flexible data structures.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Covers schema differences, data models, ACID vs BASE, and trade-offs. 4: Mentions structured vs flexible schema and scaling. 3: Basic correct distinction. 2: Oversimplified or partially wrong. 1: Incorrect comparison."
+  },
+  {
+    "task_id": "typical_010",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How does photosynthesis convert light energy into chemical energy?",
+    "gold_answer": "Photosynthesis occurs in two stages: light-dependent reactions in the thylakoid membranes capture light energy to split water, producing ATP, NADPH, and oxygen as a byproduct. The Calvin cycle (light-independent reactions) in the stroma uses ATP and NADPH to fix CO2 into glucose through carbon fixation via RuBisCO. The overall equation is 6CO2 + 6H2O + light energy -> C6H12O6 + 6O2.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Describes both stages, mentions key molecules (ATP, NADPH), and carbon fixation. 4: Distinguishes light and dark reactions correctly. 3: General understanding of CO2 to glucose conversion. 2: Incomplete or confused stages. 1: Fundamental errors."
+  },
+  {
+    "task_id": "typical_011",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the principle behind public-key cryptography?",
+    "gold_answer": "Public-key cryptography uses a mathematically linked pair of keys: a public key (freely shared) and a private key (kept secret). Data encrypted with the public key can only be decrypted with the corresponding private key, and vice versa. This is based on trapdoor functions that are easy to compute in one direction but computationally infeasible to reverse without the private key. Common algorithms include RSA (based on integer factorization) and ECC (based on elliptic curve discrete logarithm).",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains key pair, trapdoor functions, and names an algorithm. 4: Explains key pair concept and one-way functions. 3: Correct basic concept. 2: Partial understanding. 1: Confuses with symmetric encryption."
+  },
+  {
+    "task_id": "typical_012",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What role does the p53 protein play in cancer prevention?",
+    "gold_answer": "p53, known as the 'guardian of the genome,' is a tumor suppressor protein that responds to DNA damage and cellular stress. It activates DNA repair mechanisms, halts the cell cycle at checkpoints to allow repair, and triggers apoptosis (programmed cell death) if damage is irreparable. Mutations in the TP53 gene are found in approximately 50% of human cancers, making it the most commonly mutated gene in cancer.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains tumor suppression, DNA repair, apoptosis, and mutation prevalence. 4: Mentions cell cycle arrest and apoptosis. 3: Identifies it as tumor suppressor. 2: Vague cancer-related role. 1: Incorrect function."
+  },
+  {
+    "task_id": "typical_013",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the CAP theorem in distributed systems?",
+    "gold_answer": "The CAP theorem (Brewer's theorem) states that a distributed data store can provide at most two of three guarantees simultaneously: Consistency (all nodes see the same data at the same time), Availability (every request receives a response), and Partition tolerance (the system continues operating despite network partitions). Since network partitions are unavoidable in practice, real systems must choose between consistency and availability during partitions (CP or AP systems).",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Defines all three properties, the trade-off, and practical implications. 4: Correctly states the theorem and trade-off. 3: Names the three properties correctly. 2: Partial understanding. 1: Incorrect properties listed."
+  },
+  {
+    "task_id": "typical_014",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How does natural selection drive evolution?",
+    "gold_answer": "Natural selection operates through four conditions: variation exists within a population, some variations are heritable, organisms produce more offspring than can survive, and individuals with advantageous traits have higher fitness (survival and reproduction rates). Over generations, beneficial traits become more prevalent in the population while deleterious traits decrease. This mechanism, first described by Darwin and Wallace, is a primary driver of adaptive evolution.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains variation, heritability, differential fitness, and generational change. 4: Covers 3 of 4 conditions. 3: General concept of survival of fittest. 2: Oversimplified. 1: Lamarckian or incorrect mechanism."
+  },
+  {
+    "task_id": "typical_015",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the difference between a compiler and an interpreter?",
+    "gold_answer": "A compiler translates an entire source program into machine code (or intermediate code) before execution, producing a standalone executable. An interpreter executes source code line by line or statement by statement at runtime, without producing a separate executable. Compiled programs typically run faster but require a compilation step; interpreted programs offer more flexibility and easier debugging but slower execution. Some languages use hybrid approaches (e.g., Java compiles to bytecode, then JIT-interprets).",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Distinguishes translation timing, execution model, trade-offs, and mentions hybrid. 4: Correct distinction with performance trade-off. 3: Basic correct distinction. 2: Partially correct. 1: Incorrect or reversed."
+  },
+  {
+    "task_id": "typical_016",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the greenhouse effect and how does it relate to climate change?",
+    "gold_answer": "The greenhouse effect is a natural process where certain atmospheric gases (CO2, methane, water vapor, N2O) trap infrared radiation re-emitted from Earth's surface, warming the atmosphere. Without it, Earth's average temperature would be about -18C instead of 15C. Human activities (fossil fuel combustion, deforestation, agriculture) have increased greenhouse gas concentrations, enhancing this effect and causing global warming, leading to climate change impacts including rising sea levels, extreme weather, and ecosystem disruption.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains mechanism, natural vs enhanced effect, human causes, and impacts. 4: Covers mechanism and human enhancement. 3: Basic understanding of heat trapping. 2: Confused mechanism. 1: Fundamental misunderstanding."
+  },
+  {
+    "task_id": "typical_017",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the significance of the Turing test?",
+    "gold_answer": "The Turing test, proposed by Alan Turing in 1950, evaluates a machine's ability to exhibit intelligent behavior indistinguishable from a human. In the test, a human evaluator converses with both a human and a machine without knowing which is which; if the evaluator cannot reliably distinguish the machine, it passes. Its significance lies in providing an operational definition of machine intelligence and sparking philosophical debate about AI, consciousness, and the nature of understanding. Critics note it tests imitation rather than genuine understanding (Searle's Chinese Room argument).",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Describes the test setup, significance, and mentions criticisms. 4: Correct description and significance. 3: Correct basic description. 2: Vague understanding. 1: Incorrect description."
+  },
+  {
+    "task_id": "typical_018",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How do antibiotics work and why does antibiotic resistance develop?",
+    "gold_answer": "Antibiotics work by targeting essential bacterial processes: cell wall synthesis (penicillins, cephalosporins), protein synthesis (tetracyclines, macrolides), DNA replication (fluoroquinolones), or metabolic pathways (sulfonamides). Resistance develops through natural selection: random mutations or horizontal gene transfer can give bacteria resistance mechanisms (efflux pumps, enzyme degradation, target modification). Overuse and misuse of antibiotics accelerate resistance by selecting for resistant strains while killing susceptible ones.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains mechanisms of action, resistance mechanisms, and evolutionary selection. 4: Covers action and resistance development. 3: General understanding of both concepts. 2: One concept correct, one weak. 1: Fundamental errors."
+  },
+  {
+    "task_id": "typical_019",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the function of the Federal Reserve in the US economy?",
+    "gold_answer": "The Federal Reserve (Fed) serves as the central bank of the United States. Its primary functions include: conducting monetary policy by setting the federal funds rate and using open market operations to influence money supply and credit conditions; supervising and regulating banks to ensure financial system stability; serving as lender of last resort during financial crises; and providing financial services including operating the payment system. Its dual mandate is to promote maximum employment and stable prices.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Covers monetary policy, bank regulation, lender of last resort, and dual mandate. 4: Mentions monetary policy and at least one other function. 3: Correctly identifies it as central bank with monetary policy role. 2: Vague understanding. 1: Incorrect functions."
+  },
+  {
+    "task_id": "typical_020",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is plate tectonics and what evidence supports it?",
+    "gold_answer": "Plate tectonics is the theory that Earth's lithosphere is divided into large rigid plates that move on the asthenosphere driven by mantle convection. Evidence includes: the jigsaw fit of continental coastlines, matching fossil records across separated continents, paleomagnetic striping on the ocean floor showing seafloor spreading, the distribution of earthquakes and volcanoes along plate boundaries, and GPS measurements of current plate movement. The theory explains continental drift, mountain building, ocean basin formation, and volcanic activity.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains theory and provides 3+ pieces of evidence. 4: Correct theory with 2 pieces of evidence. 3: Correct basic concept with 1 evidence. 2: Vague understanding. 1: Incorrect theory."
+  },
+  {
+    "task_id": "typical_021",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the difference between classical and operant conditioning?",
+    "gold_answer": "Classical conditioning (Pavlov) involves learning by association: a neutral stimulus is paired with an unconditioned stimulus until the neutral stimulus alone elicits a conditioned response. Operant conditioning (Skinner) involves learning through consequences: behaviors are strengthened by reinforcement (positive or negative) or weakened by punishment. Key difference: classical conditioning involves involuntary reflexive responses, while operant conditioning involves voluntary behaviors shaped by their outcomes.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Distinguishes association vs consequences, names researchers, and explains voluntary vs involuntary. 4: Correct distinction with examples. 3: Basic correct distinction. 2: Partially confused. 1: Incorrect or reversed."
+  },
+  {
+    "task_id": "typical_022",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How does a hash table achieve O(1) average-case lookup time?",
+    "gold_answer": "A hash table uses a hash function to compute an index into an array of buckets from a key. The hash function maps keys to array indices, allowing direct access to the stored value. Average O(1) time is achieved when the hash function distributes keys uniformly, minimizing collisions. Collisions (multiple keys mapping to the same index) are handled via chaining (linked lists at each bucket) or open addressing (probing for next empty slot). Performance degrades toward O(n) if load factor is too high or the hash function produces many collisions.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains hash function, direct access, collision handling, and degradation conditions. 4: Covers hash function and collision handling. 3: Correct basic mechanism. 2: Partial understanding. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "typical_023",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the ozone layer and why is it important?",
+    "gold_answer": "The ozone layer is a region of the stratosphere (15-35 km altitude) with high concentrations of ozone (O3). It absorbs 97-99% of the Sun's ultraviolet-B radiation, protecting living organisms from DNA damage, skin cancer, cataracts, and harm to marine ecosystems. CFCs and other ozone-depleting substances catalytically destroy ozone molecules. The Montreal Protocol (1987) successfully reduced CFC emissions, and the ozone layer is gradually recovering.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains location, UV protection, threats (CFCs), and Montreal Protocol. 4: Covers UV protection and CFC threat. 3: Correct basic UV protection role. 2: Vague understanding. 1: Confuses with greenhouse effect."
+  },
+  {
+    "task_id": "typical_024",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the central dogma of molecular biology?",
+    "gold_answer": "The central dogma, articulated by Francis Crick in 1958, describes the flow of genetic information: DNA is transcribed into RNA, which is translated into protein. DNA replication copies DNA for cell division. Transcription occurs in the nucleus (eukaryotes) producing mRNA, which is processed and transported to ribosomes for translation into amino acid sequences. Known exceptions include reverse transcription (RNA to DNA, by retroviruses) and RNA replication (by RNA viruses).",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: States DNA->RNA->protein flow, mentions Crick, and notes exceptions. 4: Correct flow with transcription and translation. 3: Correct basic flow. 2: Incomplete flow. 1: Incorrect direction or fundamental error."
+  },
+  {
+    "task_id": "typical_025",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How does a blockchain maintain data integrity without a central authority?",
+    "gold_answer": "A blockchain maintains integrity through: cryptographic hashing (each block contains a hash of the previous block, creating a tamper-evident chain), distributed consensus mechanisms (proof-of-work, proof-of-stake) where multiple nodes must agree on valid transactions, decentralized replication (all nodes maintain a copy of the ledger), and economic incentives (miners/validators are rewarded for honest behavior). Altering any historical block would require re-computing all subsequent hashes and controlling a majority of network resources.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains hashing chains, consensus, decentralization, and attack difficulty. 4: Covers hashing and consensus. 3: Basic understanding of distributed ledger. 2: Vague understanding. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "typical_026",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the difference between Type 1 and Type 2 diabetes?",
+    "gold_answer": "Type 1 diabetes is an autoimmune condition where the immune system destroys insulin-producing beta cells in the pancreas, resulting in little or no insulin production. It typically develops in childhood and requires lifelong insulin therapy. Type 2 diabetes involves insulin resistance where cells do not respond effectively to insulin, often combined with reduced insulin secretion over time. It is more common, typically develops in adults, and is strongly associated with obesity, sedentary lifestyle, and genetics. Type 2 can often be managed with lifestyle changes and oral medications.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Correctly distinguishes autoimmune vs resistance, onset, management, and risk factors. 4: Correct distinction with management differences. 3: Basic correct distinction. 2: Partially correct. 1: Incorrect or reversed."
+  },
+  {
+    "task_id": "typical_027",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the traveling salesman problem and why is it computationally significant?",
+    "gold_answer": "The traveling salesman problem (TSP) asks for the shortest possible route that visits each city in a given set exactly once and returns to the starting city. It is NP-hard, meaning no known polynomial-time algorithm exists to solve it optimally for all instances. Its significance lies in being a canonical example of combinatorial optimization problems, with practical applications in logistics, circuit design, and DNA sequencing. Approximate and heuristic algorithms (nearest neighbor, simulated annealing, genetic algorithms) are used for practical solutions.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Defines TSP, explains NP-hardness, and mentions applications or solution approaches. 4: Correct definition and NP-hard classification. 3: Correct definition. 2: Vague understanding. 1: Incorrect definition."
+  },
+  {
+    "task_id": "typical_028",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How does the human immune system distinguish self from non-self?",
+    "gold_answer": "The immune system uses Major Histocompatibility Complex (MHC) molecules on cell surfaces to distinguish self from non-self. During development, T cells undergo positive and negative selection in the thymus: those that react too strongly to self-MHC are eliminated (negative selection), while those that can interact with self-MHC appropriately survive (positive selection). B cells also undergo tolerance mechanisms. Foreign antigens presented on MHC molecules trigger immune responses, while self-antigens generally do not. Failure of self-tolerance leads to autoimmune diseases.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains MHC, thymic selection, tolerance, and autoimmunity connection. 4: Covers MHC and selection. 3: Mentions MHC or self-tolerance. 2: Vague understanding. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "typical_029",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the water cycle and what are its main components?",
+    "gold_answer": "The water cycle (hydrological cycle) describes the continuous movement of water through Earth's systems. Main components include: evaporation (water surfaces to atmosphere), transpiration (plants release water vapor), condensation (water vapor forms clouds), precipitation (rain, snow, sleet, hail), surface runoff (water flows to rivers, lakes, oceans), infiltration (water seeps into groundwater), and groundwater flow. Solar energy and gravity are the primary driving forces.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Names 5+ components and driving forces. 4: Names 4 components correctly. 3: Names 3 components. 2: Incomplete with 1-2 components. 1: Incorrect or confused."
+  },
+  {
+    "task_id": "typical_030",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the difference between correlation and causation in statistics?",
+    "gold_answer": "Correlation measures the statistical relationship between two variables — when one changes, the other tends to change in a predictable way. Causation means one variable directly causes change in another. Correlation does not imply causation because: confounding variables may influence both, the relationship may be coincidental, or the causal direction may be reversed. Establishing causation typically requires controlled experiments, temporal precedence, and elimination of alternative explanations. Observational studies can show correlation but rarely prove causation.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Distinguishes both concepts, explains why correlation != causation, and mentions how to establish causation. 4: Correct distinction with confounding variable mention. 3: Basic correct distinction. 2: Partial understanding. 1: Treats them as equivalent."
+  },
+  {
+    "task_id": "typical_031",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is general relativity and how does it differ from Newtonian gravity?",
+    "gold_answer": "General relativity, published by Einstein in 1915, describes gravity not as a force but as curvature of spacetime caused by mass and energy. Massive objects warp the fabric of spacetime, and other objects follow geodesics (straightest possible paths) through this curved spacetime. It differs from Newtonian gravity, which treats gravity as an instantaneous force between masses. General relativity predicts effects absent in Newtonian physics: gravitational time dilation, gravitational lensing, gravitational waves, and the precession of Mercury's orbit.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains spacetime curvature, contrasts with Newtonian force, and names 2+ predictions. 4: Correct spacetime curvature concept with contrast. 3: Basic understanding of spacetime curvature. 2: Vague understanding. 1: Incorrect or confuses with special relativity."
+  },
+  {
+    "task_id": "typical_032",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How does the Internet Domain Name System (DNS) work?",
+    "gold_answer": "DNS translates human-readable domain names (e.g., example.com) into IP addresses that computers use to communicate. The process involves: a recursive resolver (usually provided by the ISP) receives the query, checks its cache, then queries root name servers, which direct to TLD servers (.com, .org), which direct to authoritative name servers for the specific domain. The authoritative server returns the IP address. Results are cached at each level with TTL values to reduce query load. DNS uses primarily UDP on port 53.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains hierarchical resolution, caching, and key server types. 4: Covers resolution process and caching. 3: Basic name-to-IP translation concept. 2: Vague understanding. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "typical_033",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What was the significance of the Rosetta Stone for understanding ancient languages?",
+    "gold_answer": "The Rosetta Stone, discovered in 1799 during Napoleon's Egyptian campaign, contains the same decree written in three scripts: hieroglyphic, Demotic, and Ancient Greek. Since scholars could read Ancient Greek, it provided the key to deciphering Egyptian hieroglyphics, which had been unreadable for nearly 1,400 years. Jean-Francois Champollion used the stone to crack the hieroglyphic code in 1822, revealing that hieroglyphs were a combination of phonetic and ideographic elements, opening up the study of ancient Egyptian civilization.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Names three scripts, Champollion, and explains the decipherment process. 4: Explains trilingual nature and its role in decipherment. 3: Identifies it as key to deciphering hieroglyphs. 2: Vague significance. 1: Incorrect role."
+  },
+  {
+    "task_id": "typical_034",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the standard model of particle physics?",
+    "gold_answer": "The Standard Model is a theoretical framework describing fundamental particles and three of four known forces (electromagnetic, weak nuclear, strong nuclear — excluding gravity). It classifies particles into fermions (matter particles: 6 quarks and 6 leptons, each with antiparticles) and bosons (force carriers: photon for electromagnetic, W/Z bosons for weak, gluons for strong, and the Higgs boson which gives mass to particles). The Higgs boson was experimentally confirmed at CERN in 2012.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Covers particle classification, three forces, key bosons, and Higgs discovery. 4: Correct framework with particle types and forces. 3: Basic understanding of particle classification. 2: Vague understanding. 1: Incorrect framework."
+  },
+  {
+    "task_id": "typical_035",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How does a neural network learn through backpropagation?",
+    "gold_answer": "Backpropagation computes the gradient of the loss function with respect to each weight in the network by applying the chain rule of calculus, propagating error signals backward from the output layer through hidden layers to the input layer. During training: a forward pass computes predictions, the loss function measures prediction error, backpropagation computes gradients of the loss with respect to each weight, and gradient descent (or a variant like Adam) updates weights to minimize the loss. This process iterates over many batches of training data.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains chain rule, gradient computation, forward/backward passes, and weight updates. 4: Covers gradient computation and weight updates. 3: Basic understanding of error propagation. 2: Vague understanding. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "typical_036",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the significance of the Magna Carta in the development of constitutional law?",
+    "gold_answer": "The Magna Carta, sealed in 1215 by King John of England, established the principle that the monarch's power is not absolute and is subject to law. Key provisions included protections against arbitrary imprisonment, access to swift justice, and limitations on feudal taxation without consent. Though originally addressing baronial grievances, it became a foundational document for constitutional principles including rule of law, due process, and representative government. It influenced the English Bill of Rights, the US Constitution, and the Universal Declaration of Human Rights.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Covers key principles, historical context, and lasting influence on later documents. 4: Explains principles and mentions influence. 3: Identifies it as limiting royal power. 2: Vague significance. 1: Incorrect historical role."
+  },
+  {
+    "task_id": "typical_037",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What are prions and how do they cause disease?",
+    "gold_answer": "Prions are misfolded proteins (PrPSc) that can induce normal proteins (PrPC) to adopt the same abnormal conformation, propagating without nucleic acids. They cause transmissible spongiform encephalopathies (TSEs) including Creutzfeldt-Jakob disease in humans, BSE (mad cow disease) in cattle, and scrapie in sheep. Prion diseases are characterized by spongiform degeneration of brain tissue, are invariably fatal, and are remarkable because they represent an infectious agent composed solely of protein — no DNA or RNA is involved in their replication.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains misfolding mechanism, names diseases, and notes no nucleic acid. 4: Covers misfolding propagation and disease examples. 3: Identifies them as misfolded proteins. 2: Vague understanding. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "typical_038",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the Heisenberg uncertainty principle?",
+    "gold_answer": "The Heisenberg uncertainty principle states that it is fundamentally impossible to simultaneously know both the exact position and exact momentum of a particle with arbitrary precision. Mathematically, the product of the uncertainties in position and momentum must be at least h-bar/2 (where h-bar is the reduced Planck constant). This is not a limitation of measurement instruments but a fundamental property of quantum systems arising from the wave nature of particles. It also applies to other conjugate variable pairs like energy and time.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: States the principle, provides mathematical bound, and explains it as fundamental (not instrumental). 4: Correct statement with fundamental nature. 3: Correct basic statement. 2: Attributes it to measurement limitation. 1: Incorrect principle."
+  },
+  {
+    "task_id": "typical_039",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How does ocean acidification affect marine ecosystems?",
+    "gold_answer": "Ocean acidification occurs when seawater absorbs excess atmospheric CO2, forming carbonic acid and lowering ocean pH. Since the Industrial Revolution, ocean pH has dropped by approximately 0.1 units (a 26% increase in acidity). This reduces carbonate ion availability, making it harder for calcifying organisms (corals, mollusks, sea urchins, some plankton) to build and maintain calcium carbonate shells and skeletons. It can also affect fish behavior, disrupt food webs, and threaten coral reef ecosystems that support approximately 25% of marine species.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains CO2 absorption mechanism, pH change, calcification impacts, and ecosystem effects. 4: Covers mechanism and biological impacts. 3: Basic understanding of pH change and shell impacts. 2: Vague understanding. 1: Confuses with other pollution."
+  },
+  {
+    "task_id": "typical_040",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the difference between machine learning and deep learning?",
+    "gold_answer": "Machine learning is a broad field where algorithms learn patterns from data without explicit programming, encompassing techniques like decision trees, SVMs, random forests, and logistic regression. Deep learning is a subset of machine learning that uses artificial neural networks with multiple hidden layers (deep architectures) to learn hierarchical representations of data. Deep learning excels at unstructured data (images, text, audio), can automatically learn feature representations (eliminating manual feature engineering), but requires more data and compute. Traditional ML may outperform deep learning on small, structured datasets.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains subset relationship, architectural distinction, feature learning, and trade-offs. 4: Correct subset relationship with key differences. 3: Basic correct distinction. 2: Partial understanding. 1: Treats them as unrelated."
+  },
+  {
+    "task_id": "typical_041",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What was the significance of the discovery of penicillin?",
+    "gold_answer": "Alexander Fleming discovered penicillin in 1928 when he noticed that Penicillium mold inhibited bacterial growth on a culture plate. Howard Florey and Ernst Boris Chain later developed it for clinical use in the 1940s. Penicillin became the first widely-used antibiotic, dramatically reducing deaths from bacterial infections and battlefield wounds in WWII. It launched the antibiotic era, transforming medicine by making previously fatal infections treatable, enabling safer surgeries, and significantly increasing life expectancy.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Names Fleming, describes discovery, mentions Florey/Chain, and covers medical impact. 4: Correct discovery story and medical significance. 3: Identifies Fleming and basic significance. 2: Vague understanding. 1: Incorrect attribution or significance."
+  },
+  {
+    "task_id": "typical_042",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is entropy in thermodynamics?",
+    "gold_answer": "Entropy is a thermodynamic property measuring the degree of disorder or randomness in a system, or equivalently, the number of microscopic configurations consistent with the macroscopic state. The second law of thermodynamics states that the total entropy of an isolated system never decreases — it either increases or remains constant. Entropy increases during irreversible processes (heat transfer from hot to cold, mixing, friction). Boltzmann's equation S = k*ln(W) relates entropy to the number of microstates. Entropy provides the arrow of time and determines the direction of spontaneous processes.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Defines entropy, states second law, mentions Boltzmann, and explains directional significance. 4: Correct definition and second law connection. 3: Basic understanding of disorder. 2: Vague concept. 1: Incorrect definition."
+  },
+  {
+    "task_id": "typical_043",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How does HTTPS secure web communications?",
+    "gold_answer": "HTTPS secures web communications using TLS (Transport Layer Security). The process involves: a TLS handshake where the server presents its digital certificate (verified against trusted Certificate Authorities), key exchange (often using Diffie-Hellman) to establish a shared session key, then symmetric encryption (e.g., AES) of all data transmitted between client and server. This provides confidentiality (data encrypted in transit), integrity (message authentication codes detect tampering), and authentication (certificates verify server identity).",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains TLS handshake, certificate verification, key exchange, and the three security properties. 4: Covers handshake and encryption. 3: Basic understanding of encryption in transit. 2: Vague 'secure connection' understanding. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "typical_044",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the theory of supply and demand in economics?",
+    "gold_answer": "Supply and demand theory describes how prices are determined in a market. Demand represents the quantity consumers will buy at various prices (downward-sloping curve — higher prices reduce quantity demanded). Supply represents the quantity producers will sell at various prices (upward-sloping curve — higher prices increase quantity supplied). The equilibrium price occurs where supply and demand curves intersect. Shifts in either curve (due to changes in preferences, income, technology, input costs, etc.) change the equilibrium price and quantity. Price elasticity measures responsiveness to price changes.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains both curves, equilibrium, shifts, and elasticity. 4: Covers curves, equilibrium, and shifts. 3: Basic understanding of price determination. 2: Vague concept. 1: Incorrect model."
+  },
+  {
+    "task_id": "typical_045",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What are stem cells and why are they important in medicine?",
+    "gold_answer": "Stem cells are undifferentiated cells capable of self-renewal and differentiation into specialized cell types. Types include: embryonic stem cells (pluripotent — can become any cell type), adult stem cells (multipotent — limited differentiation), and induced pluripotent stem cells (iPSCs — adult cells reprogrammed to pluripotency, discovered by Yamanaka in 2006). Medical importance includes: potential regenerative therapies for degenerative diseases, drug testing and development, understanding developmental biology, and current clinical uses in bone marrow transplants for blood disorders and cancers.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains self-renewal, differentiation types, iPSCs, and medical applications. 4: Covers cell types and medical potential. 3: Basic understanding of differentiation. 2: Vague understanding. 1: Incorrect definition."
+  },
+  {
+    "task_id": "typical_046",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is containerization in software development and how does Docker implement it?",
+    "gold_answer": "Containerization packages an application with its dependencies, libraries, and configuration into an isolated, lightweight unit (container) that runs consistently across environments. Docker implements this using Linux kernel features: namespaces for process isolation, cgroups for resource limiting, and union file systems for efficient layered images. Unlike virtual machines, containers share the host OS kernel, making them faster to start and more resource-efficient. Docker uses Dockerfiles to define images, a registry (Docker Hub) for distribution, and provides CLI tools for building, running, and managing containers.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains containerization concept, Docker's kernel-level implementation, and VM contrast. 4: Covers concept and Docker components. 3: Basic understanding of containers. 2: Confuses with VMs. 1: Incorrect concept."
+  },
+  {
+    "task_id": "typical_047",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "How does the human eye perceive color?",
+    "gold_answer": "Color perception occurs through photoreceptor cells in the retina. Cone cells (approximately 6 million) are responsible for color vision and contain three types of opsins sensitive to short (blue, ~420nm), medium (green, ~530nm), and long (red, ~560nm) wavelengths. The brain interprets color based on the ratio of activation across these three cone types (trichromatic theory). Opponent-process theory explains further processing: signals are compared in opponent channels (red-green, blue-yellow, light-dark) in the retina and brain. Color blindness results from missing or altered cone types.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains cone types, trichromatic and opponent-process theories, and color blindness. 4: Covers cone types and trichromatic theory. 3: Basic understanding of cones. 2: Vague understanding. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "typical_048",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the significance of the double-slit experiment in physics?",
+    "gold_answer": "The double-slit experiment demonstrates wave-particle duality, a fundamental concept in quantum mechanics. When particles (photons, electrons) pass through two slits, they create an interference pattern on a screen, characteristic of wave behavior. However, when individual particles are detected, they arrive as discrete points (particle behavior). Most remarkably, even single particles fired one at a time build up an interference pattern, suggesting each particle passes through both slits simultaneously as a probability wave. Observing which slit a particle passes through destroys the interference pattern, demonstrating the observer effect.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains interference pattern, wave-particle duality, single-particle behavior, and observer effect. 4: Covers interference and duality. 3: Basic understanding of interference. 2: Vague understanding. 1: Incorrect explanation."
+  },
+  {
+    "task_id": "typical_049",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What are the main causes and consequences of soil erosion?",
+    "gold_answer": "Soil erosion is the removal of topsoil by water, wind, or human activities. Main causes include: deforestation (removing root systems that bind soil), overgrazing, intensive agriculture (tilling breaks soil structure), construction, and climate change (increased rainfall intensity). Consequences include: loss of fertile topsoil reducing agricultural productivity, sedimentation of waterways causing flooding and water quality degradation, loss of soil carbon exacerbating climate change, habitat destruction, and desertification. Globally, soil erodes 10-40 times faster than it forms.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Covers multiple causes, consequences, and quantitative context. 4: Mentions 3+ causes and consequences. 3: Basic causes and consequences. 2: One-sided coverage. 1: Incorrect or confused."
+  },
+  {
+    "task_id": "typical_050",
+    "difficulty": "typical",
+    "split": "eval",
+    "question": "What is the role of the ribosome in protein synthesis?",
+    "gold_answer": "Ribosomes are molecular machines that translate mRNA sequences into polypeptide chains (proteins). They consist of two subunits (large and small) made of ribosomal RNA and proteins. During translation: the small subunit binds mRNA and recognizes the start codon (AUG), tRNA molecules carrying amino acids bind to codons via anticodon base pairing at the A site, peptide bonds form between amino acids at the P site via peptidyl transferase activity of the large subunit's rRNA (a ribozyme), and the ribosome translocates along the mRNA until reaching a stop codon.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains subunits, mRNA reading, tRNA matching, peptide bond formation, and translocation. 4: Covers mRNA reading and peptide bond formation. 3: Basic understanding of mRNA-to-protein. 2: Vague role. 1: Incorrect function."
+  },
+  {
+    "task_id": "hard_001",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "Compare the mechanisms by which mRNA vaccines and traditional inactivated vaccines generate immune responses, and explain why mRNA vaccines could be developed faster during the COVID-19 pandemic.",
+    "gold_answer": "Traditional inactivated vaccines use chemically killed pathogens that retain surface antigens, directly presenting foreign proteins to the immune system to generate antibody and some T-cell responses. mRNA vaccines deliver synthetic mRNA encoding the spike protein into host cells, which then produce the antigen endogenously. This triggers both humoral (antibody) and robust cellular (CD8+ T-cell) responses because the antigen is presented via both MHC-I and MHC-II pathways. mRNA vaccines were faster to develop because: only the viral genetic sequence is needed (no virus cultivation), synthetic mRNA can be manufactured rapidly once the sequence is known, the lipid nanoparticle delivery platform is pathogen-agnostic, and manufacturing scales using the same process regardless of the target antigen.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Compares both mechanisms including MHC pathway differences and gives 3+ speed advantages. 4: Correct comparison with 2 speed advantages. 3: Basic comparison with 1 speed advantage. 2: Describes one type well but weak comparison. 1: Incorrect mechanisms."
+  },
+  {
+    "task_id": "hard_002",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How do the Byzantine fault tolerance problem and the CAP theorem together constrain the design of distributed consensus protocols like Raft and PBFT?",
+    "gold_answer": "Byzantine fault tolerance (BFT) addresses nodes that may behave arbitrarily (malicious or buggy), requiring 3f+1 nodes to tolerate f Byzantine faults. The CAP theorem states distributed systems can only guarantee two of three: consistency, availability, and partition tolerance. Together they constrain protocol design: Raft assumes crash-fault-only (no Byzantine behavior) and chooses CP (consistency + partition tolerance, sacrificing availability during leader election), requiring only 2f+1 nodes for f crash faults. PBFT handles Byzantine faults but requires 3f+1 nodes, has O(n^2) message complexity, and also sacrifices availability during view changes. The combination means systems handling Byzantine faults need more nodes and communication overhead, and must still choose between consistency and availability during partitions.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains BFT threshold, CAP trade-offs for both protocols, and node/communication overhead differences. 4: Correctly relates BFT and CAP with protocol-specific trade-offs. 3: Understands both concepts but weak synthesis. 2: Explains concepts separately without integration. 1: Incorrect understanding of either concept."
+  },
+  {
+    "task_id": "hard_003",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "Explain how epigenetic modifications can be inherited across generations without changes to the DNA sequence, and discuss the evidence for transgenerational epigenetic inheritance in mammals.",
+    "gold_answer": "Epigenetic modifications (DNA methylation, histone modifications, non-coding RNAs) alter gene expression without changing the DNA sequence. During reproduction, most epigenetic marks are erased in two waves: in primordial germ cells and after fertilization. However, some marks escape reprogramming, particularly at imprinted genes, retrotransposons, and certain metastable epialleles. Evidence in mammals includes: the Agouti viable yellow mouse where maternal diet affects offspring coat color and obesity via DNA methylation; Dutch Hunger Winter studies showing famine exposure during pregnancy correlating with altered methylation and metabolic disease in offspring and grandchildren; and studies showing paternal stress or dietary changes affecting offspring metabolism through sperm small RNAs. The mechanism remains debated, with small non-coding RNAs in sperm emerging as a likely carrier of transgenerational information.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains epigenetic marks, reprogramming barriers, and cites 2+ specific mammalian studies with mechanisms. 4: Covers reprogramming and 1-2 examples. 3: Basic epigenetic concept with inheritance mention. 2: Understands epigenetics but weak on inheritance. 1: Confuses with genetic inheritance."
+  },
+  {
+    "task_id": "hard_004",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "Analyze how the transformer architecture's self-attention mechanism differs from recurrent neural networks in processing sequential data, and explain why transformers have largely replaced RNNs in NLP.",
+    "gold_answer": "RNNs process sequences element-by-element, maintaining a hidden state that captures sequential context. This creates a bottleneck: long-range dependencies suffer from vanishing/exploding gradients, and sequential processing prevents parallelization. The transformer's self-attention mechanism computes attention weights between all pairs of positions simultaneously, creating direct connections between any two positions regardless of distance (O(1) path length vs O(n) for RNNs). This enables: capturing long-range dependencies without gradient degradation, massive parallelization during training (all positions computed simultaneously), and flexible context windows. Trade-offs include O(n^2) memory and compute for self-attention vs O(n) for RNNs. Transformers replaced RNNs in NLP because: superior handling of long-range context, efficient GPU utilization through parallelism, and the emergence of pre-training paradigms (BERT, GPT) enabled by efficient scaling.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Contrasts sequential vs parallel processing, explains attention mechanism, covers trade-offs including O(n^2), and discusses replacement reasons. 4: Correct contrast with attention explanation and 2+ replacement reasons. 3: Basic understanding of attention vs recurrence. 2: Describes one architecture well but weak contrast. 1: Incorrect mechanisms."
+  },
+  {
+    "task_id": "hard_005",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How do the economic concepts of moral hazard and adverse selection both arise from information asymmetry, and how do they manifest differently in insurance markets?",
+    "gold_answer": "Both moral hazard and adverse selection stem from information asymmetry between parties. Adverse selection occurs before a contract: the insurer cannot fully observe the risk profile of applicants, so high-risk individuals disproportionately seek insurance (they value it more), potentially driving premiums up and low-risk individuals out in a 'death spiral' (Akerlof's lemons problem applied to insurance). Moral hazard occurs after a contract: once insured, individuals may take greater risks or exercise less caution because they are shielded from full consequences. In insurance markets: adverse selection manifests as risk pool deterioration (smokers more likely to buy health insurance), countered by underwriting, risk classification, and mandatory coverage. Moral hazard manifests as behavioral changes post-coverage (insured drivers being less careful), countered by deductibles, copayments, and experience rating.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Distinguishes timing (pre vs post-contract), explains both in insurance context, and discusses countermeasures. 4: Correct distinction with insurance examples. 3: Correctly defines both concepts. 2: Understands one concept well, other is weak. 1: Confuses the two concepts."
+  },
+  {
+    "task_id": "hard_006",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "Compare the approaches of CRISPR-Cas9 gene editing and antisense oligonucleotide therapy for treating genetic diseases, including their mechanisms, advantages, and limitations.",
+    "gold_answer": "CRISPR-Cas9 makes permanent changes to genomic DNA by creating double-strand breaks at targeted sequences, enabling gene knockout, correction, or insertion via non-homologous end joining or homology-directed repair. Advantages: permanent one-time treatment, precise genomic targeting. Limitations: off-target edits, delivery challenges (viral vectors needed for in vivo), mosaicism, immune responses to Cas9, and ethical concerns with germline editing. Antisense oligonucleotides (ASOs) are short synthetic nucleic acids that bind complementary mRNA to modulate gene expression through RNase H-mediated degradation, splice modulation, or translational blocking. Advantages: no permanent genomic changes, reversible effects, simpler delivery (some cross cell membranes without vectors), faster regulatory path. Limitations: require repeated dosing, limited to modulating expression (cannot correct mutations), potential hepatotoxicity, and variable tissue distribution.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Correctly compares mechanisms, lists 2+ advantages and limitations for each, and identifies key trade-offs. 4: Correct mechanisms with advantages and limitations. 3: Basic understanding of both approaches. 2: One approach well-explained, other weak. 1: Incorrect mechanisms."
+  },
+  {
+    "task_id": "hard_007",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "Explain how the concept of comparative advantage in international trade theory can coexist with arguments for industrial policy and strategic trade protection.",
+    "gold_answer": "Comparative advantage (Ricardo) states that countries benefit from specializing in goods they produce at lower opportunity cost, even if they lack absolute advantage — free trade maximizes global efficiency. However, industrial policy arguments challenge this under several conditions: infant industry argument (new industries need temporary protection to reach competitive scale), strategic trade theory (Brander-Spencer model shows subsidies can shift oligopoly profits in industries with increasing returns to scale), market failures (externalities, knowledge spillovers not captured by private firms), and national security considerations. The coexistence works because comparative advantage assumes perfect competition and static advantages, while industrial policy addresses dynamic comparative advantages, market imperfections, and strategic interactions. Successful examples include East Asian developmental states (South Korea, Taiwan) that used targeted protection to build competitive industries, though failures (import substitution in Latin America) show the risks of political capture and inefficient allocation.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains comparative advantage, 3+ industrial policy arguments, reconciles the tension, and provides historical examples. 4: Correct theory with 2+ policy arguments and reconciliation. 3: Understands both perspectives but weak synthesis. 2: Explains one side well. 1: Misunderstands comparative advantage."
+  },
+  {
+    "task_id": "hard_008",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How do garbage collection algorithms in managed languages (like Java's G1 or Go's concurrent collector) balance throughput, latency, and memory overhead, and what trade-offs do they make compared to manual memory management?",
+    "gold_answer": "Garbage collectors face a fundamental trilemma between throughput (minimizing total GC time), latency (minimizing pause times), and memory overhead (space for GC metadata and fragmentation). Java's G1 divides the heap into regions, uses concurrent marking with an initial marking pause, and performs incremental compaction targeting regions with most garbage (garbage-first), achieving predictable pause times at the cost of throughput and memory overhead from region metadata. Go's concurrent collector prioritizes low latency with sub-millisecond pauses using concurrent tri-color marking and write barriers, trading throughput and accepting higher memory usage. Compared to manual memory management (C/C++): GC eliminates use-after-free and double-free bugs, reduces memory leaks (though not entirely — semantic leaks persist), but adds unpredictable pauses, memory overhead (typically 2-3x for GC metadata and delayed collection), and reduces cache locality due to non-deterministic object placement.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains the trilemma, contrasts 2 GC algorithms, and covers trade-offs vs manual management. 4: Covers trilemma and one GC algorithm with manual comparison. 3: Basic GC trade-offs with manual comparison. 2: Describes GC without trade-off analysis. 1: Incorrect GC mechanisms."
+  },
+  {
+    "task_id": "hard_009",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How does the gut microbiome influence brain function and behavior through the gut-brain axis, and what evidence supports this connection?",
+    "gold_answer": "The gut-brain axis is a bidirectional communication system involving neural (vagus nerve), endocrine (HPA axis, gut hormones), immune (cytokines), and metabolic (short-chain fatty acids, neurotransmitter precursors) pathways. The gut microbiome influences brain function through: production of neurotransmitters and precursors (gut bacteria produce ~95% of serotonin, also GABA, dopamine precursors), short-chain fatty acids (butyrate, propionate) that cross the blood-brain barrier and modulate neuroinflammation, immune modulation affecting neuroinflammation, and vagus nerve signaling. Evidence includes: germ-free mice showing altered stress responses, anxiety-like behavior, and cognitive deficits reversible by colonization; probiotic studies showing reduced cortisol and anxiety in humans; fecal microbiota transplant studies transferring behavioral phenotypes between mice; and correlational studies linking dysbiosis with depression, autism spectrum disorder, and Parkinson's disease.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains 3+ communication pathways, microbiome-derived molecules, and cites 2+ types of evidence. 4: Covers pathways and evidence. 3: Basic concept with some mechanisms. 2: Vague connection without mechanisms. 1: Incorrect pathways."
+  },
+  {
+    "task_id": "hard_010",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "Explain how zero-knowledge proofs work and discuss their applications in both cryptocurrency privacy and identity verification systems.",
+    "gold_answer": "Zero-knowledge proofs (ZKPs) allow a prover to convince a verifier that a statement is true without revealing any information beyond the statement's validity. They satisfy three properties: completeness (honest provers convince honest verifiers), soundness (dishonest provers cannot convince verifiers of false statements), and zero-knowledge (verifier learns nothing beyond the statement's truth). In cryptocurrency: ZKPs enable private transactions (Zcash uses zk-SNARKs to prove transaction validity without revealing sender, receiver, or amount), and zk-rollups (like zkSync) use ZKPs to compress many transactions into a single proof for Ethereum scaling. In identity verification: ZKPs enable selective disclosure (proving you are over 18 without revealing your birthdate, proving credit score above a threshold without revealing the score), decentralized identity systems, and compliance verification without exposing underlying data.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains ZKP properties, crypto applications (privacy + scaling), and identity verification with examples. 4: Correct ZKP concept with applications in both domains. 3: Basic ZKP understanding with one application area. 2: Vague understanding. 1: Incorrect ZKP concept."
+  },
+  {
+    "task_id": "hard_011",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How do the geological carbon cycle and biological carbon cycle interact over different timescales, and what role does each play in regulating atmospheric CO2?",
+    "gold_answer": "The biological carbon cycle operates on short timescales (days to centuries): photosynthesis fixes CO2 into organic matter, respiration and decomposition release it back. Oceans absorb and release CO2 through physical dissolution and biological pump (phytoplankton fix carbon, sinking organic matter sequesters it in deep ocean). The geological carbon cycle operates over millions of years: weathering of silicate rocks consumes CO2, forming carbonates deposited as marine sediments. Volcanism returns CO2 to the atmosphere. Fossil fuel formation (burial of organic carbon) removes CO2 over millions of years. The interaction: biological productivity influences weathering rates (land plants accelerate silicate weathering 2-8x), ocean biological pump transfers carbon to geological reservoirs, and the geological thermostat (increased CO2 raises temperature, accelerating weathering, removing CO2) stabilizes climate over millions of years. Human fossil fuel combustion short-circuits this by releasing geological carbon on biological timescales.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Distinguishes timescales, explains both cycles, describes their interactions including thermostat, and addresses human perturbation. 4: Covers both cycles and interactions. 3: Understands both cycles separately. 2: Explains one cycle well. 1: Confused or incorrect."
+  },
+  {
+    "task_id": "hard_012",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "Compare the game-theoretic foundations of mechanism design with those of classical game theory, and explain how auction design applies mechanism design principles.",
+    "gold_answer": "Classical game theory analyzes strategic interactions given fixed rules — predicting outcomes (Nash equilibria) when rational agents interact in defined games. Mechanism design is 'reverse game theory': it starts with desired outcomes and designs rules (mechanisms) that incentivize rational agents to produce those outcomes. Key concepts include incentive compatibility (truth-telling is optimal), individual rationality (participation is voluntary), and the revelation principle (any mechanism can be replicated by a direct mechanism where agents report types truthfully). In auction design: the Vickrey (second-price sealed-bid) auction achieves incentive compatibility because bidding true value is a dominant strategy (you pay the second-highest bid, so overstating risks overpaying and understating risks losing). The Revenue Equivalence Theorem shows that standard auction formats yield the same expected revenue under standard assumptions. The VCG mechanism generalizes this to multi-item settings. Practical challenges include collusion, bidder risk aversion, and computational complexity in combinatorial auctions.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Contrasts game theory vs mechanism design, explains key design principles, and applies to auction design with examples. 4: Correct contrast with auction application. 3: Basic understanding of both with some connection. 2: Understands one well, weak on the other. 1: Confuses the two frameworks."
+  },
+  {
+    "task_id": "hard_013",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How do quantum computers threaten current cryptographic systems, and what approaches are being developed for post-quantum cryptography?",
+    "gold_answer": "Quantum computers threaten cryptography primarily through Shor's algorithm, which can factor large integers and compute discrete logarithms in polynomial time, breaking RSA, DSA, and elliptic-curve cryptography that rely on the hardness of these problems. Grover's algorithm provides quadratic speedup for brute-force search, effectively halving symmetric key lengths (requiring AES-256 instead of AES-128). Post-quantum cryptographic approaches include: lattice-based cryptography (CRYSTALS-Kyber for key encapsulation, CRYSTALS-Dilithium for signatures — selected by NIST), hash-based signatures (SPHINCS+, also NIST-selected), code-based cryptography (Classic McEliece, based on error-correcting codes), and multivariate polynomial cryptography. The transition challenge involves migrating existing infrastructure, the 'harvest now, decrypt later' threat to currently encrypted data, and hybrid schemes that combine classical and post-quantum algorithms during the transition period.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains Shor's and Grover's threats, names 3+ PQC approaches with NIST selections, and discusses transition. 4: Covers quantum threats and 2+ PQC approaches. 3: Basic threat understanding with PQC awareness. 2: Understands threat but vague on solutions. 1: Incorrect quantum threat model."
+  },
+  {
+    "task_id": "hard_014",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "Explain how reinforcement learning from human feedback (RLHF) works in training large language models, including the roles of the reward model, policy optimization, and the KL penalty.",
+    "gold_answer": "RLHF fine-tunes a pre-trained language model in three phases. First, supervised fine-tuning (SFT) on high-quality demonstrations creates an initial policy. Second, a reward model is trained on human preference data: annotators rank pairs of model outputs, and a model learns to predict these preferences (Bradley-Terry model), producing a scalar reward for any output. Third, the SFT model is optimized using reinforcement learning (PPO or similar) to maximize the reward model's score. The KL divergence penalty constrains the policy from deviating too far from the SFT model, preventing reward hacking (exploiting reward model weaknesses by generating outputs that score high but are actually low quality). The KL penalty balances alignment improvement against maintaining the base model's general capabilities and coherence. Challenges include reward model imperfection, mode collapse, and the difficulty of capturing complex human values in scalar rewards.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains all three phases, reward model training, KL penalty purpose, and challenges. 4: Covers the pipeline and KL penalty. 3: Basic RLHF understanding. 2: Vague understanding of human feedback integration. 1: Incorrect pipeline."
+  },
+  {
+    "task_id": "hard_015",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How do trophic cascades demonstrate the interconnectedness of ecosystems, and what does the reintroduction of wolves to Yellowstone reveal about top-down ecological regulation?",
+    "gold_answer": "Trophic cascades are indirect ecological effects that ripple through food webs when top predators affect lower trophic levels. They can be top-down (predator-driven) or bottom-up (resource-driven). Yellowstone wolf reintroduction (1995-96) provided a landmark demonstration: wolves reduced elk populations and, crucially, changed elk behavior (landscape of fear), reducing overgrazing in riparian areas. This allowed recovery of willows, aspens, and cottonwoods, which stabilized riverbanks (reducing erosion and changing river morphology), provided habitat for songbirds and beavers, and increased berry production supporting bears. Beaver dams created pools benefiting fish and amphibians. This cascade from apex predator to geomorphology demonstrates that ecosystems are not simply bottom-up resource systems but are strongly regulated by top predators, and that removing or adding a single species can reorganize entire ecosystems.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Defines trophic cascades, traces the Yellowstone wolf cascade through 3+ levels including geomorphology, and draws broader ecological conclusions. 4: Covers the cascade with multiple levels and conclusions. 3: Basic trophic cascade with Yellowstone example. 2: Describes wolf reintroduction without cascade analysis. 1: Incorrect ecological relationships."
+  },
+  {
+    "task_id": "hard_016",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How do the Lambda calculus and Turing machines provide equivalent but different foundations for computability, and what are the practical implications of each formalism for programming language design?",
+    "gold_answer": "Turing machines model computation as a finite state machine operating on an infinite tape — imperative, step-by-step state transitions. Lambda calculus models computation as function application and substitution — declarative, based on mathematical functions. The Church-Turing thesis establishes their equivalence: both capture the same class of computable functions. Practical implications: Turing machines inspired imperative programming languages (C, Java) emphasizing mutable state, sequential instructions, and explicit memory management. Lambda calculus inspired functional programming languages (Haskell, Lisp, ML) emphasizing immutability, higher-order functions, and declarative composition. Type systems trace to lambda calculus extensions (System F, dependent types), while von Neumann architecture directly realizes the Turing machine model. Modern languages blend both: Python and JavaScript support functional patterns, while Haskell uses monads to model stateful computation in a purely functional framework.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Contrasts both formalisms, establishes equivalence, and traces influence to specific language paradigms with examples. 4: Correct contrast with equivalence and language connections. 3: Basic understanding of both with some connection. 2: Explains one formalism well. 1: Incorrect characterization."
+  },
+  {
+    "task_id": "hard_017",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "Explain how the endocrine system and nervous system interact to coordinate the human stress response, from initial stressor detection through the HPA axis activation to long-term health consequences.",
+    "gold_answer": "When a stressor is detected, the amygdala triggers two parallel pathways. The fast pathway: sympathetic nervous system activates the adrenal medulla to release epinephrine and norepinephrine within seconds, producing the fight-or-flight response (increased heart rate, blood pressure, glucose mobilization, bronchodilation). The slow pathway (HPA axis): hypothalamus releases CRH, stimulating the anterior pituitary to release ACTH, which triggers cortisol release from the adrenal cortex over minutes. Cortisol mobilizes energy stores, suppresses non-essential functions (immune, digestive, reproductive), and provides negative feedback to hypothalamus and pituitary to terminate the response. Chronic stress disrupts this feedback: sustained cortisol elevation leads to hippocampal atrophy (impaired memory), immune suppression, metabolic syndrome, cardiovascular disease, depression, and anxiety. The interaction between neural (fast, precise) and endocrine (slower, sustained) systems provides both immediate and prolonged stress adaptation.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains both pathways with timing, HPA axis components, negative feedback, and chronic consequences. 4: Covers both pathways and consequences. 3: Basic stress response with HPA mention. 2: One pathway only. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "hard_018",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How do consistency models in distributed databases (eventual consistency, strong consistency, causal consistency) affect application design, and when is each appropriate?",
+    "gold_answer": "Strong consistency (linearizability) guarantees all nodes see the same data in the same order — reads always return the most recent write. It simplifies application logic but requires coordination (consensus protocols), increasing latency and reducing availability during partitions. Appropriate for: financial transactions, inventory management, leader election. Eventual consistency guarantees all replicas converge eventually, but reads may return stale data. It offers high availability and low latency with no coordination overhead. Appropriate for: social media feeds, DNS, shopping carts (Amazon's Dynamo). Causal consistency preserves causal ordering (if A causes B, all nodes see A before B) while allowing concurrent writes to be seen in different orders. It provides a middle ground — stronger guarantees than eventual without the coordination cost of strong consistency. Appropriate for: collaborative editing, comment threads, messaging. Application design implications: eventual consistency requires conflict resolution (CRDTs, last-writer-wins), idempotent operations, and tolerance for anomalies; strong consistency requires handling unavailability; causal consistency requires dependency tracking.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains all three models with trade-offs, appropriate use cases, and application design implications. 4: Covers all three with use cases. 3: Distinguishes models correctly. 2: Understands one model well. 1: Confuses models."
+  },
+  {
+    "task_id": "hard_019",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How did the development of germ theory in the 19th century transform both medical practice and public health policy, and what resistance did it face from the medical establishment?",
+    "gold_answer": "Before germ theory, miasma theory (disease from bad air) dominated medicine. Key developments: Semmelweis demonstrated handwashing reduced puerperal fever mortality (1840s) but was rejected by peers; Pasteur disproved spontaneous generation and demonstrated microbial fermentation (1860s); Koch established Koch's postulates linking specific microorganisms to specific diseases (1880s), identifying tuberculosis and cholera bacilli; Lister introduced antiseptic surgery using carbolic acid (1860s). Medical practice transformed through: antiseptic/aseptic surgical techniques, pasteurization, vaccination expansion, and antibiotics. Public health transformed through: water treatment, sewage systems, quarantine policies, and food safety regulations. Resistance came from: established physicians invested in existing theories, lack of microscopic evidence initially, Semmelweis's inability to explain the mechanism, and institutional inertia. The transformation took decades despite evidence, illustrating how paradigm shifts in science face social and institutional barriers.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Traces development through key figures, explains medical and public health impacts, and discusses resistance with specific examples. 4: Covers key figures, impacts, and resistance. 3: Basic germ theory history with some impacts. 2: Names figures but weak on transformation. 1: Historically inaccurate."
+  },
+  {
+    "task_id": "hard_020",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "Compare how convolutional neural networks and vision transformers process visual information, and explain the trade-offs that determine when each architecture is preferred.",
+    "gold_answer": "CNNs process images through hierarchical convolutional layers that learn local spatial features with translational equivariance via shared kernel weights. Early layers detect edges and textures; deeper layers combine these into higher-level features. Inductive biases (locality and translation equivariance) enable learning from limited data. Vision Transformers (ViT) divide images into patches, project them as token embeddings, and process through self-attention layers that capture global relationships between all patches from the first layer. ViTs lack CNN inductive biases, requiring more data to learn spatial relationships but having greater modeling flexibility. Trade-offs: CNNs are more data-efficient (strong inductive bias helps with small datasets), have linear compute scaling with image size, and are well-optimized for inference. ViTs excel with large datasets (overcoming lack of bias through data), capture global context earlier, scale better with model size, and benefit from self-supervised pre-training. Hybrid approaches (convolutional stems with transformer bodies) combine strengths.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Contrasts processing approaches, explains inductive bias differences, covers data efficiency vs scaling trade-offs, and mentions hybrids. 4: Correct architectural contrast with trade-offs. 3: Basic understanding of both. 2: One architecture well-explained. 1: Incorrect architectures."
+  },
+  {
+    "task_id": "hard_021",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How do different memory allocation strategies (stack allocation, arena/region allocation, reference counting, tracing GC) affect performance characteristics in systems programming, and when is each most appropriate?",
+    "gold_answer": "Stack allocation is fastest (pointer bump, automatic deallocation on scope exit) but limited to values with known sizes and LIFO lifetimes. Ideal for local variables and small fixed-size buffers. Arena/region allocation groups objects with similar lifetimes; all are freed at once by releasing the arena. Near-zero allocation overhead and no per-object bookkeeping, but wastes memory if individual objects could be freed earlier. Ideal for request processing, parsers, and per-phase compilation. Reference counting tracks per-object reference counts, freeing when count reaches zero. Deterministic destruction enables RAII patterns, but adds overhead per pointer copy, cannot collect cycles without supplementary tracing, and has poor cache behavior due to scattered count updates. Ideal for shared ownership (C++ shared_ptr, Swift, Python). Tracing GC (mark-sweep, generational) finds reachable objects from roots, freeing unreachable ones. Handles cycles automatically, allows pointer-bump allocation (fast), but introduces pause times, requires 2-3x memory headroom, and has non-deterministic destruction. Ideal for application-level code (Java, Go, C#).",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains all four strategies with performance characteristics, limitations, and appropriate use cases. 4: Covers all four with trade-offs. 3: Covers 3 strategies correctly. 2: Covers 1-2 strategies. 1: Incorrect characterizations."
+  },
+  {
+    "task_id": "hard_022",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How do plate boundary interactions create different types of volcanic activity, and what explains the contrast between Hawaiian and Cascadian volcanism?",
+    "gold_answer": "Plate boundary type determines volcanic activity through magma composition and generation mechanism. Divergent boundaries (mid-ocean ridges): decompression melting of rising mantle produces basaltic magma, creating effusive eruptions and new oceanic crust. Convergent boundaries (subduction zones): water from subducting oceanic plate lowers mantle melting point, and interaction with continental crust produces silica-rich (andesitic to rhyolitic) magma. High silica content means high viscosity, trapping gases and producing explosive eruptions. Hawaiian volcanism occurs over a mantle hotspot (not a plate boundary): a stationary plume of hot mantle material produces basaltic magma with low viscosity and gas content, resulting in relatively gentle effusive shield volcanoes. Cascadian volcanism (Mt. St. Helens, Mt. Rainier) results from Juan de Fuca plate subducting beneath North America: silica-rich magma produces violent explosive eruptions, pyroclastic flows, and steep stratovolcanoes. The fundamental contrast is magma composition driven by tectonic setting.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains 3 boundary types, magma composition differences, and directly contrasts Hawaiian vs Cascadian with mechanisms. 4: Covers boundary types and the contrast. 3: Basic volcanic types with some mechanism. 2: Describes volcanoes without tectonic explanation. 1: Incorrect plate tectonic connections."
+  },
+  {
+    "task_id": "hard_023",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "Explain the relationship between Godel's incompleteness theorems and the limits of formal mathematical systems, and discuss their philosophical implications for the foundations of mathematics.",
+    "gold_answer": "Godel's First Incompleteness Theorem (1931) proves that any consistent formal system capable of expressing basic arithmetic contains statements that are true but unprovable within the system (Godel sentences). The Second Theorem shows that such a system cannot prove its own consistency. The proof uses Godel numbering to encode metamathematical statements as arithmetic, creating self-referential sentences analogous to the liar's paradox. Implications for foundations: Hilbert's program (to prove all mathematics consistent and complete from finitary methods) was shown impossible. Logicism (Russell and Whitehead's attempt to derive all math from logic) cannot capture all mathematical truths. Formalism must accept inherent limitations. Philosophical implications include: mathematical truth transcends provability, no single formal system captures all mathematics, and there is an inherent tension between consistency and completeness. Penrose controversially argued the theorems show human mathematical understanding exceeds mechanical computation, though most logicians dispute this interpretation.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: States both theorems, explains Godel numbering, discusses impact on Hilbert's program, and covers philosophical implications. 4: Both theorems with foundational impact. 3: First theorem with some implications. 2: Vague understanding. 1: Incorrect theorems."
+  },
+  {
+    "task_id": "hard_024",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How do the mechanisms of horizontal gene transfer challenge the traditional tree-of-life model in evolutionary biology, and what alternative models have been proposed?",
+    "gold_answer": "Horizontal gene transfer (HGT) involves genetic material passing between organisms outside of parent-to-offspring inheritance, through transformation (uptake of environmental DNA), transduction (viral transfer), conjugation (direct cell-to-cell transfer via pili), and gene transfer agents. HGT is pervasive in prokaryotes: studies show 80%+ of bacterial genes have been horizontally transferred at some point, making strict tree-like phylogeny misleading for bacteria. Antibiotic resistance genes spread rapidly via HGT. Challenges to the tree of life: different genes in the same organism can have different evolutionary histories, making a single species tree ambiguous. Mitochondria and chloroplasts originated through endosymbiosis (HGT of entire genomes). Alternative models include: the web of life or network model (phylogenetic networks showing reticulate evolution), the ring of life (showing eukaryotes arising from a fusion event), and the tree-with-horizontal-connections model (maintaining a core tree for vertically inherited genes while acknowledging HGT). The concept of a 'core genome' that is rarely transferred is used to anchor phylogeny.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains HGT mechanisms, quantifies prevalence, describes tree-of-life challenges, and names alternative models. 4: Covers HGT types and alternative models. 3: Basic HGT concept with tree challenge. 2: Knows HGT exists but weak on implications. 1: Incorrect mechanisms."
+  },
+  {
+    "task_id": "hard_025",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "Analyze how the interaction between fiscal policy and monetary policy affects economic outcomes during a recession, including potential conflicts between central bank independence and government spending.",
+    "gold_answer": "During recessions, fiscal policy (government spending and taxation) and monetary policy (interest rates and money supply) can work in concert or conflict. Coordinated response: central bank lowers interest rates (conventional) or uses quantitative easing (unconventional, buying bonds to lower long-term rates), while government increases spending and cuts taxes (fiscal stimulus). The IS-LM model shows fiscal expansion shifts IS right while monetary accommodation prevents interest rate crowding-out. At the zero lower bound (liquidity trap), monetary policy alone is ineffective, making fiscal policy crucial (Keynes's insight). Conflicts arise because: independent central banks may tighten policy if fiscal deficits threaten inflation (fiscal-monetary tension), monetary financing of deficits (central bank buying government bonds directly) risks inflation and compromises central bank credibility, and political pressure on central banks to monetize debt undermines the institutional independence that anchors inflation expectations. Historical examples: Japan's 'Abenomics' attempted coordination of fiscal and monetary stimulus; the post-2008 era saw unconventional monetary policy (QE) filling gaps when fiscal austerity constrained government response in Europe.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Covers both policy mechanisms, coordination and conflict scenarios, zero lower bound, and historical examples. 4: Explains interaction and conflicts with examples. 3: Basic understanding of both policies in recession. 2: Explains one policy well. 1: Incorrect interaction model."
+  },
+  {
+    "task_id": "tricky_001",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Why did Einstein win the Nobel Prize for his theory of relativity?",
+    "gold_answer": "Einstein did not win the Nobel Prize for relativity. He won the 1921 Nobel Prize in Physics for his explanation of the photoelectric effect, which demonstrated the quantum nature of light. The Nobel Committee was cautious about awarding for relativity as it lacked direct experimental confirmation at the time and remained controversial among some physicists.",
+    "known_gaps": null,
+    "known_assumptions": ["Einstein won the Nobel Prize for his theory of relativity"],
+    "scoring_rubric": "5: Identifies the false premise, names the photoelectric effect, and explains why not relativity. 4: Identifies false premise and correct reason. 3: Questions the premise but wrong about actual reason. 2: Partially questions the premise. 1: Accepts the false premise."
+  },
+  {
+    "task_id": "tricky_002",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "How did the Great Wall of China successfully prevent all Mongol invasions?",
+    "gold_answer": "The Great Wall did not successfully prevent all Mongol invasions. The Mongols under Genghis Khan and later Kublai Khan successfully bypassed or breached the walls multiple times. The Mongol Empire conquered China and established the Yuan Dynasty (1271-1368). The walls served more as a system of border control, trade regulation, and early warning rather than an impenetrable barrier. Different dynasties built different wall sections with varying effectiveness.",
+    "known_gaps": null,
+    "known_assumptions": ["The Great Wall successfully prevented all Mongol invasions"],
+    "scoring_rubric": "5: Identifies false premise, cites Mongol conquests, and explains the wall's actual functions. 4: Identifies false premise with historical evidence. 3: Questions premise but vague on details. 2: Partially questions. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_003",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Since humans only use 10% of their brains, what potential could be unlocked by activating the remaining 90%?",
+    "gold_answer": "The premise that humans only use 10% of their brains is a myth. Neuroimaging studies (fMRI, PET scans) show that virtually all brain regions are active, though not simultaneously. Different regions activate for different tasks. Damage to even small brain areas can have severe consequences, and evolution would not maintain metabolically expensive tissue (the brain uses ~20% of the body's energy) if 90% were unused. The myth likely originated from misinterpretations of early neuroscience research or glial cell ratios.",
+    "known_gaps": null,
+    "known_assumptions": ["Humans only use 10% of their brains"],
+    "scoring_rubric": "5: Debunks the myth with neuroimaging evidence, evolutionary argument, and explains myth origin. 4: Debunks with evidence. 3: Identifies it as a myth but weak evidence. 2: Hedges on the myth. 1: Accepts the premise."
+  },
+  {
+    "task_id": "tricky_004",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Why does the full moon cause increases in emergency room visits and crime rates?",
+    "gold_answer": "Extensive research has found no consistent scientific evidence that full moons cause increases in ER visits, crime, or erratic behavior. Multiple meta-analyses and large-scale studies have debunked the 'lunar effect.' The persistent belief is likely due to confirmation bias (people notice and remember unusual events during full moons while ignoring similar events at other times), cultural mythology, and selective reporting. Some studies finding correlations have been criticized for methodological flaws.",
+    "known_gaps": null,
+    "known_assumptions": ["The full moon causes increases in emergency room visits and crime rates"],
+    "scoring_rubric": "5: Debunks the lunar effect, cites research evidence, and explains confirmation bias mechanism. 4: Debunks with evidence. 3: Questions the premise but uncertain. 2: Hedges. 1: Accepts the premise."
+  },
+  {
+    "task_id": "tricky_005",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "How did Columbus prove to skeptics that the Earth was round when he sailed to America?",
+    "gold_answer": "Columbus did not prove the Earth was round — educated Europeans already knew this. The spherical Earth was established by ancient Greeks (Eratosthenes calculated its circumference around 240 BC). The actual debate was about the Earth's size: Columbus underestimated the circumference and believed Asia was much closer to Europe by sailing west. He never reached Asia and did not initially realize he had found continents unknown to Europeans. The 'flat Earth' myth about medieval Europeans was popularized by Washington Irving's fictionalized 1828 biography of Columbus.",
+    "known_gaps": null,
+    "known_assumptions": ["People in Columbus's time believed the Earth was flat", "Columbus proved the Earth was round"],
+    "scoring_rubric": "5: Debunks both myths, cites Eratosthenes, explains actual debate about circumference, and mentions Irving. 4: Debunks myths with historical evidence. 3: Questions premise but incomplete. 2: Partially questions. 1: Accepts premises."
+  },
+  {
+    "task_id": "tricky_006",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Why is glass classified as a liquid that flows very slowly over time?",
+    "gold_answer": "Glass is not a slowly flowing liquid — it is an amorphous solid. The misconception arose from observations of old cathedral windows being thicker at the bottom, which is actually due to medieval glass manufacturing techniques (crown glass process produced uneven panes, and glaziers logically placed the thicker edge at the bottom). Thermodynamically, glass is in a metastable state with an extremely high viscosity at room temperature. Any flow would be undetectable over timescales far exceeding the age of the universe. Glass lacks the long-range crystalline order of typical solids but is definitively solid in its mechanical properties.",
+    "known_gaps": null,
+    "known_assumptions": ["Glass is a liquid that flows slowly"],
+    "scoring_rubric": "5: Debunks the myth, explains it as amorphous solid, addresses cathedral window evidence, and mentions viscosity. 4: Debunks with explanation. 3: Questions premise but incomplete. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_007",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "How does the iron maiden demonstrate the cruelty of medieval torture practices?",
+    "gold_answer": "The iron maiden is almost certainly not an authentic medieval torture device. No verified medieval examples or contemporaneous references exist. The earliest known iron maidens date to the 18th-19th centuries and were likely fabricated by combining existing artifacts (iron cabinets with spikes added later) for sensationalist museum displays. The concept was popularized during the Gothic Revival period when there was fascination with depicting the Middle Ages as barbaric. While medieval torture certainly existed (rack, thumbscrews, strappado), the iron maiden specifically appears to be a modern invention attributed to the medieval period.",
+    "known_gaps": null,
+    "known_assumptions": ["The iron maiden was an authentic medieval torture device"],
+    "scoring_rubric": "5: Identifies it as likely fabrication, dates the hoax, explains motivations, and contrasts with actual medieval practices. 4: Identifies it as non-authentic with evidence. 3: Questions authenticity but uncertain. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_008",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Since Napoleon was notably short, how did his height affect his military leadership style?",
+    "gold_answer": "Napoleon was not notably short. He stood approximately 5'7\" (170 cm), which was average or slightly above average for a French man of his era. The myth originated from: confusion between French and English measurement units (the French pouce was longer than the English inch), British propaganda caricatures by James Gillray and others during the Napoleonic Wars, and his nickname 'le petit caporal' which was a term of affection, not a literal description. His leadership style was characterized by decisive action, strategic innovation, and personal charisma — none attributable to compensating for height.",
+    "known_gaps": null,
+    "known_assumptions": ["Napoleon was notably short"],
+    "scoring_rubric": "5: Debunks height myth with actual measurements, explains unit confusion and propaganda origin. 4: Debunks with evidence. 3: Questions premise but uncertain on details. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_009",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Why does reading in dim light cause permanent damage to your eyesight?",
+    "gold_answer": "Reading in dim light does not cause permanent damage to eyesight. It can cause temporary eye strain (asthenopia) — symptoms include eye fatigue, discomfort, headaches, and difficulty focusing — but these resolve once lighting improves or the eyes rest. The eye adjusts to low light by dilating the pupil, and while sustained close work in poor lighting is uncomfortable, it does not alter the eye's structure or cause lasting damage. Ophthalmological research has consistently found no link between dim-light reading and permanent vision deterioration. Myopia development is more linked to genetics and prolonged close work regardless of lighting.",
+    "known_gaps": null,
+    "known_assumptions": ["Reading in dim light causes permanent eye damage"],
+    "scoring_rubric": "5: Debunks permanence, explains temporary strain, cites research, and mentions actual myopia factors. 4: Debunks with explanation. 3: Questions premise. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_010",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "How does the different taste map on the tongue (sweet at the tip, bitter at the back) help explain how we perceive flavors?",
+    "gold_answer": "The tongue taste map is a myth. All taste qualities (sweet, sour, salty, bitter, umami) can be perceived across the entire tongue surface, though there may be slight regional sensitivity differences. The myth originated from a misinterpretation of a 1901 German thesis by D.P. Hanig, whose data showed small sensitivity variations that were misrepresented as discrete zones in a 1942 textbook by Edwin Boring. Modern research using taste receptor mapping shows that taste buds containing receptors for all taste qualities are distributed across the tongue, soft palate, epiglottis, and upper esophagus.",
+    "known_gaps": null,
+    "known_assumptions": ["Different regions of the tongue are responsible for different tastes"],
+    "scoring_rubric": "5: Debunks the map, traces the myth's origin through Hanig and Boring, and explains actual receptor distribution. 4: Debunks with historical origin. 3: Identifies it as myth. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_011",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Why did the signing of the Declaration of Independence on July 4, 1776, make that date the official start of American independence?",
+    "gold_answer": "The Declaration of Independence was not actually signed on July 4, 1776. The Continental Congress voted to approve independence on July 2, 1776 (the date John Adams thought would be celebrated). July 4 is when the final wording of the Declaration was approved. Most delegates signed the engrossed parchment copy on August 2, 1776, and some signed even later. Not all delegates present on July 4 ultimately signed, and some who signed were not present on July 4. The July 4th celebration commemorates the adoption of the document's text, not the vote for independence or the actual signing ceremony.",
+    "known_gaps": null,
+    "known_assumptions": ["The Declaration of Independence was signed on July 4, 1776"],
+    "scoring_rubric": "5: Corrects signing date, explains July 2 vote, July 4 text approval, August 2 signing, and Adams quote. 4: Corrects date with multiple clarifications. 3: Questions the signing date. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_012",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "How does the left brain control logical thinking while the right brain controls creativity?",
+    "gold_answer": "The strict left-brain/right-brain dichotomy is a neuromyth. While some lateralization exists (e.g., language processing tends to be left-lateralized in most right-handed people, and spatial attention has right-hemisphere biases), complex cognitive functions like creativity and logical thinking involve distributed networks across both hemispheres. A 2013 University of Utah study using fMRI on over 1,000 subjects found no evidence that individuals preferentially use one hemisphere. Creativity involves prefrontal cortex, default mode network, and executive attention networks spanning both hemispheres. The myth was oversimplified from Roger Sperry's split-brain research in the 1960s.",
+    "known_gaps": null,
+    "known_assumptions": ["The left brain controls logic and the right brain controls creativity"],
+    "scoring_rubric": "5: Debunks the dichotomy, cites research, explains actual lateralization nuances, and traces myth origin. 4: Debunks with evidence. 3: Questions the simplification. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_013",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Why did Marie Antoinette say 'Let them eat cake' when told the peasants had no bread?",
+    "gold_answer": "There is no reliable evidence that Marie Antoinette ever said 'Let them eat cake' (Qu'ils mangent de la brioche). The phrase appeared in Rousseau's 'Confessions' (written around 1765, published 1782), attributed to 'a great princess,' when Marie Antoinette was only 10 years old and still in Austria. It was likely a widely circulating anecdote attributed to various royals. The phrase became associated with Marie Antoinette as revolutionary propaganda to symbolize royal indifference, but historians consider it apocryphal. Similar phrases were attributed to earlier figures including Marie-Therese of Spain.",
+    "known_gaps": null,
+    "known_assumptions": ["Marie Antoinette said 'Let them eat cake'"],
+    "scoring_rubric": "5: Identifies as apocryphal, cites Rousseau's earlier attribution, explains propaganda use, and notes alternative attributions. 4: Identifies as false with evidence. 3: Questions the attribution. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_014",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "How does the goldfish's 3-second memory limit affect its ability to learn?",
+    "gold_answer": "Goldfish do not have a 3-second memory — this is a persistent myth. Research has demonstrated that goldfish can retain memories for months. Studies at the University of Plymouth trained goldfish to press levers for food, and they remembered the task after months. Israeli researchers trained goldfish to associate sounds with feeding times, and the fish remembered the association five months later. Goldfish can learn mazes, recognize their owners, and be trained through classical and operant conditioning. Their cognitive abilities, while limited compared to mammals, far exceed the myth.",
+    "known_gaps": null,
+    "known_assumptions": ["Goldfish have a 3-second memory"],
+    "scoring_rubric": "5: Debunks myth, cites specific studies, and describes actual goldfish cognitive abilities. 4: Debunks with research evidence. 3: Identifies as myth. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_015",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Since evolution is 'just a theory,' what are the main alternative scientific explanations for the diversity of life?",
+    "gold_answer": "The phrase 'just a theory' reflects a misunderstanding of scientific terminology. In science, a theory is a well-substantiated explanation supported by extensive evidence and repeated testing — not a guess (which is a hypothesis). Evolution is supported by fossil records, comparative anatomy, molecular biology (DNA sequence similarities), direct observation of evolution in action (antibiotic resistance, Darwin's finches), and radiometric dating. There are no competing scientific explanations with comparable evidence; creationism and intelligent design are not scientific theories as they are not falsifiable and do not generate testable predictions. Within evolutionary biology, debate concerns mechanisms and details (punctuated equilibrium vs gradualism, relative importance of natural selection vs genetic drift), not whether evolution occurs.",
+    "known_gaps": null,
+    "known_assumptions": ["The word 'theory' in 'theory of evolution' means it is unproven or speculative"],
+    "scoring_rubric": "5: Addresses theory vs hypothesis, cites evolution evidence, explains no scientific alternatives, and notes within-field debates. 4: Corrects terminology and provides evidence. 3: Addresses terminology issue. 2: Hedges on 'just a theory.' 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_016",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Why do most people swallow an average of eight spiders per year while sleeping?",
+    "gold_answer": "The claim that people swallow eight spiders per year in their sleep is a myth with no scientific basis. Spiders are unlikely to crawl into a sleeping person's mouth because: the vibrations from breathing, heartbeat, and potential snoring would signal danger to spiders; a sleeping person's mouth environment (warm, moist, with airflow) is unattractive to spiders; and spiders actively avoid large organisms. The statistic is often attributed to a 1993 magazine column by Lisa Holst that allegedly listed it as an example of how easily false facts spread, though the provenance of this attribution is itself debated.",
+    "known_gaps": null,
+    "known_assumptions": ["People swallow eight spiders per year while sleeping"],
+    "scoring_rubric": "5: Debunks the myth, explains why spiders would avoid mouths, and discusses the myth's origin. 4: Debunks with reasoning. 3: Identifies as myth. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_017",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "How has dropping crime rates been primarily caused by increased incarceration in the United States since the 1990s?",
+    "gold_answer": "The relationship between incarceration and crime reduction is far more complex than a simple causal link. While some studies estimate that increased incarceration accounted for 10-25% of the crime decline, multiple other factors were significant: improved policing strategies (CompStat, community policing), the aging population (crime is disproportionately committed by young males), the waning crack cocaine epidemic, economic improvements and lower unemployment, lead abatement (Nevin's lead-crime hypothesis showing reduced lead exposure correlating with reduced violent crime 20 years later), and increased access to legal abortion (Donohue-Levitt hypothesis, controversial). Moreover, the US has the highest incarceration rate globally, and research shows diminishing returns — incarcerating low-risk individuals provides minimal public safety benefit while imposing enormous social and economic costs.",
+    "known_gaps": null,
+    "known_assumptions": ["Increased incarceration is the primary cause of dropping crime rates"],
+    "scoring_rubric": "5: Challenges single-cause narrative, names 4+ alternative factors, and discusses diminishing returns. 4: Challenges with multiple factors. 3: Questions the causal claim. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_018",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Why does cracking your knuckles cause arthritis over time?",
+    "gold_answer": "Cracking knuckles does not cause arthritis. Multiple studies have found no association between habitual knuckle cracking and osteoarthritis. The most famous study was by Dr. Donald Unger, who cracked the knuckles on only one hand for over 60 years and found no difference in arthritis between his hands (published 2009, won Ig Nobel Prize). A larger study at Uniformed Services University found no increased arthritis in habitual crackers. The cracking sound is caused by the formation of gas bubbles (cavitation) in synovial fluid when the joint capsule is stretched. While chronic cracking may lead to reduced grip strength or joint swelling in some cases, it does not cause arthritis.",
+    "known_gaps": null,
+    "known_assumptions": ["Cracking knuckles causes arthritis"],
+    "scoring_rubric": "5: Debunks with Unger study and larger studies, explains cavitation mechanism, and notes actual minor effects. 4: Debunks with research. 3: Identifies as myth. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_019",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "How did Thomas Edison invent the light bulb?",
+    "gold_answer": "Edison did not invent the light bulb from scratch — he improved upon decades of prior work. Humphry Davy demonstrated arc lighting in 1802, Warren de la Rue created an early vacuum bulb with platinum filament in 1840, and Joseph Swan in England independently developed and patented a working incandescent lamp before Edison. Edison's key contribution was developing a practical, commercially viable incandescent lamp with a long-lasting carbonized bamboo filament (1879), combined with an entire electrical distribution system (generators, wiring, meters). Edison's genius was in systematic experimentation (testing thousands of filament materials) and creating the complete infrastructure for electric lighting, not in the initial invention.",
+    "known_gaps": null,
+    "known_assumptions": ["Edison single-handedly invented the light bulb"],
+    "scoring_rubric": "5: Credits prior inventors, explains Edison's actual contribution (practical improvement + system), and names specific predecessors. 4: Credits predecessors and Edison's real role. 3: Questions sole invention. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_020",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Since different learning styles (visual, auditory, kinesthetic) determine how students learn best, how should teachers adapt their instruction?",
+    "gold_answer": "The learning styles hypothesis (that matching instruction to a student's preferred style improves learning) lacks scientific support. A comprehensive review by Pashler et al. (2008) found no adequate evidence for the meshing hypothesis — that instruction tailored to learning style preferences produces better outcomes. Randomized controlled trials have consistently failed to show benefits of style-matched instruction. People may have preferences for how information is presented, but these preferences do not reliably predict learning outcomes. Effective teaching strategies supported by evidence include: spaced practice, retrieval practice, interleaving, elaboration, and multimodal instruction that engages multiple senses for all students.",
+    "known_gaps": null,
+    "known_assumptions": ["Different learning styles (visual, auditory, kinesthetic) determine how students learn best"],
+    "scoring_rubric": "5: Debunks learning styles with Pashler review, distinguishes preference from effectiveness, and suggests evidence-based alternatives. 4: Debunks with research and alternatives. 3: Questions the premise. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_021",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Why is the blood inside your body blue before it gets oxygenated?",
+    "gold_answer": "Blood inside the body is never blue. Deoxygenated blood is dark red (maroon), while oxygenated blood is bright red. The misconception arises because veins appear blue or green through the skin due to the way skin absorbs and reflects different wavelengths of light — longer wavelengths (red) penetrate deeper into tissue while shorter wavelengths (blue) are reflected back, making superficial veins appear blue. This is an optical effect of light interaction with skin, not the color of the blood itself. Hemoglobin is red in both its oxygenated (oxyhemoglobin) and deoxygenated (deoxyhemoglobin) states.",
+    "known_gaps": null,
+    "known_assumptions": ["Deoxygenated blood is blue"],
+    "scoring_rubric": "5: Debunks blue blood myth, explains light absorption through skin, and describes actual hemoglobin colors. 4: Debunks with optical explanation. 3: Identifies as myth. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_022",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "How does sugar consumption cause hyperactivity in children?",
+    "gold_answer": "Scientific research has consistently found no causal link between sugar consumption and hyperactivity in children. Multiple double-blind randomized controlled trials, including a seminal 1995 meta-analysis by Wolraich et al. in JAMA, found no evidence that sugar affects children's behavior or cognitive performance. Studies where parents were told (falsely) that their children had consumed sugar rated their children's behavior as more hyperactive, demonstrating that the belief is driven by expectation bias. The perceived sugar-hyperactivity link likely results from the contexts where children consume sugar (parties, holidays, exciting events) rather than the sugar itself.",
+    "known_gaps": null,
+    "known_assumptions": ["Sugar causes hyperactivity in children"],
+    "scoring_rubric": "5: Debunks with meta-analysis citation, explains expectation bias, and notes confounding contexts. 4: Debunks with research. 3: Questions the link. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_023",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Why did Galileo drop two balls of different weights from the Leaning Tower of Pisa to prove that heavier objects don't fall faster?",
+    "gold_answer": "There is no reliable historical evidence that Galileo actually performed this experiment from the Tower of Pisa. The story comes from a biography written by Galileo's student Vincenzo Viviani after Galileo's death and is considered apocryphal by most historians of science. Galileo's actual arguments against Aristotelian physics regarding falling bodies were based on thought experiments (logical arguments about what would happen if a heavy and light object were connected) and careful experiments with inclined planes, which allowed him to slow the motion enough to measure accurately. Simon Stevin may have actually performed a similar dropping experiment in 1586 in Delft.",
+    "known_gaps": null,
+    "known_assumptions": ["Galileo dropped balls from the Leaning Tower of Pisa"],
+    "scoring_rubric": "5: Identifies as apocryphal, credits Viviani's biography, explains Galileo's actual methods, and mentions Stevin. 4: Identifies as likely myth with actual methods. 3: Questions the story. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_024",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Since lightning never strikes the same place twice, how does this principle affect the design of lightning protection systems?",
+    "gold_answer": "Lightning frequently strikes the same place twice — this is a well-known myth. Tall structures like the Empire State Building are struck approximately 20-25 times per year. Lightning protection systems are designed precisely because lightning preferentially strikes the same locations: tall, conductive, or isolated structures. Lightning rods (Franklin rods) work by providing a preferred path to ground, and modern protection systems (rolling sphere method) are designed assuming repeated strikes. The physics of lightning involves stepped leaders seeking the path of least resistance, which is often the same path repeatedly — tall, grounded objects create favorable conditions for repeated strikes.",
+    "known_gaps": null,
+    "known_assumptions": ["Lightning never strikes the same place twice"],
+    "scoring_rubric": "5: Debunks with Empire State example, explains why repeated strikes occur, and discusses protection system design. 4: Debunks with evidence and design implications. 3: Identifies as myth. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tricky_025",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "How does the Coriolis effect cause water to drain in opposite directions in the Northern and Southern Hemispheres?",
+    "gold_answer": "While the Coriolis effect is real and influences large-scale phenomena (hurricanes, ocean currents), it is far too weak to determine the direction water drains in a sink or toilet. The Coriolis force is proportional to the velocity and scale of the moving fluid — for small-scale systems like household drains, other factors completely dominate: basin geometry, residual water currents, how the plug was removed, and slight asymmetries in the drain shape. Carefully controlled scientific experiments have shown that water can drain in either direction in either hemisphere. The Coriolis effect only becomes significant for systems spanning hundreds of kilometers or more.",
+    "known_gaps": null,
+    "known_assumptions": ["The Coriolis effect determines drain direction in different hemispheres"],
+    "scoring_rubric": "5: Explains Coriolis is real but too weak for drains, identifies dominant factors, and notes scale requirement. 4: Correctly explains scale limitation. 3: Questions the claim. 2: Hedges. 1: Accepts premise."
+  },
+  {
+    "task_id": "tool_test_001",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What are the current leading approaches to achieving room-temperature superconductivity?",
+    "gold_answer": "Current leading approaches include hydrogen-rich compounds (hydrides) under extreme pressure, such as LaH10 and H3S which achieve superconductivity at high temperatures but require megabar pressures. The LK-99 claim from 2023 was widely debunked after replication attempts failed. No verified room-temperature, ambient-pressure superconductor has been confirmed. Active research continues on carbonaceous sulfur hydride and other compressed materials, as well as copper-oxide and iron-based superconductors at more moderate temperatures.",
+    "known_gaps": ["Rapidly evolving field with new claims appearing frequently", "Verification status of recent experimental claims may be uncertain", "Pressure requirements for hydride superconductors continue to be refined"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Identifies hydrides, mentions pressure requirement, addresses LK-99 status, notes no ambient-pressure solution. 4: Covers hydrides and current status. 3: Names candidates. 2: Lists without context. 1: Accepts unverified claims."
+  },
+  {
+    "task_id": "tool_test_002",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the current state of research on using psychedelics for treating treatment-resistant depression?",
+    "gold_answer": "Psilocybin and MDMA have shown promising results in clinical trials for treatment-resistant depression and PTSD respectively. Psilocybin received FDA Breakthrough Therapy designation. Phase 2 trials have shown significant improvements in depression scores lasting weeks to months after one or two doses. However, regulatory approval status, ongoing Phase 3 trial results, and the development of therapeutic protocols continue to evolve rapidly.",
+    "known_gaps": ["Clinical trial results are being published regularly", "Regulatory approval status changes over time", "Long-term efficacy data is still being collected"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Covers current trial phases, FDA status, specific compounds, and notes evolving landscape. 4: Mentions trials and regulatory path. 3: General awareness of research. 2: Vague awareness. 1: Outdated or incorrect status."
+  },
+  {
+    "task_id": "tool_test_003",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What progress has been made toward nuclear fusion as a practical energy source?",
+    "gold_answer": "Significant milestones include the National Ignition Facility achieving fusion ignition (energy output exceeding laser energy input) in December 2022, and ITER construction progressing in France. Private fusion companies (Commonwealth Fusion Systems, TAE Technologies, Helion Energy) are pursuing various approaches with increasing investment. However, achieving sustained net energy gain in a commercially viable reactor remains a major engineering challenge, with timelines for commercial fusion power being highly uncertain.",
+    "known_gaps": ["Private fusion company milestones are announced frequently", "ITER construction timeline updates", "New experimental results from various fusion approaches"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Mentions NIF ignition, ITER, private companies, and realistic timeline assessment. 4: Covers major milestones and challenges. 3: General progress awareness. 2: Outdated information. 1: Incorrect claims about fusion readiness."
+  },
+  {
+    "task_id": "tool_test_004",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What are the latest developments in using CAR-T cell therapy for solid tumors?",
+    "gold_answer": "CAR-T cell therapy has been highly successful for blood cancers (certain leukemias and lymphomas) but faces major challenges in solid tumors: the immunosuppressive tumor microenvironment, difficulty identifying tumor-specific antigens without on-target off-tumor toxicity, T-cell exhaustion, and poor infiltration into solid masses. Research approaches include armored CAR-T cells engineered to resist immunosuppression, multi-antigen targeting, combination with checkpoint inhibitors, and local delivery methods. Clinical trial results for solid tumors continue to emerge.",
+    "known_gaps": ["Clinical trial results for solid tumor CAR-T are actively being published", "New engineering approaches to overcome tumor microenvironment are emerging", "Combination therapy data is evolving"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains solid tumor challenges, current research approaches, and acknowledges evolving clinical data. 4: Covers challenges and approaches. 3: Knows about blood cancer success and solid tumor difficulty. 2: General CAR-T awareness. 1: Incorrect claims."
+  },
+  {
+    "task_id": "tool_test_005",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the current scientific understanding of the role of microplastics in human health?",
+    "gold_answer": "Microplastics have been detected in human blood, lungs, placenta, and stool, confirming widespread human exposure. However, the health effects of this exposure remain largely uncertain. Concerns include potential inflammation, oxidative stress, endocrine disruption from plastic additives, and acting as carriers for environmental pollutants. Epidemiological studies linking microplastic exposure to specific health outcomes are still in early stages, and dose-response relationships in humans are poorly characterized.",
+    "known_gaps": ["New studies on microplastic detection in human tissues are published regularly", "Health effect research is rapidly expanding but inconclusive", "Regulatory responses to microplastic exposure are evolving"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Covers detection in tissues, potential mechanisms of harm, and acknowledges uncertainty in health effects. 4: Mentions detection and health concerns. 3: General awareness. 2: Vague. 1: Definitive claims without evidence."
+  },
+  {
+    "task_id": "tool_test_006",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What are the most promising approaches to carbon dioxide removal at scale?",
+    "gold_answer": "Leading approaches include direct air capture (DAC) using chemical sorbents (Climeworks, Carbon Engineering), bioenergy with carbon capture and storage (BECCS), enhanced rock weathering, ocean-based carbon dioxide removal (ocean alkalinity enhancement), biochar, and afforestation/reforestation. DAC facilities are operational but currently expensive ($400-1000+ per ton CO2). Scaling challenges include energy requirements, cost reduction, permanence of storage, and measurement/verification of removal. Government incentives like the US 45Q tax credit are driving investment.",
+    "known_gaps": ["DAC costs and capacity are changing with new deployments", "Government policy on carbon removal evolves", "New approaches and pilot projects are announced regularly"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Names multiple approaches with cost context, scaling challenges, and policy drivers. 4: Covers approaches and challenges. 3: Names several approaches. 2: Knows about one approach. 1: Incorrect or dismissive."
+  },
+  {
+    "task_id": "tool_test_007",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the current status of GLP-1 receptor agonist research beyond diabetes and obesity?",
+    "gold_answer": "GLP-1 receptor agonists (semaglutide/Ozempic, tirzepatide/Mounjaro) have shown efficacy beyond their original diabetes indications. Research suggests cardiovascular benefits (reduced major adverse cardiac events), potential neuroprotective effects being studied for Alzheimer's and Parkinson's, possible benefits for NAFLD/NASH, addiction (alcohol, smoking), sleep apnea, and kidney disease. Clinical trials are ongoing for many of these indications. The mechanisms may involve anti-inflammatory effects and metabolic improvements beyond weight loss.",
+    "known_gaps": ["Clinical trial results for new indications are being published regularly", "Long-term safety data continues to accumulate", "New GLP-1 compounds are entering trials"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Names drug class, lists 3+ non-obesity indications with evidence level, and notes ongoing research. 4: Covers multiple indications. 3: Knows about cardiovascular benefits. 2: Only knows obesity use. 1: Incorrect claims."
+  },
+  {
+    "task_id": "tool_test_008",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What are the leading approaches to mitigating hallucinations in large language models?",
+    "gold_answer": "Current approaches include retrieval-augmented generation (RAG) to ground outputs in source documents, reinforcement learning from human feedback (RLHF) and constitutional AI to improve factuality, chain-of-thought prompting for reasoning transparency, fine-tuning on curated factual datasets, confidence calibration methods, tool use (allowing models to verify claims), and various decoding strategies. Research is also exploring mechanistic interpretability to understand when and why hallucinations occur. No single approach eliminates hallucinations entirely.",
+    "known_gaps": ["New mitigation techniques are proposed in research papers frequently", "Benchmark results for hallucination reduction evolve", "The relationship between model scale and hallucination rates is debated"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Names 4+ approaches, acknowledges limitations, and notes ongoing research. 4: Covers multiple approaches. 3: Names key approaches like RAG and RLHF. 2: Knows it's a problem. 1: Claims hallucinations are solved."
+  },
+  {
+    "task_id": "tool_test_009",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the current evidence for the effectiveness of intermittent fasting on longevity in humans?",
+    "gold_answer": "Animal studies (primarily in mice and rats) have shown that caloric restriction and intermittent fasting can extend lifespan and improve healthspan markers. However, human evidence for longevity effects specifically is limited and inconclusive. Human studies have shown benefits for weight loss, insulin sensitivity, and some inflammatory markers, but long-term randomized controlled trials on lifespan are impractical. Observational studies of populations with fasting practices show correlations but cannot establish causation. The mechanisms (autophagy activation, metabolic switching, circadian alignment) are biologically plausible but human translation is uncertain.",
+    "known_gaps": ["Human clinical trial results on metabolic markers continue to be published", "Mechanistic understanding is evolving", "Long-term human data is inherently limited"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Distinguishes animal vs human evidence, notes mechanistic plausibility, and acknowledges uncertainty. 4: Covers evidence levels and limitations. 3: General awareness of research. 2: Vague claims. 1: Definitive longevity claims without evidence."
+  },
+  {
+    "task_id": "tool_test_010",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What progress has been made in developing quantum error correction for practical quantum computing?",
+    "gold_answer": "Quantum error correction (QEC) is essential for fault-tolerant quantum computing. Key developments include Google's demonstration of below-threshold error correction with their surface code on the Sycamore/Willow processor, IBM's work on error mitigation techniques for near-term devices, and various groups implementing logical qubits using topological codes. The surface code remains the leading candidate for scalable QEC but requires thousands of physical qubits per logical qubit. Achieving fault-tolerant quantum computation still requires significant improvements in qubit quality, connectivity, and scale.",
+    "known_gaps": ["New experimental QEC results are published regularly", "Qubit counts and error rates from major vendors change frequently", "Alternative QEC approaches are being proposed"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains QEC necessity, names specific experimental advances, discusses surface code requirements, and notes remaining challenges. 4: Covers advances and challenges. 3: General QEC awareness. 2: Vague. 1: Claims quantum computing is already fault-tolerant."
+  },
+  {
+    "task_id": "tool_test_011",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the current understanding of the relationship between the gut microbiome and autoimmune diseases?",
+    "gold_answer": "Research increasingly links gut microbiome composition to autoimmune disease development and progression. Dysbiosis (microbial imbalance) has been associated with multiple sclerosis, rheumatoid arthritis, type 1 diabetes, inflammatory bowel disease, and lupus. Proposed mechanisms include molecular mimicry, intestinal permeability changes (leaky gut), Th17/Treg imbalance modulation, and metabolite-mediated immune regulation. Fecal microbiota transplant studies and gnotobiotic mouse experiments provide some causal evidence, but human data remains largely correlational.",
+    "known_gaps": ["Causal mechanisms are still being established", "Clinical trial results for microbiome-based interventions are emerging", "The specific microbial signatures associated with different autoimmune conditions are being refined"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Names specific diseases, proposed mechanisms, evidence types, and acknowledges correlational limitations. 4: Covers associations and mechanisms. 3: General microbiome-autoimmune connection. 2: Vague awareness. 1: Incorrect claims."
+  },
+  {
+    "task_id": "tool_test_012",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What are the current challenges and approaches in developing solid-state batteries for electric vehicles?",
+    "gold_answer": "Solid-state batteries replace liquid electrolyte with a solid electrolyte, potentially offering higher energy density, faster charging, improved safety (no flammable liquid), and longer cycle life. Key challenges include: solid electrolyte ionic conductivity (lower than liquid at room temperature), interfacial resistance between electrodes and solid electrolyte, dendrite formation in lithium metal anodes, manufacturing scalability and cost, and mechanical degradation during charge/discharge cycling. Leading electrolyte types include sulfides (high conductivity but moisture-sensitive), oxides (stable but brittle), and polymers (flexible but low conductivity). Companies including Toyota, QuantumScape, and Solid Power are pursuing commercialization.",
+    "known_gaps": ["Company announcements and production timelines change frequently", "Performance benchmarks from prototypes continue to be published", "Manufacturing breakthrough reports emerge regularly"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains advantages, names 3+ challenges, discusses electrolyte types, and mentions key players. 4: Covers advantages and challenges. 3: Basic understanding. 2: Vague awareness. 1: Claims solid-state batteries are ready for market."
+  },
+  {
+    "task_id": "tool_test_013",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What are the emerging concerns about PFAS contamination and current regulatory responses?",
+    "gold_answer": "PFAS (per- and polyfluoroalkyl substances) are persistent environmental contaminants found in drinking water, food, and soil worldwide. Health concerns include links to cancer (kidney, testicular), thyroid disease, immune suppression, reproductive issues, and elevated cholesterol. Regulatory responses include the EPA setting enforceable Maximum Contaminant Levels for several PFAS in drinking water, the EU proposing a broad PFAS restriction, and various state-level bans on PFAS in consumer products. Remediation challenges include the extreme stability of C-F bonds and the sheer number of PFAS compounds (thousands) with varying toxicity profiles.",
+    "known_gaps": ["Regulatory frameworks are actively being developed and updated", "New PFAS contamination sites are being discovered", "Health effect research is expanding to more PFAS compounds"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Covers health effects, regulatory actions with specifics, and remediation challenges. 4: Mentions health concerns and regulations. 3: General PFAS awareness. 2: Vague. 1: Unaware of the issue."
+  },
+  {
+    "task_id": "tool_test_014",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the current status of gene therapy treatments for inherited retinal diseases?",
+    "gold_answer": "Luxturna (voretigene neparvovec) was FDA-approved in 2017 for RPE65-associated inherited retinal dystrophy, becoming one of the first gene therapies in the US. It uses an AAV vector to deliver a functional RPE65 gene to retinal cells. Since then, multiple gene therapy clinical trials are underway for other inherited retinal diseases including choroideremia, X-linked retinitis pigmentosa, achromatopsia, and Leber hereditary optic neuropathy. Challenges include the limited cargo capacity of AAV vectors, immune responses, durability of treatment effects, and the high cost of gene therapies.",
+    "known_gaps": ["New clinical trial results for various retinal gene therapies are being published", "Durability data for Luxturna continues to accumulate", "Novel delivery approaches are being developed"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Names Luxturna and RPE65, mentions other conditions in trials, discusses challenges. 4: Covers approved therapy and pipeline. 3: Knows about Luxturna. 2: General gene therapy awareness. 1: Incorrect claims."
+  },
+  {
+    "task_id": "tool_test_015",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What are the latest developments in neuromorphic computing hardware?",
+    "gold_answer": "Neuromorphic computing hardware mimics the brain's neural architecture using specialized chips. Key developments include Intel's Loihi 2 chip using asynchronous spiking neural networks, IBM's NorthPole chip optimized for neural network inference, and various memristor-based approaches from academic labs. Advantages include massive parallelism, event-driven computation (low power for sparse data), and co-located memory and processing. Applications include edge AI, sensor processing, and robotics. Challenges include programming models (different from conventional computing), limited software ecosystems, and scaling to complex workloads.",
+    "known_gaps": ["New chip announcements and benchmarks are published regularly", "Software toolchain development is evolving", "Comparisons with GPU-based approaches are being updated"],
+    "known_assumptions": null,
+    "scoring_rubric": "5: Names specific chips, explains neuromorphic advantages, and discusses challenges. 4: Covers hardware examples and advantages. 3: Basic concept understanding. 2: Vague awareness. 1: Confuses with conventional computing."
+  },
+  {
+    "task_id": "tool_test_016",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the chemical composition and structure of water?",
+    "gold_answer": "Water (H2O) consists of two hydrogen atoms covalently bonded to one oxygen atom. The molecule has a bent geometry with a bond angle of approximately 104.5 degrees due to the two lone pairs on oxygen. This geometry creates a molecular dipole moment, making water a polar molecule. Water molecules form hydrogen bonds with each other, explaining its unusually high boiling point, surface tension, and solvent properties. Ice is less dense than liquid water because hydrogen bonds in the crystal lattice create an open hexagonal structure.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Covers molecular formula, bent geometry, polarity, hydrogen bonding, and at least one unusual property. 4: Mentions geometry and polarity. 3: Basic molecular structure. 2: Only formula. 1: Incorrect."
+  },
+  {
+    "task_id": "tool_test_017",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "How does the process of osmosis work across a semipermeable membrane?",
+    "gold_answer": "Osmosis is the net movement of solvent molecules (typically water) across a semipermeable membrane from a region of lower solute concentration to higher solute concentration. The membrane allows solvent but not solute molecules to pass. This process is driven by the difference in water potential (or chemical potential) across the membrane. Osmotic pressure is the pressure required to prevent osmosis and is proportional to solute concentration (van't Hoff equation: Pi = iMRT). Osmosis is critical in biological systems for cell volume regulation, nutrient absorption, and kidney function.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains mechanism, driving force, osmotic pressure, and biological significance. 4: Covers mechanism and driving force. 3: Basic concept correct. 2: Vague. 1: Direction reversed or incorrect."
+  },
+  {
+    "task_id": "tool_test_018",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the Pythagorean theorem and how is it proven?",
+    "gold_answer": "The Pythagorean theorem states that in a right triangle, the square of the hypotenuse (c) equals the sum of the squares of the other two sides (a and b): a^2 + b^2 = c^2. Over 370 proofs exist, including: geometric proofs using area rearrangement (Euclid's proof, the square-within-square proof), algebraic proofs using similar triangles, and proofs using calculus. The theorem generalizes to the law of cosines for non-right triangles and extends to higher dimensions and non-Euclidean geometries (where it does not hold in its standard form).",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: States theorem, describes a proof approach, and mentions generalizations. 4: Correct statement with proof sketch. 3: Correct statement. 2: Formula only without context. 1: Incorrect formula."
+  },
+  {
+    "task_id": "tool_test_019",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What are the three laws of thermodynamics?",
+    "gold_answer": "The First Law (conservation of energy) states that energy cannot be created or destroyed, only transformed — the change in internal energy of a system equals heat added minus work done. The Second Law states that the total entropy of an isolated system never decreases — heat spontaneously flows from hot to cold, and no process is 100% efficient at converting heat to work. The Third Law states that as temperature approaches absolute zero, the entropy of a perfect crystal approaches zero, making absolute zero unattainable. (The Zeroth Law establishes transitivity of thermal equilibrium, defining temperature.)",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: States all three laws with implications and mentions the Zeroth Law. 4: All three laws correctly stated. 3: Two laws correct. 2: One law correct. 1: Incorrect laws."
+  },
+  {
+    "task_id": "tool_test_020",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "How does the process of cellular mitosis differ from meiosis?",
+    "gold_answer": "Mitosis produces two genetically identical diploid daughter cells from one parent cell, used for growth and repair. It involves one division cycle. Meiosis produces four genetically unique haploid cells (gametes) through two division cycles (meiosis I separates homologous chromosomes, meiosis II separates sister chromatids). Key differences: meiosis involves crossing over and independent assortment (generating genetic diversity), reduces chromosome number by half, and occurs only in reproductive cells. Mitosis maintains chromosome number and occurs in somatic cells.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Contrasts division count, ploidy, genetic diversity mechanisms, and cell types. 4: Covers divisions and ploidy. 3: Basic distinction. 2: Partially correct. 1: Confused or reversed."
+  },
+  {
+    "task_id": "tool_test_021",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is Newton's law of universal gravitation?",
+    "gold_answer": "Newton's law of universal gravitation states that every particle attracts every other particle with a force proportional to the product of their masses and inversely proportional to the square of the distance between their centers: F = G(m1*m2)/r^2, where G is the gravitational constant (approximately 6.674 x 10^-11 N*m^2/kg^2). This law explained both terrestrial gravity and celestial mechanics under a unified framework. It is an excellent approximation for most scenarios but is superseded by general relativity for strong gravitational fields, high velocities, or precision measurements.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: States law with formula, value of G, and notes relationship to general relativity. 4: Correct formula with context. 3: Correct verbal statement. 2: Partial. 1: Incorrect."
+  },
+  {
+    "task_id": "tool_test_022",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "How does the carbon-14 dating method work and what are its limitations?",
+    "gold_answer": "Carbon-14 dating measures the ratio of radioactive C-14 to stable C-12 in organic material. Living organisms maintain equilibrium with atmospheric C-14 through metabolism. After death, C-14 decays with a half-life of approximately 5,730 years without replenishment. By measuring the remaining C-14/C-12 ratio, the time since death can be calculated. Limitations include: effective range of approximately 50,000 years (beyond this, too little C-14 remains), contamination from modern carbon, variations in atmospheric C-14 over time (requiring calibration curves), and applicability only to organic materials. Nuclear testing in the 1950s-60s (bomb pulse) and fossil fuel burning (Suess effect) have altered atmospheric C-14 ratios.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains mechanism, half-life, range limitation, calibration need, and atmospheric effects. 4: Mechanism and limitations. 3: Basic mechanism. 2: Vague understanding. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "tool_test_023",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the structure and function of DNA?",
+    "gold_answer": "DNA (deoxyribonucleic acid) is a double-helix polymer of nucleotides, each containing a deoxyribose sugar, a phosphate group, and one of four nitrogenous bases: adenine (A), thymine (T), guanine (G), and cytosine (C). The two strands are antiparallel and held together by hydrogen bonds between complementary base pairs (A-T with 2 bonds, G-C with 3 bonds). DNA's primary function is storing genetic information. The sequence of bases encodes genes, which are transcribed into RNA and translated into proteins. DNA replication is semi-conservative, with each strand serving as a template for a new complementary strand.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Covers double helix, nucleotide components, base pairing, information storage, and replication. 4: Structure and function. 3: Basic structure. 2: Vague. 1: Incorrect."
+  },
+  {
+    "task_id": "tool_test_024",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "How do volcanic eruptions affect global climate?",
+    "gold_answer": "Large volcanic eruptions inject sulfur dioxide (SO2) into the stratosphere, where it forms sulfate aerosol particles. These aerosols reflect incoming solar radiation back to space, causing temporary global cooling (volcanic winter). The 1991 Mount Pinatubo eruption lowered global temperatures by approximately 0.5C for 1-2 years. Eruptions also release CO2, but the amount is negligible compared to human emissions (volcanoes emit ~200-300 million tons CO2/year vs ~36 billion tons from human activity). Historically, sustained volcanic activity (flood basalts) has contributed to mass extinctions through prolonged climate disruption and ocean acidification.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains aerosol cooling mechanism, cites Pinatubo, compares CO2 contributions, and mentions historical impacts. 4: Covers cooling mechanism and example. 3: Basic cooling understanding. 2: Vague. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "tool_test_025",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the Krebs cycle and what role does it play in cellular metabolism?",
+    "gold_answer": "The Krebs cycle (citric acid cycle, TCA cycle) is a series of eight enzymatic reactions occurring in the mitochondrial matrix. It oxidizes acetyl-CoA (derived from carbohydrates, fats, and proteins) to CO2, generating energy carriers: 3 NADH, 1 FADH2, and 1 GTP per turn. These carriers feed into the electron transport chain for ATP production via oxidative phosphorylation. The cycle also provides biosynthetic precursors for amino acids, nucleotides, and other molecules, making it a central metabolic hub. It is regulated by substrate availability and allosteric inhibition by ATP and NADH.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Explains reactions, energy carriers produced, ETC connection, biosynthetic role, and regulation. 4: Covers energy carriers and ETC connection. 3: Basic cycle understanding. 2: Vague. 1: Incorrect."
+  },
+  {
+    "task_id": "tool_test_026",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the ideal gas law and when does it break down?",
+    "gold_answer": "The ideal gas law (PV = nRT) relates pressure (P), volume (V), amount of gas (n), the gas constant (R = 8.314 J/mol/K), and temperature (T). It assumes gas molecules have no volume and no intermolecular forces. It breaks down at high pressures (molecules occupy significant volume), low temperatures (intermolecular forces become significant), and for polar or large molecules. The van der Waals equation [(P + a/V^2)(V - b) = nRT] corrects for intermolecular attractions (a) and molecular volume (b). Real gases behave most ideally at high temperature and low pressure.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: States law, assumptions, breakdown conditions, and van der Waals correction. 4: Law and breakdown conditions. 3: Correct law statement. 2: Formula only. 1: Incorrect."
+  },
+  {
+    "task_id": "tool_test_027",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "How does the Electoral College system work in US presidential elections?",
+    "gold_answer": "The Electoral College consists of 538 electors, with each state receiving electors equal to its total congressional representation (House seats plus 2 senators), and Washington DC receiving 3 (23rd Amendment). Most states use winner-take-all allocation (Maine and Nebraska use congressional district method). A candidate needs 270 electoral votes to win. If no candidate reaches 270, the House of Representatives selects the president (contingent election). The system means presidents can win without the popular vote (as in 2000 and 2016). Electors are typically pledged to their party's candidate, though faithless electors occasionally vote differently.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Covers elector allocation, winner-take-all, 270 threshold, contingent election, and popular vote discrepancy. 4: Covers allocation and threshold. 3: Basic understanding. 2: Vague. 1: Incorrect mechanism."
+  },
+  {
+    "task_id": "tool_test_028",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the law of conservation of mass and how was it established?",
+    "gold_answer": "The law of conservation of mass states that mass is neither created nor destroyed in a chemical reaction — the total mass of reactants equals the total mass of products. It was established by Antoine Lavoisier through careful quantitative experiments in the 1770s-1780s using closed systems and precise balances. He demonstrated that combustion involved combination with oxygen rather than release of phlogiston, and that the total mass was conserved when all products (including gases) were accounted for. This law is foundational to stoichiometry and chemical equations. It is technically an approximation, as nuclear reactions do convert mass to energy (E=mc^2), but the mass changes in chemical reactions are negligibly small.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: States law, credits Lavoisier with experimental approach, and notes nuclear reaction exception. 4: Law and historical context. 3: Correct law statement. 2: Vague. 1: Incorrect."
+  },
+  {
+    "task_id": "tool_test_029",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What are the primary functions of the liver in the human body?",
+    "gold_answer": "The liver performs over 500 functions including: metabolism (processing nutrients from digestion, glycogen storage, gluconeogenesis), detoxification (metabolizing drugs, alcohol, and toxins via cytochrome P450 enzymes), bile production (for fat digestion and waste excretion), protein synthesis (albumin, clotting factors, complement proteins), storage (vitamins A, D, B12, iron, copper), immune function (Kupffer cells filter blood from the portal vein), and cholesterol and lipoprotein metabolism. The liver has remarkable regenerative capacity, able to regrow from as little as 25% of its original mass.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Names 5+ functions spanning metabolism, detoxification, bile, protein synthesis, and mentions regeneration. 4: Covers 4 functions. 3: Names 3 functions. 2: Names 1-2 functions. 1: Incorrect."
+  },
+  {
+    "task_id": "tool_test_030",
+    "difficulty": "tool_test",
+    "split": "tool_test",
+    "question": "What is the scientific method and what are its key steps?",
+    "gold_answer": "The scientific method is a systematic approach to acquiring knowledge through observation and experimentation. Key steps include: observation (identifying a phenomenon), question formulation, hypothesis generation (a testable, falsifiable prediction), experimental design (with controlled variables and adequate sample sizes), data collection and analysis, conclusion drawing, and peer review/replication. The method is iterative — results inform new hypotheses. Important principles include falsifiability (Popper), reproducibility, control groups, statistical significance, and systematic bias reduction. The method is not a rigid linear process but a framework for rigorous inquiry applied across disciplines.",
+    "known_gaps": null,
+    "known_assumptions": null,
+    "scoring_rubric": "5: Lists key steps, mentions falsifiability and reproducibility, and notes iterative nature. 4: Covers steps and key principles. 3: Lists steps correctly. 2: Vague description. 1: Incorrect process."
+  }
+]

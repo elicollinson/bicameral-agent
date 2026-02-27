@@ -30,6 +30,12 @@ from bicameral_agent.tool_latency import (
     ToolPrediction,
 )
 from bicameral_agent.gemini import ChatMessage, GeminiClient, GeminiResponse
+from bicameral_agent.dataset import (
+    ResearchQADataset,
+    ResearchQATask,
+    TaskDifficulty,
+    TaskSplit,
+)
 
 __all__ = [
     "APILatencyModel",
@@ -57,8 +63,12 @@ __all__ = [
     "QueueItem",
     "QueueState",
     "ReplayState",
+    "ResearchQADataset",
+    "ResearchQATask",
     "StateEncoder",
     "SubCallPrediction",
+    "TaskDifficulty",
+    "TaskSplit",
     "TokenEstimate",
     "TokenEstimator",
     "ToolInvocation",
