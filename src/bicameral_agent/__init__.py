@@ -37,6 +37,14 @@ from bicameral_agent.dataset import (
     TaskSplit,
 )
 from bicameral_agent.scorer import LexicalScorer, TaskScore, TaskScorer
+from bicameral_agent.assumption_auditor import (
+    AssumptionAuditor,
+    EvidenceResult,
+    EvidenceVerdict,
+    IdentifiedAssumption,
+    RiskLevel,
+    SuggestedAction,
+)
 from bicameral_agent.gap_scanner import (
     GapCategory,
     IdentifiedGap,
@@ -55,6 +63,7 @@ from bicameral_agent.tool_primitive import (
 
 __all__ = [
     "APILatencyModel",
+    "AssumptionAuditor",
     "BudgetExceededError",
     "ChatMessage",
     "ContextFeatures",
@@ -68,12 +77,15 @@ __all__ = [
     "EpisodeOutcome",
     "EpisodeReplayer",
     "EpisodeValidator",
+    "EvidenceResult",
+    "EvidenceVerdict",
     "FEATURE_DIM",
     "FastEmbedEmbedder",
     "GapCategory",
     "GeminiClient",
     "GeminiResponse",
     "HashEmbedder",
+    "IdentifiedAssumption",
     "IdentifiedGap",
     "InterruptConfig",
     "LatencyEstimate",
@@ -87,10 +99,12 @@ __all__ = [
     "ResearchGapScanner",
     "ResearchQADataset",
     "ResearchQATask",
+    "RiskLevel",
     "SearchResult",
     "StateEncoder",
     "StateVector",
     "SubCallPrediction",
+    "SuggestedAction",
     "TaskDifficulty",
     "TaskScore",
     "TaskScorer",
