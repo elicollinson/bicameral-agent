@@ -37,6 +37,13 @@ from bicameral_agent.dataset import (
     TaskSplit,
 )
 from bicameral_agent.scorer import LexicalScorer, TaskScore, TaskScorer
+from bicameral_agent.gap_scanner import (
+    GapCategory,
+    IdentifiedGap,
+    MockSearchProvider,
+    ResearchGapScanner,
+    SearchResult,
+)
 from bicameral_agent.tool_primitive import (
     BudgetExceededError,
     StateVector,
@@ -63,19 +70,24 @@ __all__ = [
     "EpisodeValidator",
     "FEATURE_DIM",
     "FastEmbedEmbedder",
+    "GapCategory",
     "GeminiClient",
     "GeminiResponse",
     "HashEmbedder",
+    "IdentifiedGap",
     "InterruptConfig",
     "LatencyEstimate",
     "LexicalScorer",
     "Message",
+    "MockSearchProvider",
     "Priority",
     "QueueItem",
     "QueueState",
     "ReplayState",
+    "ResearchGapScanner",
     "ResearchQADataset",
     "ResearchQATask",
+    "SearchResult",
     "StateEncoder",
     "StateVector",
     "SubCallPrediction",
