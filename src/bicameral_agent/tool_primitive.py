@@ -10,8 +10,7 @@ from __future__ import annotations
 import abc
 import logging
 import time
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
 
 import numpy as np
 from pydantic import BaseModel, Field
@@ -19,9 +18,6 @@ from pydantic import BaseModel, Field
 from bicameral_agent.gemini import GeminiClient, GeminiResponse
 from bicameral_agent.queue import QueueItem
 from bicameral_agent.schema import Message
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -61,11 +57,11 @@ class ToolMetadata(BaseModel):
     estimated_relevance: float = Field(ge=0.0, le=1.0)
     """Estimated relevance of the result to the current reasoning state."""
 
-    tokens_consumed: int = Field(ge=0)
-    """Total tokens consumed across all internal LLM calls."""
+    tokens_consumed: int = Field(default=0, ge=0)
+    """Total tokens consumed across all internal LLM calls. Auto-populated by base class."""
 
-    execution_duration_ms: int = Field(ge=0)
-    """Wall-clock execution duration in milliseconds."""
+    execution_duration_ms: int = Field(default=0, ge=0)
+    """Wall-clock execution duration in milliseconds. Auto-populated by base class."""
 
 
 class ToolResult(BaseModel):
@@ -83,11 +79,7 @@ class BudgetExceededError(Exception):
 
 
 class _TokenTracker:
-    """Tracks token usage and call count for budget enforcement.
-
-    Used as the on_completion callback for a GeminiClient scoped to a
-    single tool execution.
-    """
+    """Tracks token usage and call count for budget enforcement."""
 
     def __init__(self, tool_id: str, budget: TokenBudget) -> None:
         self.tool_id = tool_id
@@ -96,13 +88,20 @@ class _TokenTracker:
         self.total_output_tokens: int = 0
         self.call_count: int = 0
 
-    def on_completion(self, input_tokens: int, output_tokens: int, duration_ms: float) -> None:
-        """Callback fired after every internal LLM call."""
+    def check_budget_before_call(self) -> None:
+        """Raise if the next call would exceed the call count budget."""
+        if self.call_count >= self.budget.max_calls:
+            raise BudgetExceededError(
+                f"Tool {self.tool_id!r} exceeded max_calls budget: "
+                f"{self.call_count} >= {self.budget.max_calls}"
+            )
+
+    def record_completion(self, input_tokens: int, output_tokens: int, duration_ms: float) -> None:
+        """Record a completed LLM call and enforce token budgets."""
         self.call_count += 1
         self.total_input_tokens += input_tokens
         self.total_output_tokens += output_tokens
 
-        # Log per-call data for the latency model
         logger.info(
             "tool_llm_call: tool_id=%s, input_tokens=%d, output_tokens=%d, duration_ms=%.1f",
             self.tool_id,
@@ -111,12 +110,6 @@ class _TokenTracker:
             duration_ms,
         )
 
-        # Budget enforcement
-        if self.call_count > self.budget.max_calls:
-            raise BudgetExceededError(
-                f"Tool {self.tool_id!r} exceeded max_calls budget: "
-                f"{self.call_count} > {self.budget.max_calls}"
-            )
         if self.total_input_tokens > self.budget.max_input_tokens:
             raise BudgetExceededError(
                 f"Tool {self.tool_id!r} exceeded max_input_tokens budget: "
@@ -131,6 +124,28 @@ class _TokenTracker:
     @property
     def total_tokens(self) -> int:
         return self.total_input_tokens + self.total_output_tokens
+
+
+class _TrackedClient:
+    """Wraps a GeminiClient with budget tracking via composition.
+
+    Presents the same ``generate()`` interface as GeminiClient.
+    Checks call budget before each call and records token usage after.
+    """
+
+    def __init__(self, inner: GeminiClient, tracker: _TokenTracker) -> None:
+        self._inner = inner
+        self._tracker = tracker
+
+    def generate(self, *args, **kwargs) -> GeminiResponse:
+        self._tracker.check_budget_before_call()
+        response = self._inner.generate(*args, **kwargs)
+        self._tracker.record_completion(
+            response.input_tokens,
+            response.output_tokens,
+            response.duration_ms,
+        )
+        return response
 
 
 class ToolPrimitive(abc.ABC):
@@ -173,15 +188,12 @@ class ToolPrimitive(abc.ABC):
             BudgetExceededError: If the tool exceeds its token budget.
         """
         tracker = _TokenTracker(self._tool_id, budget)
-
-        # Create a client with the tracker callback wired in
-        tracked_client = _TrackedGeminiClient(client, tracker)
+        tracked_client = _TrackedClient(client, tracker)
 
         start_ns = time.monotonic_ns()
         result = self._execute(
             conversation_history=conversation_history,
             reasoning_state=reasoning_state,
-            budget=budget,
             client=tracked_client,
         )
         duration_ms = int((time.monotonic_ns() - start_ns) / 1_000_000)
@@ -197,8 +209,7 @@ class ToolPrimitive(abc.ABC):
         self,
         conversation_history: list[Message],
         reasoning_state: StateVector,
-        budget: TokenBudget,
-        client: GeminiClient,
+        client: _TrackedClient,
     ) -> ToolResult:
         """Tool-specific execution logic. Implement in subclasses.
 
@@ -207,27 +218,3 @@ class ToolPrimitive(abc.ABC):
         will be overwritten by the base class after this method returns.
         """
         ...
-
-
-class _TrackedGeminiClient(GeminiClient):
-    """A GeminiClient wrapper that chains a token tracker callback.
-
-    Delegates all calls to the underlying client while ensuring the
-    tracker's on_completion callback fires for every API call.
-    """
-
-    def __init__(self, inner: GeminiClient, tracker: _TokenTracker) -> None:
-        # Bypass GeminiClient.__init__ — we delegate to the inner client
-        object.__init__(self)
-        self._inner = inner
-        self._tracker = tracker
-
-    def generate(self, *args, **kwargs) -> GeminiResponse:
-        """Delegate to inner client, then fire tracker callback."""
-        response = self._inner.generate(*args, **kwargs)
-        self._tracker.on_completion(
-            response.input_tokens,
-            response.output_tokens,
-            response.duration_ms,
-        )
-        return response
