@@ -37,6 +37,14 @@ from bicameral_agent.dataset import (
     TaskSplit,
 )
 from bicameral_agent.scorer import LexicalScorer, TaskScore, TaskScorer
+from bicameral_agent.tool_primitive import (
+    BudgetExceededError,
+    StateVector,
+    TokenBudget,
+    ToolMetadata,
+    ToolPrimitive,
+    ToolResult,
+)
 
 __all__ = [
     "APILatencyModel",
@@ -80,6 +88,12 @@ __all__ = [
     "ToolPrediction",
     "UserEvent",
     "UserEventType",
+    "BudgetExceededError",
+    "StateVector",
+    "TokenBudget",
+    "ToolMetadata",
+    "ToolPrimitive",
+    "ToolResult",
     "ValidationResult",
     "episode_from_parquet",
     "episode_to_parquet",
