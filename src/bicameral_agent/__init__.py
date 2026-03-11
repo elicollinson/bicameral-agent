@@ -63,6 +63,13 @@ from bicameral_agent.signal_classifier import (
     SignalVector,
     StopCount,
 )
+from bicameral_agent.heuristic_controller import (
+    Action,
+    DecisionLog,
+    ExecutingTool,
+    FullState,
+    HeuristicController,
+)
 from bicameral_agent.tool_primitive import (
     BudgetExceededError,
     StateVector,
@@ -73,6 +80,7 @@ from bicameral_agent.tool_primitive import (
 )
 
 __all__ = [
+    "Action",
     "APILatencyModel",
     "AssistantResponse",
     "AssumptionAuditor",
@@ -84,7 +92,9 @@ __all__ = [
     "ContextQueue",
     "ConversationLogger",
     "CostEstimate",
+    "DecisionLog",
     "DecisionPoint",
+    "ExecutingTool",
     "Embedder",
     "Episode",
     "EpisodeOutcome",
@@ -96,10 +106,12 @@ __all__ = [
     "FastEmbedEmbedder",
     "FollowUpClassifier",
     "FollowUpType",
+    "FullState",
     "GapCategory",
     "GeminiClient",
     "GeminiResponse",
     "HashEmbedder",
+    "HeuristicController",
     "IdentifiedAssumption",
     "IdentifiedGap",
     "InterruptConfig",
