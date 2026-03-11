@@ -30,6 +30,7 @@ from bicameral_agent.tool_latency import (
     ToolLatencyModel,
     ToolPrediction,
 )
+from bicameral_agent.conscious_loop import AssistantResponse, ConsciousLoop
 from bicameral_agent.gemini import ChatMessage, GeminiClient, GeminiResponse
 from bicameral_agent.dataset import (
     ResearchQADataset,
@@ -73,9 +74,11 @@ from bicameral_agent.tool_primitive import (
 
 __all__ = [
     "APILatencyModel",
+    "AssistantResponse",
     "AssumptionAuditor",
     "BudgetExceededError",
     "ChatMessage",
+    "ConsciousLoop",
     "ContextFeatures",
     "ContextInjection",
     "ContextQueue",
