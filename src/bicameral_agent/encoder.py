@@ -31,6 +31,7 @@ from __future__ import annotations
 import numpy as np
 
 from bicameral_agent.embeddings import Embedder, get_default_embedder
+from bicameral_agent.followup_classifier import FollowUpClassifier
 from bicameral_agent.schema import Message, ToolInvocation, UserEvent, UserEventType
 
 FEATURE_DIM: int = 53
@@ -50,26 +51,6 @@ _LENGTH_RATIO_CAP = 5.0
 # ---------------------------------------------------------------------------
 _TOOL_VOCAB: list[str] = ["research_gap_scanner", "assumption_auditor", "context_refresher"]
 # Index 3 is "none / unknown"
-
-# ---------------------------------------------------------------------------
-# Follow-up keyword sets (priority order: correction > redirect >
-# elaboration > new_task > encouragement)
-# ---------------------------------------------------------------------------
-_CORRECTION_KEYWORDS: frozenset[str] = frozenset(
-    {"no", "wrong", "incorrect", "fix", "mistake", "error", "actually", "not right", "correction"}
-)
-_REDIRECT_KEYWORDS: frozenset[str] = frozenset(
-    {"instead", "rather", "different", "change", "switch", "topic", "another", "but what about"}
-)
-_ELABORATION_KEYWORDS: frozenset[str] = frozenset(
-    {"more", "detail", "explain", "elaborate", "expand", "deeper", "further", "clarify", "how"}
-)
-_NEW_TASK_KEYWORDS: frozenset[str] = frozenset(
-    {"now", "next", "also", "additionally", "new", "another thing", "can you", "please"}
-)
-_ENCOURAGEMENT_KEYWORDS: frozenset[str] = frozenset(
-    {"good", "great", "thanks", "perfect", "nice", "exactly", "yes", "correct", "right", "ok"}
-)
 
 # ---------------------------------------------------------------------------
 # Hedging keywords (for confidence estimation)
@@ -294,6 +275,9 @@ class StateEncoder:
     ) -> np.ndarray:
         """One-hot encode the last follow-up type (5 slots).
 
+        Delegates to :class:`~bicameral_agent.followup_classifier.FollowUpClassifier`
+        for the actual classification logic.
+
         Priority: correction(0) > redirect(1) > elaboration(2) >
         new_task(3) > encouragement(4).
         """
@@ -318,18 +302,8 @@ class StateEncoder:
         if followup_msg is None:
             return out
 
-        text_lower = followup_msg.content.lower()
-        keyword_sets = [
-            _CORRECTION_KEYWORDS,
-            _REDIRECT_KEYWORDS,
-            _ELABORATION_KEYWORDS,
-            _NEW_TASK_KEYWORDS,
-            _ENCOURAGEMENT_KEYWORDS,
-        ]
-        for idx, kw_set in enumerate(keyword_sets):
-            if any(kw in text_lower for kw in kw_set):
-                out[idx] = 1.0
-                return out  # first match wins (priority order)
+        followup_type = FollowUpClassifier.classify(followup_msg.content, messages)
+        out[FollowUpClassifier.type_index(followup_type)] = 1.0
         return out
 
     @staticmethod

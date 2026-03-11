@@ -21,6 +21,7 @@ from bicameral_agent.replay import DecisionPoint, EpisodeReplayer, ReplayState
 from bicameral_agent.validation import EpisodeValidator, ValidationResult
 from bicameral_agent.embeddings import Embedder, FastEmbedEmbedder, HashEmbedder
 from bicameral_agent.encoder import FEATURE_DIM, StateEncoder
+from bicameral_agent.followup_classifier import FollowUpClassifier, FollowUpType
 from bicameral_agent.latency import APILatencyModel, LatencyEstimate
 from bicameral_agent.token_estimator import ContextFeatures, TokenEstimate, TokenEstimator
 from bicameral_agent.tool_latency import (
@@ -81,6 +82,8 @@ __all__ = [
     "EvidenceVerdict",
     "FEATURE_DIM",
     "FastEmbedEmbedder",
+    "FollowUpClassifier",
+    "FollowUpType",
     "GapCategory",
     "GeminiClient",
     "GeminiResponse",
