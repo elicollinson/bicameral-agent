@@ -39,6 +39,13 @@ from bicameral_agent.dataset import (
     TaskSplit,
 )
 from bicameral_agent.scorer import LexicalScorer, TaskScore, TaskScorer
+from bicameral_agent.simulated_user import (
+    ActionType,
+    Patience,
+    SimulatedUser,
+    Strictness,
+    UserAction,
+)
 from bicameral_agent.assumption_auditor import (
     AssumptionAuditor,
     EvidenceResult,
@@ -81,6 +88,7 @@ from bicameral_agent.tool_primitive import (
 
 __all__ = [
     "Action",
+    "ActionType",
     "APILatencyModel",
     "AssistantResponse",
     "AssumptionAuditor",
@@ -120,6 +128,7 @@ __all__ = [
     "LexicalScorer",
     "Message",
     "MockSearchProvider",
+    "Patience",
     "Priority",
     "QueueItem",
     "QueueState",
@@ -132,10 +141,12 @@ __all__ = [
     "SIGNAL_DIM",
     "SearchResult",
     "SentimentShift",
+    "SimulatedUser",
     "SignalClassifier",
     "SignalVector",
     "StateEncoder",
     "StateVector",
+    "Strictness",
     "StopCount",
     "SubCallPrediction",
     "SuggestedAction",
@@ -152,6 +163,7 @@ __all__ = [
     "ToolPrediction",
     "ToolPrimitive",
     "ToolResult",
+    "UserAction",
     "UserEvent",
     "UserEventType",
     "ValidationResult",
