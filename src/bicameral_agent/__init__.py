@@ -77,6 +77,12 @@ from bicameral_agent.heuristic_controller import (
     FullState,
     HeuristicController,
 )
+from bicameral_agent.episode_runner import (
+    Controller,
+    EpisodeConfig,
+    EpisodeRunner,
+    RandomController,
+)
 from bicameral_agent.tool_primitive import (
     BudgetExceededError,
     StateVector,
@@ -101,12 +107,15 @@ __all__ = [
     "ConversationLogger",
     "CostEstimate",
     "DecisionLog",
+    "Controller",
     "DecisionPoint",
     "ExecutingTool",
     "Embedder",
     "Episode",
+    "EpisodeConfig",
     "EpisodeOutcome",
     "EpisodeReplayer",
+    "EpisodeRunner",
     "EpisodeValidator",
     "EvidenceResult",
     "EvidenceVerdict",
@@ -132,6 +141,7 @@ __all__ = [
     "Priority",
     "QueueItem",
     "QueueState",
+    "RandomController",
     "ReplayState",
     "ResearchGapScanner",
     "ResearchQADataset",
