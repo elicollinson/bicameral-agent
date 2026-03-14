@@ -46,6 +46,17 @@ class ConversationLogger:
         self._finalized = False
         self._metadata: dict = metadata or {}
 
+    def set_metadata(self, key: str, value: object) -> None:
+        """Set a metadata key-value pair.
+
+        Args:
+            key: Metadata key.
+            value: Metadata value (must be JSON-serializable).
+        """
+        with self._lock:
+            self._check_not_finalized()
+            self._metadata[key] = value
+
     def _now_ms(self) -> int:
         return self._epoch_ms + (time.monotonic_ns() - self._mono_origin_ns) // 1_000_000
 

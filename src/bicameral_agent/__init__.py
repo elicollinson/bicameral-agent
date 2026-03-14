@@ -81,7 +81,15 @@ from bicameral_agent.episode_runner import (
     Controller,
     EpisodeConfig,
     EpisodeRunner,
+    InjectionMode,
     RandomController,
+)
+from bicameral_agent.coherence_judge import CoherenceJudge, CoherenceScore
+from bicameral_agent.ab_test import (
+    ABTestResult,
+    ABTestRunner,
+    Condition,
+    default_conditions,
 )
 from bicameral_agent.tool_primitive import (
     BudgetExceededError,
@@ -93,6 +101,8 @@ from bicameral_agent.tool_primitive import (
 )
 
 __all__ = [
+    "ABTestResult",
+    "ABTestRunner",
     "Action",
     "ActionType",
     "APILatencyModel",
@@ -100,6 +110,9 @@ __all__ = [
     "AssumptionAuditor",
     "BudgetExceededError",
     "ChatMessage",
+    "CoherenceJudge",
+    "CoherenceScore",
+    "Condition",
     "ConsciousLoop",
     "ContextFeatures",
     "ContextInjection",
@@ -131,6 +144,7 @@ __all__ = [
     "HeuristicController",
     "IdentifiedAssumption",
     "IdentifiedGap",
+    "InjectionMode",
     "InterruptConfig",
     "LatencyEstimate",
     "LengthRatio",
@@ -177,6 +191,7 @@ __all__ = [
     "UserEvent",
     "UserEventType",
     "ValidationResult",
+    "default_conditions",
     "episode_from_parquet",
     "episode_to_parquet",
     "episodes_from_parquet",

@@ -12,6 +12,7 @@ from bicameral_agent.episode_runner import (
     Controller,
     EpisodeConfig,
     EpisodeRunner,
+    InjectionMode,
     RandomController,
 )
 from bicameral_agent.followup_classifier import FollowUpType
@@ -476,6 +477,184 @@ class TestEpisodeRunner:
         event_types = [e.event_type for e in episode.user_events]
         assert UserEventType.FOLLOW_UP in event_types
         assert UserEventType.STOP in event_types
+
+
+# ---------------------------------------------------------------------------
+# TestInjectionModes
+# ---------------------------------------------------------------------------
+
+
+class TestInjectionModes:
+    """Tests for SYNCHRONOUS, BREAKPOINT, and INTERRUPT injection modes."""
+
+    def _run_with_mode(
+        self,
+        mode: InjectionMode,
+        controller_actions: list[Action] | None = None,
+    ) -> Episode:
+        """Run a single-turn episode with a specific injection mode."""
+        client = _make_mock_client()
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        if controller_actions:
+            ctrl.decide.side_effect = controller_actions
+        else:
+            ctrl.decide.return_value = Action.DO_NOTHING
+
+        config = EpisodeConfig(max_turns=1, injection_mode=mode)
+        runner = EpisodeRunner(client, config)
+
+        with patch("bicameral_agent.episode_runner.SimulatedUser") as MockSimUser:
+            mock_sim = MagicMock()
+            mock_sim.respond.return_value = UserAction(
+                action_type=ActionType.TASK_COMPLETE,
+                response_delay_ms=100,
+                confidence=0.9,
+            )
+            MockSimUser.return_value = mock_sim
+            episode = runner.run_episode(_make_task(), ctrl)
+
+        return episode
+
+    def test_breakpoint_preserves_existing_behavior(self):
+        """BREAKPOINT mode should produce the same structure as before."""
+        episode = self._run_with_mode(InjectionMode.BREAKPOINT)
+        assert isinstance(episode, Episode)
+        assert episode.outcome.total_turns == 1
+        assert episode.metadata.get("injection_mode") == "breakpoint"
+
+    def test_synchronous_mode_metadata(self):
+        """SYNCHRONOUS mode stores mode in metadata."""
+        episode = self._run_with_mode(InjectionMode.SYNCHRONOUS)
+        assert episode.metadata.get("injection_mode") == "synchronous"
+
+    def test_interrupt_mode_metadata(self):
+        """INTERRUPT mode stores mode in metadata."""
+        episode = self._run_with_mode(InjectionMode.INTERRUPT)
+        assert episode.metadata.get("injection_mode") == "interrupt"
+
+    def test_synchronous_triggers_regeneration(self):
+        """SYNCHRONOUS mode regenerates after tool deposit."""
+        client = _make_mock_client()
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.SCANNER
+
+        config = EpisodeConfig(max_turns=1, injection_mode=InjectionMode.SYNCHRONOUS)
+        runner = EpisodeRunner(client, config)
+
+        with patch("bicameral_agent.episode_runner.SimulatedUser") as MockSimUser:
+            mock_sim = MagicMock()
+            mock_sim.respond.return_value = UserAction(
+                action_type=ActionType.TASK_COMPLETE,
+                response_delay_ms=100,
+                confidence=0.9,
+            )
+            MockSimUser.return_value = mock_sim
+
+            with patch("bicameral_agent.episode_runner.ResearchGapScanner") as MockScanner:
+                from bicameral_agent.queue import Priority, QueueItem
+                from bicameral_agent.tool_primitive import ToolMetadata, ToolResult
+
+                mock_tool = MagicMock()
+                mock_tool.execute.return_value = ToolResult(
+                    queue_deposit=QueueItem(
+                        content="New context from scanner",
+                        priority=Priority.HIGH,
+                        source_tool_id="research_gap_scanner",
+                        token_count=10,
+                    ),
+                    metadata=ToolMetadata(
+                        tool_id="research_gap_scanner",
+                        action_taken="scanned",
+                        confidence=0.8,
+                        items_found=1,
+                        estimated_relevance=0.9,
+                        tokens_consumed=30,
+                    ),
+                )
+                MockScanner.return_value = mock_tool
+
+                episode = runner.run_episode(_make_task(), ctrl)
+
+        # In synchronous mode, tool deposit should trigger regeneration
+        # The generate method should be called more than once (original + regen)
+        assert client.generate.call_count >= 2
+        assert episode.metadata.get("injection_mode") == "synchronous"
+
+    def test_interrupt_mode_threshold(self):
+        """INTERRUPT mode only regenerates when threshold exceeded."""
+        from bicameral_agent.queue import InterruptConfig, Priority, QueueItem
+        from bicameral_agent.tool_primitive import ToolMetadata, ToolResult
+
+        client = _make_mock_client()
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.SCANNER
+
+        # Set high threshold so interrupt is NOT triggered
+        config = EpisodeConfig(
+            max_turns=1,
+            injection_mode=InjectionMode.INTERRUPT,
+            interrupt_config=InterruptConfig(
+                count_threshold=100,
+                token_threshold=100000,
+                priority_threshold=Priority.CRITICAL,
+            ),
+        )
+        runner = EpisodeRunner(client, config)
+
+        with patch("bicameral_agent.episode_runner.SimulatedUser") as MockSimUser:
+            mock_sim = MagicMock()
+            mock_sim.respond.return_value = UserAction(
+                action_type=ActionType.TASK_COMPLETE,
+                response_delay_ms=100,
+                confidence=0.9,
+            )
+            MockSimUser.return_value = mock_sim
+
+            with patch("bicameral_agent.episode_runner.ResearchGapScanner") as MockScanner:
+                mock_tool = MagicMock()
+                mock_tool.execute.return_value = ToolResult(
+                    queue_deposit=QueueItem(
+                        content="Low priority context",
+                        priority=Priority.LOW,
+                        source_tool_id="research_gap_scanner",
+                        token_count=5,
+                    ),
+                    metadata=ToolMetadata(
+                        tool_id="research_gap_scanner",
+                        action_taken="scanned",
+                        confidence=0.5,
+                        items_found=1,
+                        estimated_relevance=0.3,
+                        tokens_consumed=20,
+                    ),
+                )
+                MockScanner.return_value = mock_tool
+
+                episode = runner.run_episode(_make_task(), ctrl)
+
+        # Threshold not exceeded → no regeneration, only 1 generate call per turn
+        # (conscious loop's run_turn calls generate once, plus possible interrupt check)
+        assert episode.metadata.get("interrupt_count") == 0
+        assert episode.metadata.get("injection_mode") == "interrupt"
+
+    def test_interrupt_count_tracked(self):
+        """interrupt_count is tracked in metadata."""
+        episode = self._run_with_mode(InjectionMode.INTERRUPT)
+        assert "interrupt_count" in episode.metadata
+        assert isinstance(episode.metadata["interrupt_count"], int)
+
+    def test_injection_mode_in_episode_config(self):
+        """EpisodeConfig defaults to BREAKPOINT."""
+        cfg = EpisodeConfig()
+        assert cfg.injection_mode == InjectionMode.BREAKPOINT
+
+    def test_injection_mode_configurable(self):
+        """EpisodeConfig accepts custom injection mode."""
+        cfg = EpisodeConfig(injection_mode=InjectionMode.SYNCHRONOUS)
+        assert cfg.injection_mode == InjectionMode.SYNCHRONOUS
 
 
 # ---------------------------------------------------------------------------

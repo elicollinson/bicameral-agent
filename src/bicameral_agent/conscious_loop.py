@@ -143,6 +143,44 @@ class ConsciousLoop:
 
         return result
 
+    def regenerate_with_context(self, context_str: str) -> AssistantResponse:
+        """Re-generate the last assistant response with additional context.
+
+        Pops the last model message from history, finds the last user message,
+        and regenerates with the provided context. Does NOT increment turn count.
+        """
+        if not self._history or self._history[-1].role != "model":
+            raise ValueError("No model message to replace in history")
+
+        # Pop the last model message
+        self._history.pop()
+
+        # Find the last user message
+        last_user_msg = None
+        for msg in reversed(self._history):
+            if msg.role == "user":
+                last_user_msg = msg.content
+                break
+        if last_user_msg is None:
+            raise ValueError("No user message found in history")
+
+        start_ns = time.monotonic_ns()
+        response = self._generate(last_user_msg, context_str)
+        duration_ms = (time.monotonic_ns() - start_ns) / 1_000_000
+
+        self._history.append(ChatMessage(role="model", content=response.content))
+
+        return AssistantResponse(
+            content=response.content,
+            turn_number=self._turn_count,
+            input_tokens=response.input_tokens,
+            output_tokens=response.output_tokens,
+            total_tokens=response.input_tokens + response.output_tokens,
+            duration_ms=duration_ms,
+            interrupted=False,
+            context_injected=True,
+        )
+
     def _generate(
         self, user_message: str, context_str: str | None
     ) -> GeminiResponse:

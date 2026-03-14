@@ -336,6 +336,84 @@ class TestOnCompletionCallback:
         assert second_arg.turn_number == 2
 
 
+class TestRegenerateWithContext:
+    """Tests for regenerate_with_context()."""
+
+    def test_history_updated(self):
+        """After regeneration, history contains the new response, not the old one."""
+        responses = [_make_response("original"), _make_response("regenerated")]
+        loop, client, _ = _make_loop(generate_side_effect=responses)
+        loop.run_turn("Hello")
+
+        assert loop.history[-1].content == "original"
+
+        client.generate.return_value = _make_response("regenerated")
+        result = loop.regenerate_with_context("new context info")
+
+        assert result.content == "regenerated"
+        assert result.context_injected
+        assert loop.history[-1].content == "regenerated"
+        # History length unchanged: still user + model
+        assert len(loop.history) == 2
+
+    def test_turn_count_unchanged(self):
+        """regenerate_with_context does NOT increment turn count."""
+        loop, client, _ = _make_loop()
+        loop.run_turn("Hello")
+        assert loop.turn_count == 1
+
+        client.generate.return_value = _make_response("regen")
+        loop.regenerate_with_context("context")
+        assert loop.turn_count == 1
+
+    def test_context_injected_flag(self):
+        loop, client, _ = _make_loop()
+        loop.run_turn("Hello")
+
+        client.generate.return_value = _make_response("regen")
+        result = loop.regenerate_with_context("injected context")
+        assert result.context_injected is True
+
+    def test_context_appears_in_generation(self):
+        """The context string should appear in the generate call."""
+        loop, client, _ = _make_loop()
+        loop.run_turn("Hello")
+
+        client.generate.return_value = _make_response("regen")
+        loop.regenerate_with_context("CRITICAL_INFO")
+
+        # Last generate call should include the context
+        call_args = client.generate.call_args
+        messages = call_args[0][0]
+        last_msg = messages[-1]
+        assert "CRITICAL_INFO" in last_msg.content
+
+    def test_error_no_model_message(self):
+        """Raises ValueError if no model message to replace."""
+        loop, _, _ = _make_loop()
+        with pytest.raises(ValueError, match="No model message"):
+            loop.regenerate_with_context("context")
+
+    def test_multi_turn_regeneration(self):
+        """Regeneration works correctly after multiple turns."""
+        responses = [_make_response("r1"), _make_response("r2"), _make_response("r2_regen")]
+        loop, client, _ = _make_loop(generate_side_effect=responses)
+        loop.run_turn("msg1")
+        loop.run_turn("msg2")
+
+        assert loop.turn_count == 2
+        assert len(loop.history) == 4
+
+        client.generate.return_value = _make_response("r2_regen")
+        result = loop.regenerate_with_context("new info")
+
+        assert result.content == "r2_regen"
+        assert loop.turn_count == 2  # unchanged
+        assert len(loop.history) == 4  # unchanged
+        assert loop.history[-1].content == "r2_regen"
+        assert loop.history[-2].content == "msg2"
+
+
 class TestMultiTurnConversation:
     """History grows across turns."""
 
