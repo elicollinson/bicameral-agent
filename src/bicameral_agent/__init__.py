@@ -100,7 +100,17 @@ from bicameral_agent.tool_primitive import (
     ToolResult,
 )
 
+try:
+    from bicameral_agent.policy_value_net import (
+        ACTION_ORDER,
+        NUM_ACTIONS,
+        PolicyValueNetwork,
+    )
+except ImportError:  # torch not installed
+    pass
+
 __all__ = [
+    "ACTION_ORDER",
     "ABTestResult",
     "ABTestRunner",
     "Action",
@@ -151,7 +161,9 @@ __all__ = [
     "LexicalScorer",
     "Message",
     "MockSearchProvider",
+    "NUM_ACTIONS",
     "Patience",
+    "PolicyValueNetwork",
     "Priority",
     "QueueItem",
     "QueueState",
