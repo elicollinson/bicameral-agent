@@ -10,7 +10,6 @@ from __future__ import annotations
 import dataclasses
 import enum
 import logging
-import random
 import time
 from typing import Protocol, runtime_checkable
 
@@ -36,6 +35,7 @@ from bicameral_agent.gap_scanner import ResearchGapScanner
 from bicameral_agent.gemini import GeminiClient
 from bicameral_agent.heuristic_controller import Action, DecisionLog, FullState
 from bicameral_agent.logger import ConversationLogger
+from bicameral_agent.random_controller import RandomController
 from bicameral_agent.queue import ContextQueue, InterruptConfig
 from bicameral_agent.schema import Episode, Message, UserEvent, UserEventType
 from bicameral_agent.scorer import LexicalScorer, TaskScorer
@@ -74,49 +74,6 @@ class Controller(Protocol):
 
     @property
     def decisions(self) -> list[DecisionLog]: ...
-
-
-class RandomController:
-    """Controller that randomly selects tool actions.
-
-    With probability ``action_probability``, picks uniformly from
-    {SCANNER, AUDITOR, REFRESHER}. Respects queue depth guard (depth >= 3).
-    Uses ``random.Random(seed)`` for reproducibility.
-    """
-
-    def __init__(
-        self,
-        action_probability: float = 0.3,
-        seed: int | None = None,
-    ) -> None:
-        self._action_probability = action_probability
-        self._rng = random.Random(seed)
-        self._decisions: list[DecisionLog] = []
-
-    def decide(self, state: FullState) -> Action:
-        # Queue depth guard (matches heuristic controller rule 7)
-        if state.queue_depth >= 3:
-            action = Action.DO_NOTHING
-        elif self._rng.random() < self._action_probability:
-            action = self._rng.choice(
-                [Action.SCANNER, Action.AUDITOR, Action.REFRESHER]
-            )
-        else:
-            action = Action.DO_NOTHING
-
-        self._decisions.append(
-            DecisionLog(
-                action=action,
-                rule_fired=0,
-                state=state,
-                timestamp_ms=time.time() * 1000,
-            )
-        )
-        return action
-
-    @property
-    def decisions(self) -> list[DecisionLog]:
-        return list(self._decisions)
 
 
 @dataclasses.dataclass(frozen=True)

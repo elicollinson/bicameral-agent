@@ -82,8 +82,8 @@ from bicameral_agent.episode_runner import (
     EpisodeConfig,
     EpisodeRunner,
     InjectionMode,
-    RandomController,
 )
+from bicameral_agent.random_controller import RandomController
 from bicameral_agent.coherence_judge import CoherenceJudge, CoherenceScore
 from bicameral_agent.ab_test import (
     ABTestResult,
