@@ -19,7 +19,7 @@ from typing import Any, Callable
 from google import genai
 from google.genai import types
 
-_MODEL = "gemini-3-flash-preview"
+_MODEL = "gemini-3.1-flash-lite-preview"
 _MAX_RETRIES = 3
 _BASE_DELAY = 1.0
 _BACKOFF_FACTOR = 2.0
