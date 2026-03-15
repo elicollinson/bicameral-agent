@@ -27,6 +27,7 @@ class InjectionMode(enum.Enum):
     INTERRUPT = "interrupt"
 
 from bicameral_agent.assumption_auditor import AssumptionAuditor
+from bicameral_agent.config import HyperConfig
 from bicameral_agent.conscious_loop import AssistantResponse, ConsciousLoop
 from bicameral_agent.context_refresher import ContextRefresher
 from bicameral_agent.dataset import ResearchQATask
@@ -103,9 +104,16 @@ class EpisodeRunner:
         self,
         client: GeminiClient,
         config: EpisodeConfig | None = None,
+        hyper_config: HyperConfig | None = None,
     ) -> None:
         self._client = client
-        self._config = config or EpisodeConfig()
+        if config is not None:
+            self._config = config
+        elif hyper_config is not None:
+            self._config = hyper_config.to_episode_config()
+        else:
+            self._config = EpisodeConfig()
+        self._hyper_config = hyper_config
 
     def run_episode(
         self,
@@ -326,6 +334,8 @@ class EpisodeRunner:
         # Store metadata
         log.set_metadata("interrupt_count", interrupt_count)
         log.set_metadata("injection_mode", cfg.injection_mode.value)
+        if self._hyper_config is not None:
+            log.set_metadata("hyperparameters", self._hyper_config.to_dict())
 
         # Score if requested
         quality_score: float | None = None

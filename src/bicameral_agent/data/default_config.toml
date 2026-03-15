@@ -1,0 +1,64 @@
+# Bicameral Agent — Default Hyperparameter Configuration
+#
+# All values here match the hardcoded defaults in the codebase.
+# Override per-run via TOML file or BICAMERAL_ environment variables.
+
+[model]
+name = "gemini-3.1-flash-lite-preview"
+thinking_level = "medium"
+# temperature is unset (uses model default)
+
+[queue]
+count_threshold = 5        # interrupt if queue depth reaches this
+priority_threshold = 3     # interrupt if any item >= CRITICAL (3)
+token_threshold = 1000     # interrupt if total pending tokens reach this
+expiry_turns = 10          # turns before a queue item expires
+max_depth = 3              # queue depth guard for heuristic controller
+
+[tools]
+# Default budget applied to all tools unless overridden below.
+[tools.default_budget]
+max_calls = 10
+max_input_tokens = 50_000
+max_output_tokens = 20_000
+
+# Per-tool budget overrides (empty by default).
+# Example:
+# [tools.budgets.research_gap_scanner]
+# max_calls = 5
+# max_input_tokens = 25_000
+# max_output_tokens = 10_000
+
+# Tool priority map (empty by default).
+# Example:
+# [tools.priority_map]
+# assumption_auditor = 2
+
+[heuristic]
+scanner_interval = 5            # invoke scanner every N turns
+refresher_interval = 8          # invoke refresher every N turns
+auditor_stop_threshold = 1      # stop_count >= this triggers auditor
+auditor_high_stop_threshold = 2 # stop_count >= this triggers auditor (high priority)
+queue_depth_guard = 3           # suppress tool invocation if queue depth >= this
+stagger_tolerance_ms = 1000.0   # stagger guard window in milliseconds
+
+[training]
+learning_rate = 0.001
+batch_size = 32
+num_simulations = 100
+gamma = 0.99
+
+[training.reward_weights]
+quality = 1.0
+efficiency = 0.5
+token_waste = -0.3
+
+[mcts]
+c_puct = 1.4
+dirichlet_alpha = 0.3
+num_simulations = 100
+temperature = 1.0
+
+[evaluation]
+num_tasks = 10
+random_seed = 42
