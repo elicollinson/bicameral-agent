@@ -390,7 +390,10 @@ def _rank_results(
         response_schema=_RANKING_SCHEMA,
     )
 
-    return json.loads(response.content)
+    try:
+        return json.loads(response.content)
+    except json.JSONDecodeError:
+        return {"overall_confidence": 0.0, "ranked_results": []}
 
 
 def _max_priority(gaps: list[IdentifiedGap]) -> Priority:

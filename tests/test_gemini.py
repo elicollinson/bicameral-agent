@@ -153,7 +153,7 @@ class TestClientInit:
     def test_api_key_from_param(self):
         with patch("bicameral_agent.gemini.genai.Client"):
             client = GeminiClient(api_key="my-key")
-            assert client._model == "gemini-3-flash-preview"
+            assert client._model == "gemini-3.1-flash-lite-preview"
 
     def test_api_key_from_env(self, monkeypatch):
         monkeypatch.setenv("GEMINI_API_KEY", "env-key")

@@ -13,8 +13,8 @@ from bicameral_agent.episode_runner import (
     EpisodeConfig,
     EpisodeRunner,
     InjectionMode,
-    RandomController,
 )
+from bicameral_agent.random_controller import RandomController
 from bicameral_agent.followup_classifier import FollowUpType
 from bicameral_agent.gemini import GeminiClient, GeminiResponse
 from bicameral_agent.heuristic_controller import Action, FullState, HeuristicController

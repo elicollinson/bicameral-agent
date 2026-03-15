@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import csv
 import dataclasses
-import json
 import math
 from typing import Callable
 

@@ -10,8 +10,26 @@ from __future__ import annotations
 import dataclasses
 import enum
 import logging
-import time
 from typing import Protocol, runtime_checkable
+
+from bicameral_agent.assumption_auditor import AssumptionAuditor
+from bicameral_agent.config import HyperConfig
+from bicameral_agent.conscious_loop import AssistantResponse, ConsciousLoop
+from bicameral_agent.context_refresher import ContextRefresher
+from bicameral_agent.dataset import ResearchQATask
+from bicameral_agent.encoder import StateEncoder
+from bicameral_agent.gap_scanner import ResearchGapScanner
+from bicameral_agent.gemini import GeminiClient
+from bicameral_agent.heuristic_controller import Action, DecisionLog, FullState
+from bicameral_agent.logger import ConversationLogger
+from bicameral_agent.queue import ContextQueue, InterruptConfig
+from bicameral_agent.schema import Episode, Message, UserEvent, UserEventType
+from bicameral_agent.scorer import LexicalScorer, TaskScorer
+from bicameral_agent.signal_classifier import SignalClassifier
+from bicameral_agent.simulated_user import ActionType, Patience, SimulatedUser, Strictness
+from bicameral_agent.token_estimator import ContextFeatures
+from bicameral_agent.tool_latency import ToolLatencyModel
+from bicameral_agent.tool_primitive import BudgetExceededError, TokenBudget
 
 
 class InjectionMode(enum.Enum):
@@ -25,26 +43,6 @@ class InjectionMode(enum.Enum):
     SYNCHRONOUS = "synchronous"
     BREAKPOINT = "breakpoint"
     INTERRUPT = "interrupt"
-
-from bicameral_agent.assumption_auditor import AssumptionAuditor
-from bicameral_agent.config import HyperConfig
-from bicameral_agent.conscious_loop import AssistantResponse, ConsciousLoop
-from bicameral_agent.context_refresher import ContextRefresher
-from bicameral_agent.dataset import ResearchQATask
-from bicameral_agent.encoder import StateEncoder
-from bicameral_agent.gap_scanner import ResearchGapScanner
-from bicameral_agent.gemini import GeminiClient
-from bicameral_agent.heuristic_controller import Action, DecisionLog, FullState
-from bicameral_agent.logger import ConversationLogger
-from bicameral_agent.random_controller import RandomController
-from bicameral_agent.queue import ContextQueue, InterruptConfig
-from bicameral_agent.schema import Episode, Message, UserEvent, UserEventType
-from bicameral_agent.scorer import LexicalScorer, TaskScorer
-from bicameral_agent.signal_classifier import SignalClassifier
-from bicameral_agent.simulated_user import ActionType, Patience, SimulatedUser, Strictness
-from bicameral_agent.token_estimator import ContextFeatures
-from bicameral_agent.tool_latency import ToolLatencyModel
-from bicameral_agent.tool_primitive import BudgetExceededError, TokenBudget
 
 logger = logging.getLogger(__name__)
 

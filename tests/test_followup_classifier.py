@@ -69,7 +69,7 @@ class TestDatasetAccuracy:
         value in each row (i.e., no class is more often confused with
         another class than correctly classified)."""
         labels = [t.value for t in FollowUpType]
-        matrix: dict[str, Counter[str]] = {l: Counter() for l in labels}
+        matrix: dict[str, Counter[str]] = {label: Counter() for label in labels}
 
         for item in dataset:
             true_label = item["label"]

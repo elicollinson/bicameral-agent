@@ -15,8 +15,6 @@ from bicameral_agent.ab_test import (
     ABTestResult,
     ABTestRunner,
     Condition,
-    EpisodeMetrics,
-    MetricSummary,
     compute_summary,
     count_derailments,
     default_conditions,
@@ -27,18 +25,16 @@ from bicameral_agent.ab_test import (
 from bicameral_agent.coherence_judge import CoherenceScore
 from bicameral_agent.dataset import ResearchQATask, TaskDifficulty, TaskSplit
 from bicameral_agent.episode_runner import (
-    Controller,
     EpisodeConfig,
     EpisodeRunner,
     InjectionMode,
 )
 from bicameral_agent.gemini import GeminiClient, GeminiResponse
-from bicameral_agent.heuristic_controller import Action, HeuristicController
+from bicameral_agent.heuristic_controller import HeuristicController
 from bicameral_agent.schema import (
     Episode,
     EpisodeOutcome,
     Message,
-    UserEventType,
 )
 
 
@@ -330,8 +326,6 @@ class TestABTestRunner:
     def test_same_tasks_across_conditions(self):
         client = self._make_mock_runner()
         tasks = [_make_task(task_id="t1"), _make_task(task_id="t2")]
-
-        task_ids_per_condition: dict[str, list[str]] = {}
 
         def mock_run_episode(task, controller):
             return _make_episode(
