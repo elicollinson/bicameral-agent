@@ -73,6 +73,11 @@ class GeminiClient:
         self._on_completion = on_completion
         self._model = model
 
+    @property
+    def model(self) -> str:
+        """The model name used for API calls."""
+        return self._model
+
     def generate(
         self,
         messages: list[ChatMessage] | list[dict[str, str]],

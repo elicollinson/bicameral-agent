@@ -78,6 +78,7 @@ from bicameral_agent.heuristic_controller import (
     HeuristicController,
 )
 from bicameral_agent.config import (
+    CostConfig,
     EvaluationConfig,
     HeuristicConfig,
     HyperConfig,
@@ -87,6 +88,13 @@ from bicameral_agent.config import (
     ToolBudgetConfig,
     ToolsConfig,
     TrainingConfig,
+)
+from bicameral_agent.cost_tracker import (
+    CostBudgetExceeded,
+    CostReport,
+    CostTrackedClient,
+    CostTracker,
+    ModelPricing,
 )
 from bicameral_agent.episode_runner import (
     Controller,
@@ -135,6 +143,11 @@ __all__ = [
     "CoherenceScore",
     "Condition",
     "ConsciousLoop",
+    "CostBudgetExceeded",
+    "CostConfig",
+    "CostReport",
+    "CostTrackedClient",
+    "CostTracker",
     "ContextFeatures",
     "ContextInjection",
     "ContextQueue",
@@ -176,6 +189,7 @@ __all__ = [
     "MCTSConfig",
     "Message",
     "ModelConfig",
+    "ModelPricing",
     "MockSearchProvider",
     "NUM_ACTIONS",
     "Patience",

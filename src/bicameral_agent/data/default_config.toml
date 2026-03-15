@@ -62,3 +62,7 @@ temperature = 1.0
 [evaluation]
 num_tasks = 10
 random_seed = 42
+
+[cost]
+# session_budget = 1.00   # max dollars per session (unset = unlimited)
+# episode_budget = 0.25   # max dollars per episode (unset = unlimited)

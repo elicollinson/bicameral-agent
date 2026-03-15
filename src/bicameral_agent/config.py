@@ -138,6 +138,15 @@ class MCTSConfig(BaseModel):
     temperature: float = 1.0
 
 
+class CostConfig(BaseModel):
+    """Cost tracking and budget configuration."""
+
+    model_config = ConfigDict(frozen=True)
+
+    session_budget: float | None = None
+    episode_budget: float | None = None
+
+
 class EvaluationConfig(BaseModel):
     """Evaluation run configuration."""
 
@@ -164,6 +173,7 @@ class HyperConfig(BaseModel):
     training: TrainingConfig = Field(default_factory=TrainingConfig)
     mcts: MCTSConfig = Field(default_factory=MCTSConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
+    cost: CostConfig = Field(default_factory=CostConfig)
 
     @classmethod
     def from_toml(cls, path: str | Path) -> HyperConfig:
@@ -237,6 +247,15 @@ class HyperConfig(BaseModel):
             max_input_tokens=budget_cfg.max_input_tokens,
             max_output_tokens=budget_cfg.max_output_tokens,
         )
+
+    def to_cost_tracker(self):
+        """Produce a ``CostTracker`` from cost settings."""
+        from bicameral_agent.cost_tracker import CostTracker
+
+        tracker = CostTracker()
+        tracker.set_budget(self.cost.session_budget)
+        tracker.set_episode_budget(self.cost.episode_budget)
+        return tracker
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict for episode metadata storage."""

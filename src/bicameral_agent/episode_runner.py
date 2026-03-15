@@ -29,6 +29,7 @@ from bicameral_agent.signal_classifier import SignalClassifier
 from bicameral_agent.simulated_user import ActionType, Patience, SimulatedUser, Strictness
 from bicameral_agent.token_estimator import ContextFeatures
 from bicameral_agent.tool_latency import ToolLatencyModel
+from bicameral_agent.cost_tracker import CostBudgetExceeded, CostTrackedClient, CostTracker
 from bicameral_agent.tool_primitive import BudgetExceededError, TokenBudget
 
 
@@ -103,6 +104,7 @@ class EpisodeRunner:
         client: GeminiClient,
         config: EpisodeConfig | None = None,
         hyper_config: HyperConfig | None = None,
+        cost_tracker: CostTracker | None = None,
     ) -> None:
         self._client = client
         if config is not None:
@@ -112,6 +114,7 @@ class EpisodeRunner:
         else:
             self._config = EpisodeConfig()
         self._hyper_config = hyper_config
+        self._cost_tracker = cost_tracker
 
     def run_episode(
         self,
@@ -134,18 +137,24 @@ class EpisodeRunner:
         """
         cfg = self._config
 
+        # Cost tracking: reset episode, wrap client
+        active_client: GeminiClient | CostTrackedClient = self._client
+        if self._cost_tracker is not None:
+            self._cost_tracker.reset_episode()
+            active_client = CostTrackedClient(self._client, self._cost_tracker)
+
         # Initialize components
         queue = ContextQueue()
         log = ConversationLogger(metadata={"task_id": task.task_id})
         loop = ConsciousLoop(
-            self._client,
+            active_client,
             queue,
             system_prompt=cfg.system_prompt,
             thinking_level=cfg.thinking_level,
             interrupt_config=cfg.interrupt_config,
         )
         sim_user = SimulatedUser(
-            client=self._client,
+            client=active_client,
             patience=cfg.patience,
             strictness=cfg.strictness,
         )
@@ -185,7 +194,14 @@ class EpisodeRunner:
             queue.expire_stale(turn)
 
             # (d) Run conscious loop turn
-            response: AssistantResponse = loop.run_turn(user_message)
+            try:
+                response: AssistantResponse = loop.run_turn(user_message)
+            except CostBudgetExceeded:
+                logger.warning(
+                    "CostBudgetExceeded on turn %d, ending episode",
+                    turn,
+                )
+                break
 
             # (f) Mark pending injections as consumed
             if response.context_injected:
@@ -243,7 +259,7 @@ class EpisodeRunner:
                         conversation_history=temp_messages,
                         reasoning_state=reasoning_state,
                         budget=cfg.tool_token_budget,
-                        client=self._client,
+                        client=active_client,
                     )
                     log.log_tool_completion(
                         inv_idx,
@@ -334,6 +350,14 @@ class EpisodeRunner:
         log.set_metadata("injection_mode", cfg.injection_mode.value)
         if self._hyper_config is not None:
             log.set_metadata("hyperparameters", self._hyper_config.to_dict())
+        if self._cost_tracker is not None:
+            episode_cost = self._cost_tracker.get_episode_cost()
+            log.set_metadata("episode_cost", {
+                "input_cost": episode_cost.input_cost,
+                "output_cost": episode_cost.output_cost,
+                "total": episode_cost.total,
+                "call_count": episode_cost.call_count,
+            })
 
         # Score if requested
         quality_score: float | None = None
