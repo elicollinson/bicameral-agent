@@ -8,7 +8,7 @@ import pytest
 from bicameral_agent.embeddings import HashEmbedder
 from bicameral_agent.encoder import StateEncoder
 from bicameral_agent.latency import APILatencyModel
-from bicameral_agent.queue import ContextQueue, Priority, QueueItem
+from bicameral_agent.queue import ContextQueue, Priority, QueueItem, QueueState
 from bicameral_agent.schema import (
     ContextInjection,
     Episode,
@@ -186,4 +186,17 @@ def tool_latency_model(token_estimator, trained_latency_model):
     return ToolLatencyModel(
         token_estimator=token_estimator,
         latency_model=trained_latency_model,
+    )
+
+
+@pytest.fixture
+def sample_queue_state():
+    """A QueueState snapshot with representative values."""
+    return QueueState(
+        depth=5,
+        token_total=500,
+        max_priority=Priority.MEDIUM,
+        time_since_last_drain=2.5,
+        pending_tool_count=2,
+        estimated_next_arrival=1.0,
     )

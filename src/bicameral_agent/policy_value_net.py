@@ -1,6 +1,6 @@
 """Policy/value network for MCTS-based action selection.
 
-Takes the 53-dim state vector from :mod:`~bicameral_agent.encoder` and outputs
+Takes the 64-dim state vector from :mod:`~bicameral_agent.encoder` and outputs
 action probabilities (policy head) plus a scalar value estimate (value head).
 
 Architecture

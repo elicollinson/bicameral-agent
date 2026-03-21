@@ -235,11 +235,13 @@ class EpisodeRunner:
                 for tool_id in tools
             }
 
+            queue_snapshot = queue.get_state()
+
             state = FullState(
                 turn_number=turn,
                 stop_count=signals.stop_count.value,
                 followup_type=signals.followup_type,
-                queue_depth=queue.get_state().depth,
+                queue_depth=queue_snapshot.depth,
                 executing_tools=(),
                 predicted_latencies=predicted_latencies,
             )
@@ -251,7 +253,13 @@ class EpisodeRunner:
             if action != Action.DO_NOTHING:
                 tool_id = _TOOL_ID_MAP[action]
                 tool = tools[tool_id]
-                reasoning_state = encoder.encode(temp_messages)
+                reasoning_state = encoder.encode(
+                    temp_messages,
+                    queue_state=queue_snapshot,
+                    latency_predictions=predicted_latencies,
+                    turn_number=turn,
+                    max_turns=cfg.max_turns,
+                )
 
                 inv_idx = log.log_tool_invocation(tool_id, 0)
                 try:

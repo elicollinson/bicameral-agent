@@ -11,6 +11,7 @@ from bicameral_agent.encoder import (
     StateEncoder,
     _sentiment_score,
 )
+from bicameral_agent.queue import Priority, QueueState
 from bicameral_agent.schema import (
     Message,
     ToolInvocation,
@@ -64,7 +65,7 @@ class TestGetDefaultEmbedder:
 
 
 class TestAC1ConsistentShape:
-    """AC1: Output shape is (53,), dtype float32, FEATURE_DIM matches."""
+    """AC1: Output shape is (64,), dtype float32, FEATURE_DIM matches."""
 
     def test_shape_and_dtype(self, encoder, simple_conversation):
         msgs, events, tools = simple_conversation
@@ -73,7 +74,7 @@ class TestAC1ConsistentShape:
         assert vec.dtype == np.float32
 
     def test_feature_dim_value(self):
-        assert FEATURE_DIM == 53
+        assert FEATURE_DIM == 64
 
 
 class TestAC2Deterministic:
@@ -197,13 +198,13 @@ class TestAC6Documentation:
         import bicameral_agent.encoder as mod
 
         assert mod.__doc__ is not None
-        assert "53" in mod.__doc__
+        assert "64" in mod.__doc__
         assert "topic_embedding" in mod.__doc__
 
     def test_feature_dim_exported(self):
         from bicameral_agent import FEATURE_DIM as exported
 
-        assert exported == 53
+        assert exported == 64
 
 
 # ── Unit tests for private helpers ───────────────────────────────────
@@ -447,3 +448,174 @@ class TestSentimentScore:
 
     def test_neutral(self):
         assert _sentiment_score("the weather today") == 0
+
+
+# ── Queue state encoding tests ──────────────────────────────────────
+
+
+class TestQueueStateEncoding:
+    """Queue state features (indices 53-58) are accurate and normalized."""
+
+    def test_none_produces_zeros(self, encoder):
+        vec = encoder.encode([])
+        np.testing.assert_array_equal(vec[53:59], np.zeros(6, dtype=np.float32))
+
+    def test_basic_queue_state(self, encoder, sample_queue_state):
+        vec = encoder.encode([], queue_state=sample_queue_state)
+        assert vec[53] == pytest.approx(5 / 20)  # depth
+        assert vec[54] == pytest.approx(500 / 10_000)  # token_total
+        assert vec[55] == pytest.approx(1 / 3)  # MEDIUM=1, /3.0
+        assert vec[56] == pytest.approx(2.5 / 60)  # time_since_last_drain
+        assert vec[57] == pytest.approx(2 / 3)  # pending_tool_count
+        assert vec[58] == pytest.approx(1.0 / 30)  # estimated_next_arrival
+
+    def test_queue_state_caps(self, encoder):
+        qs = QueueState(
+            depth=100,
+            token_total=50_000,
+            max_priority=Priority.CRITICAL,
+            time_since_last_drain=120.0,
+            pending_tool_count=10,
+            estimated_next_arrival=60.0,
+        )
+        vec = encoder.encode([], queue_state=qs)
+        for i in range(53, 59):
+            assert vec[i] == pytest.approx(1.0)
+
+    def test_empty_queue_state(self, encoder):
+        qs = QueueState(
+            depth=0,
+            token_total=0,
+            max_priority=None,
+            time_since_last_drain=0.0,
+            pending_tool_count=0,
+            estimated_next_arrival=0.0,
+        )
+        vec = encoder.encode([], queue_state=qs)
+        np.testing.assert_array_equal(vec[53:59], np.zeros(6, dtype=np.float32))
+
+
+# ── Latency context encoding tests ──────────────────────────────────
+
+
+class TestLatencyContextEncoding:
+    """Latency predictions (indices 59-61) are non-zero with observations."""
+
+    def test_none_produces_zeros(self, encoder):
+        vec = encoder.encode([])
+        np.testing.assert_array_equal(vec[59:62], np.zeros(3, dtype=np.float32))
+
+    def test_with_predictions(self, encoder):
+        preds = {"research_gap_scanner": 5000.0, "assumption_auditor": 3000.0, "context_refresher": 1000.0}
+        vec = encoder.encode([], latency_predictions=preds)
+        assert vec[59] == pytest.approx(5000.0 / 30_000.0)
+        assert vec[60] == pytest.approx(3000.0 / 30_000.0)
+        assert vec[61] == pytest.approx(1000.0 / 30_000.0)
+
+    def test_latency_capped_at_one(self, encoder):
+        preds = {"research_gap_scanner": 50_000.0, "assumption_auditor": 50_000.0, "context_refresher": 50_000.0}
+        vec = encoder.encode([], latency_predictions=preds)
+        for i in range(59, 62):
+            assert vec[i] == pytest.approx(1.0)
+
+    def test_missing_tool_defaults_to_zero(self, encoder):
+        vec = encoder.encode([], latency_predictions={"research_gap_scanner": 5000.0})
+        assert vec[59] == pytest.approx(5000.0 / 30_000.0)
+        assert vec[60] == 0.0  # assumption_auditor missing
+        assert vec[61] == 0.0  # context_refresher missing
+
+
+# ── Episode progress encoding tests ─────────────────────────────────
+
+
+class TestEpisodeProgressEncoding:
+    """Episode progress features (indices 62-63) are accurate."""
+
+    def test_none_produces_zeros(self, encoder):
+        vec = encoder.encode([])
+        np.testing.assert_array_equal(vec[62:64], np.zeros(2, dtype=np.float32))
+
+    def test_midpoint(self, encoder):
+        vec = encoder.encode([], turn_number=5, max_turns=10)
+        assert vec[62] == pytest.approx(5 / 200)  # absolute progress
+        assert vec[63] == pytest.approx(0.5)  # relative completion
+
+    def test_at_limit(self, encoder):
+        vec = encoder.encode([], turn_number=25, max_turns=25)
+        assert vec[62] == pytest.approx(25 / 200)
+        assert vec[63] == pytest.approx(1.0)
+
+    def test_beyond_limit_clamped(self, encoder):
+        vec = encoder.encode([], turn_number=30, max_turns=25)
+        assert vec[62] == pytest.approx(30 / 200)
+        assert vec[63] == pytest.approx(1.0)  # clamped
+
+    def test_no_max_turns_uses_cap(self, encoder):
+        vec = encoder.encode([], turn_number=50)
+        assert vec[62] == pytest.approx(50 / 200)
+        assert vec[63] == pytest.approx(50 / 200)  # falls back to _MAX_TURNS_CAP
+
+
+# ── Backward compatibility tests ─────────────────────────────────────
+
+
+class TestBackwardCompatibility:
+    """Base features (0-52) are unchanged; old call signatures still work."""
+
+    def test_old_call_signatures(self, encoder):
+        msgs = [Message(role="user", content="hi", timestamp_ms=100, token_count=1)]
+        # All old call forms should work
+        v1 = encoder.encode(msgs)
+        v2 = encoder.encode(msgs, [])
+        v3 = encoder.encode(msgs, [], [])
+        assert v1.shape == (FEATURE_DIM,)
+        assert v2.shape == (FEATURE_DIM,)
+        assert v3.shape == (FEATURE_DIM,)
+
+    def test_base_features_unchanged(self, encoder, simple_conversation):
+        msgs, events, tools = simple_conversation
+        vec_no_ext = encoder.encode(msgs, events, tools)
+        qs = QueueState(
+            depth=3, token_total=200, max_priority=Priority.HIGH,
+            time_since_last_drain=1.0, pending_tool_count=1,
+            estimated_next_arrival=0.5,
+        )
+        vec_with_ext = encoder.encode(
+            msgs, events, tools,
+            queue_state=qs, turn_number=5, max_turns=25,
+        )
+        # First 53 features must be identical
+        np.testing.assert_array_equal(vec_no_ext[:53], vec_with_ext[:53])
+
+
+# ── Performance with extensions ──────────────────────────────────────
+
+
+class TestPerformanceWithExtensions:
+    """Encoding with all extensions still completes in < 50ms."""
+
+    def test_encode_speed_with_extensions(
+        self, encoder, simple_conversation, sample_queue_state
+    ):
+        msgs, events, tools = simple_conversation
+        # Warm up
+        encoder.encode(
+            msgs, events, tools,
+            queue_state=sample_queue_state,
+            latency_predictions={"research_gap_scanner": 5000.0, "assumption_auditor": 3000.0, "context_refresher": 1000.0},
+            turn_number=10,
+            max_turns=25,
+        )
+
+        start = time.perf_counter()
+        for _ in range(10):
+            encoder.encode(
+                msgs, events, tools,
+                queue_state=sample_queue_state,
+                latency_predictions={"research_gap_scanner": 5000.0, "assumption_auditor": 3000.0, "context_refresher": 1000.0},
+                turn_number=10,
+                max_turns=25,
+            )
+        elapsed = (time.perf_counter() - start) / 10
+
+        assert elapsed < 0.050, f"Average encode took {elapsed*1000:.1f}ms (limit 50ms)"

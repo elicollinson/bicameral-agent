@@ -21,7 +21,7 @@ from bicameral_agent.schema import Message
 
 logger = logging.getLogger(__name__)
 
-# Type alias: the 53-dim float32 vector produced by StateEncoder.encode()
+# Type alias: the 64-dim float32 vector produced by StateEncoder.encode()
 StateVector = np.ndarray
 
 

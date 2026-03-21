@@ -3,24 +3,35 @@
 Compresses conversation history, user events, and tool history into a
 fixed-dimensional feature vector suitable for policy/value network input.
 
-Feature vector layout (53 dimensions)
+Feature vector layout (64 dimensions)
 --------------------------------------
 
-=====  ==============================  ====
-Index  Feature                         Dims
-=====  ==============================  ====
-0      turn_number                        1
-1      total_tokens_so_far                1
-2–33   topic_embedding                   32
-34     estimated_confidence               1
-35–38  last_tool_invoked (one-hot)        4
-39     turns_since_last_tool              1
-40     user_stop_count                    1
-41–45  last_followup_type (one-hot)       5
-46–48  response_latency_bucket (one-hot)  3
-49     message_length_ratio               1
-50–52  sentiment_shift (one-hot)          3
-=====  ==============================  ====
+=====  ======================================  ====
+Index  Feature                                 Dims
+=====  ======================================  ====
+0      turn_number                                1
+1      total_tokens_so_far                        1
+2–33   topic_embedding                           32
+34     estimated_confidence                       1
+35–38  last_tool_invoked (one-hot)                4
+39     turns_since_last_tool                      1
+40     user_stop_count                            1
+41–45  last_followup_type (one-hot)               5
+46–48  response_latency_bucket (one-hot)          3
+49     message_length_ratio                       1
+50–52  sentiment_shift (one-hot)                  3
+53     queue_depth                                1
+54     queue_token_total                          1
+55     queue_max_priority (ordinal)               1
+56     queue_time_since_last_drain                1
+57     queue_pending_tool_count                   1
+58     queue_estimated_next_arrival               1
+59     latency_research_gap_scanner               1
+60     latency_assumption_auditor                 1
+61     latency_context_refresher                  1
+62     episode_turn_progress                      1
+63     episode_completion_fraction                1
+=====  ======================================  ====
 
 Scalar normalization uses cap-and-divide: ``min(val, cap) / cap``, producing
 values deterministically bounded to [0, 1].
@@ -32,9 +43,10 @@ import numpy as np
 
 from bicameral_agent.embeddings import Embedder, get_default_embedder
 from bicameral_agent.followup_classifier import FollowUpClassifier
+from bicameral_agent.queue import QueueState
 from bicameral_agent.schema import Message, ToolInvocation, UserEvent, UserEventType
 
-FEATURE_DIM: int = 53
+FEATURE_DIM: int = 64
 """Dimensionality of the encoded state vector."""
 
 # ---------------------------------------------------------------------------
@@ -45,6 +57,20 @@ _TOKEN_CAP = 100_000
 _TURNS_SINCE_TOOL_CAP = 20
 _STOP_CAP = 5
 _LENGTH_RATIO_CAP = 5.0
+
+# Queue state caps
+_QUEUE_DEPTH_CAP = 20
+_QUEUE_TOKEN_TOTAL_CAP = 10_000
+_PRIORITY_MAX = 3.0
+_TIME_SINCE_DRAIN_CAP = 60.0
+_PENDING_TOOL_COUNT_CAP = 3
+_ESTIMATED_ARRIVAL_CAP = 30.0
+
+# Latency caps
+_LATENCY_MS_CAP = 30_000.0
+
+# Episode progress caps
+_MAX_TURNS_CAP = 200
 
 # ---------------------------------------------------------------------------
 # Tool vocabulary (one-hot with 4 slots)
@@ -138,8 +164,13 @@ class StateEncoder:
         conversation_history: list[Message],
         user_events: list[UserEvent] | None = None,
         tool_history: list[ToolInvocation] | None = None,
+        *,
+        queue_state: QueueState | None = None,
+        latency_predictions: dict[str, float] | None = None,
+        turn_number: int | None = None,
+        max_turns: int | None = None,
     ) -> np.ndarray:
-        """Encode the current conversation state into a 53-dim float32 vector.
+        """Encode the current conversation state into a 64-dim float32 vector.
 
         Parameters
         ----------
@@ -149,11 +180,21 @@ class StateEncoder:
             User-initiated events (stops, edits, follow-ups).
         tool_history:
             Tool invocations that have occurred.
+        queue_state:
+            Snapshot from ``ContextQueue.get_state()``.  When *None*, the
+            queue feature slots (53–58) are left as zeros.
+        latency_predictions:
+            Mapping of tool_id to predicted ``mean_ms`` latency.  When
+            *None*, the latency feature slots (59–61) are left as zeros.
+        turn_number:
+            Current episode turn (1-indexed loop counter).
+        max_turns:
+            Configured maximum turns for the episode.
 
         Returns
         -------
         numpy.ndarray
-            Shape ``(53,)`` float32 vector with values in [0, 1].
+            Shape ``(64,)`` float32 vector with values in [0, 1].
         """
         user_events = user_events or []
         tool_history = tool_history or []
@@ -161,8 +202,8 @@ class StateEncoder:
         vec = np.zeros(FEATURE_DIM, dtype=np.float32)
 
         # 0: turn_number (normalized)
-        turn_number = len(conversation_history)
-        vec[0] = min(turn_number, _TURN_CAP) / _TURN_CAP
+        msg_count = len(conversation_history)
+        vec[0] = min(msg_count, _TURN_CAP) / _TURN_CAP
 
         # 1: total_tokens_so_far (normalized)
         total_tokens = sum(m.token_count for m in conversation_history)
@@ -197,6 +238,15 @@ class StateEncoder:
 
         # 50–52: sentiment shift (one-hot, 3 slots)
         vec[50:53] = self._compute_sentiment_shift(conversation_history)
+
+        # 53–58: queue state (6 dims)
+        vec[53:59] = self._encode_queue_state(queue_state)
+
+        # 59–61: latency context (3 dims)
+        vec[59:62] = self._encode_latency_context(latency_predictions)
+
+        # 62–63: episode progress (2 dims)
+        vec[62:64] = self._encode_episode_progress(turn_number, max_turns)
 
         return vec
 
@@ -392,6 +442,62 @@ class StateEncoder:
             out[2] = 1.0  # negative shift
         else:
             out[1] = 1.0  # neutral
+        return out
+
+    @staticmethod
+    def _encode_queue_state(queue_state: QueueState | None) -> np.ndarray:
+        """Encode queue state into 6 normalized features.
+
+        Indices: depth, token_total, max_priority (ordinal),
+        time_since_last_drain, pending_tool_count, estimated_next_arrival.
+        """
+        out = np.zeros(6, dtype=np.float32)
+        if queue_state is None:
+            return out
+
+        out[0] = min(queue_state.depth, _QUEUE_DEPTH_CAP) / _QUEUE_DEPTH_CAP
+        out[1] = min(queue_state.token_total, _QUEUE_TOKEN_TOTAL_CAP) / _QUEUE_TOKEN_TOTAL_CAP
+        out[2] = (queue_state.max_priority.value / _PRIORITY_MAX) if queue_state.max_priority is not None else 0.0
+        out[3] = min(queue_state.time_since_last_drain, _TIME_SINCE_DRAIN_CAP) / _TIME_SINCE_DRAIN_CAP
+        out[4] = min(queue_state.pending_tool_count, _PENDING_TOOL_COUNT_CAP) / _PENDING_TOOL_COUNT_CAP
+        out[5] = min(queue_state.estimated_next_arrival, _ESTIMATED_ARRIVAL_CAP) / _ESTIMATED_ARRIVAL_CAP
+        return out
+
+    @staticmethod
+    def _encode_latency_context(
+        latency_predictions: dict[str, float] | None,
+    ) -> np.ndarray:
+        """Encode predicted latency for each tool into 3 normalized features.
+
+        One slot per tool in ``_TOOL_VOCAB`` order, using pre-computed
+        ``mean_ms`` values capped at ``_LATENCY_MS_CAP``.
+        """
+        out = np.zeros(3, dtype=np.float32)
+        if latency_predictions is None:
+            return out
+
+        for i, tool_id in enumerate(_TOOL_VOCAB):
+            mean_ms = latency_predictions.get(tool_id, 0.0)
+            out[i] = min(mean_ms, _LATENCY_MS_CAP) / _LATENCY_MS_CAP
+        return out
+
+    @staticmethod
+    def _encode_episode_progress(
+        turn_number: int | None,
+        max_turns: int | None,
+    ) -> np.ndarray:
+        """Encode episode progress into 2 normalized features.
+
+        [0] Absolute turn progress: ``turn_number / _MAX_TURNS_CAP``.
+        [1] Relative completion fraction: ``turn_number / max_turns``.
+        """
+        out = np.zeros(2, dtype=np.float32)
+        if turn_number is None:
+            return out
+
+        out[0] = min(turn_number, _MAX_TURNS_CAP) / _MAX_TURNS_CAP
+        max_turns_eff = max_turns if max_turns is not None else _MAX_TURNS_CAP
+        out[1] = min(turn_number / max_turns_eff, 1.0)
         return out
 
 
