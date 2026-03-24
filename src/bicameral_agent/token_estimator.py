@@ -11,6 +11,8 @@ from __future__ import annotations
 import threading
 from dataclasses import dataclass
 
+from bicameral_agent.heuristic_controller import TOOL_IDS, Action
+
 
 @dataclass(frozen=True, slots=True)
 class ContextFeatures:
@@ -39,17 +41,17 @@ class _ToolProfile:
 
 
 _TOOL_PROFILES: dict[str, _ToolProfile] = {
-    "research_gap_scanner": _ToolProfile(
+    TOOL_IDS[Action.SCANNER]: _ToolProfile(
         system_prompt_tokens=500,
         default_output_per_call=400,
         fixed_calls=None,
     ),
-    "assumption_auditor": _ToolProfile(
+    TOOL_IDS[Action.AUDITOR]: _ToolProfile(
         system_prompt_tokens=400,
         default_output_per_call=450,
         fixed_calls=1,
     ),
-    "context_refresher": _ToolProfile(
+    TOOL_IDS[Action.REFRESHER]: _ToolProfile(
         system_prompt_tokens=300,
         default_output_per_call=100,
         fixed_calls=1,
@@ -156,12 +158,12 @@ class TokenEstimator:
     def _compute_input_tokens(
         tool_id: str, conv: int, turns: int, num_calls: int
     ) -> int:
-        if tool_id == "research_gap_scanner":
+        if tool_id == TOOL_IDS[Action.SCANNER]:
             gaps = num_calls - 2
             return (500 + conv) + (gaps * 2000) + (500 + conv + gaps * 2000)
-        if tool_id == "assumption_auditor":
+        if tool_id == TOOL_IDS[Action.AUDITOR]:
             return 400 + conv
-        if tool_id == "context_refresher":
+        if tool_id == TOOL_IDS[Action.REFRESHER]:
             avg_msg = conv / max(turns, 1)
             bounded = min(4 * avg_msg, conv)
             return 300 + int(bounded)

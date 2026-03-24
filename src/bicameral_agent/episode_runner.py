@@ -20,7 +20,7 @@ from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.encoder import StateEncoder
 from bicameral_agent.gap_scanner import ResearchGapScanner
 from bicameral_agent.gemini import GeminiClient
-from bicameral_agent.heuristic_controller import Action, DecisionLog, FullState
+from bicameral_agent.heuristic_controller import Action, DecisionLog, FullState, TOOL_IDS
 from bicameral_agent.logger import ConversationLogger
 from bicameral_agent.queue import ContextQueue, InterruptConfig
 from bicameral_agent.schema import Episode, Message, UserEvent, UserEventType
@@ -59,11 +59,6 @@ _DEFAULT_TOKEN_BUDGET = TokenBudget(
     max_output_tokens=20_000,
 )
 
-_TOOL_ID_MAP = {
-    Action.SCANNER: "research_gap_scanner",
-    Action.AUDITOR: "assumption_auditor",
-    Action.REFRESHER: "context_refresher",
-}
 
 
 @runtime_checkable
@@ -162,9 +157,9 @@ class EpisodeRunner:
         latency_model = ToolLatencyModel()
 
         tools = {
-            "research_gap_scanner": ResearchGapScanner(),
-            "assumption_auditor": AssumptionAuditor(),
-            "context_refresher": ContextRefresher(),
+            TOOL_IDS[Action.SCANNER]: ResearchGapScanner(),
+            TOOL_IDS[Action.AUDITOR]: AssumptionAuditor(),
+            TOOL_IDS[Action.REFRESHER]: ContextRefresher(),
         }
 
         # Tracking state
@@ -251,7 +246,7 @@ class EpisodeRunner:
 
             # (j) Execute tool if action != DO_NOTHING
             if action != Action.DO_NOTHING:
-                tool_id = _TOOL_ID_MAP[action]
+                tool_id = TOOL_IDS[action]
                 tool = tools[tool_id]
                 reasoning_state = encoder.encode(
                     temp_messages,

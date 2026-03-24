@@ -76,6 +76,7 @@ from bicameral_agent.heuristic_controller import (
     ExecutingTool,
     FullState,
     HeuristicController,
+    TOOL_IDS,
 )
 from bicameral_agent.config import (
     CostConfig,
@@ -224,6 +225,7 @@ __all__ = [
     "TokenBudget",
     "TokenEstimate",
     "TokenEstimator",
+    "TOOL_IDS",
     "ToolBudgetConfig",
     "ToolInvocation",
     "ToolLatencyModel",

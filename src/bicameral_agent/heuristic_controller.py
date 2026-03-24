@@ -31,6 +31,14 @@ class Action(str, enum.Enum):
     DO_NOTHING = "DO_NOTHING"
 
 
+TOOL_IDS: dict[Action, str] = {
+    Action.SCANNER: "research_gap_scanner",
+    Action.AUDITOR: "assumption_auditor",
+    Action.REFRESHER: "context_refresher",
+}
+"""Canonical mapping from Action enum to tool identifier string."""
+
+
 @dataclass(frozen=True, slots=True)
 class ExecutingTool:
     """A tool currently running with its predicted remaining time."""

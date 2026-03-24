@@ -43,6 +43,7 @@ import numpy as np
 
 from bicameral_agent.embeddings import Embedder, get_default_embedder
 from bicameral_agent.followup_classifier import FollowUpClassifier
+from bicameral_agent.heuristic_controller import TOOL_IDS
 from bicameral_agent.queue import QueueState
 from bicameral_agent.schema import Message, ToolInvocation, UserEvent, UserEventType
 
@@ -72,11 +73,14 @@ _LATENCY_MS_CAP = 30_000.0
 # Episode progress caps
 _MAX_TURNS_CAP = 200
 
-# ---------------------------------------------------------------------------
-# Tool vocabulary (one-hot with 4 slots)
-# ---------------------------------------------------------------------------
-_TOOL_VOCAB: list[str] = ["research_gap_scanner", "assumption_auditor", "context_refresher"]
-# Index 3 is "none / unknown"
+# Tool vocabulary derived from the canonical TOOL_IDS mapping.
+# One-hot encoding uses 4 slots: indices 0–2 for known tools, index 3 for "none / unknown".
+_TOOL_VOCAB: list[str] = list(TOOL_IDS.values())
+
+
+def _cap_norm(val: float, cap: float) -> float:
+    """Cap-and-divide normalization: ``min(val, cap) / cap`` -> [0, 1]."""
+    return min(val, cap) / cap
 
 # ---------------------------------------------------------------------------
 # Hedging keywords (for confidence estimation)
@@ -203,11 +207,11 @@ class StateEncoder:
 
         # 0: turn_number (normalized)
         msg_count = len(conversation_history)
-        vec[0] = min(msg_count, _TURN_CAP) / _TURN_CAP
+        vec[0] = _cap_norm(msg_count, _TURN_CAP)
 
         # 1: total_tokens_so_far (normalized)
         total_tokens = sum(m.token_count for m in conversation_history)
-        vec[1] = min(total_tokens, _TOKEN_CAP) / _TOKEN_CAP
+        vec[1] = _cap_norm(total_tokens, _TOKEN_CAP)
 
         # 2–33: topic embedding
         last_user_msg = self._last_message_by_role(conversation_history, "user")
@@ -307,17 +311,17 @@ class StateEncoder:
     ) -> float:
         """Normalized count of messages since the last tool completion."""
         if not tool_history or not messages:
-            return min(len(messages), _TURNS_SINCE_TOOL_CAP) / _TURNS_SINCE_TOOL_CAP
+            return _cap_norm(len(messages), _TURNS_SINCE_TOOL_CAP)
 
         last_tool_time = tool_history[-1].completed_at_ms
         turns_after = sum(1 for m in messages if m.timestamp_ms > last_tool_time)
-        return min(turns_after, _TURNS_SINCE_TOOL_CAP) / _TURNS_SINCE_TOOL_CAP
+        return _cap_norm(turns_after, _TURNS_SINCE_TOOL_CAP)
 
     @staticmethod
     def _compute_stop_count(user_events: list[UserEvent]) -> float:
         """Normalized count of user stop events."""
         stops = sum(1 for e in user_events if e.event_type == UserEventType.STOP)
-        return min(stops, _STOP_CAP) / _STOP_CAP
+        return _cap_norm(stops, _STOP_CAP)
 
     @staticmethod
     def _classify_followup(
@@ -416,7 +420,7 @@ class StateEncoder:
         if user_len == 0:
             return 0.0
         ratio = len(last_assistant.content) / user_len
-        return min(ratio, _LENGTH_RATIO_CAP) / _LENGTH_RATIO_CAP
+        return _cap_norm(ratio, _LENGTH_RATIO_CAP)
 
     @staticmethod
     def _compute_sentiment_shift(messages: list[Message]) -> np.ndarray:
@@ -455,12 +459,12 @@ class StateEncoder:
         if queue_state is None:
             return out
 
-        out[0] = min(queue_state.depth, _QUEUE_DEPTH_CAP) / _QUEUE_DEPTH_CAP
-        out[1] = min(queue_state.token_total, _QUEUE_TOKEN_TOTAL_CAP) / _QUEUE_TOKEN_TOTAL_CAP
+        out[0] = _cap_norm(queue_state.depth, _QUEUE_DEPTH_CAP)
+        out[1] = _cap_norm(queue_state.token_total, _QUEUE_TOKEN_TOTAL_CAP)
         out[2] = (queue_state.max_priority.value / _PRIORITY_MAX) if queue_state.max_priority is not None else 0.0
-        out[3] = min(queue_state.time_since_last_drain, _TIME_SINCE_DRAIN_CAP) / _TIME_SINCE_DRAIN_CAP
-        out[4] = min(queue_state.pending_tool_count, _PENDING_TOOL_COUNT_CAP) / _PENDING_TOOL_COUNT_CAP
-        out[5] = min(queue_state.estimated_next_arrival, _ESTIMATED_ARRIVAL_CAP) / _ESTIMATED_ARRIVAL_CAP
+        out[3] = _cap_norm(queue_state.time_since_last_drain, _TIME_SINCE_DRAIN_CAP)
+        out[4] = _cap_norm(queue_state.pending_tool_count, _PENDING_TOOL_COUNT_CAP)
+        out[5] = _cap_norm(queue_state.estimated_next_arrival, _ESTIMATED_ARRIVAL_CAP)
         return out
 
     @staticmethod
@@ -478,7 +482,7 @@ class StateEncoder:
 
         for i, tool_id in enumerate(_TOOL_VOCAB):
             mean_ms = latency_predictions.get(tool_id, 0.0)
-            out[i] = min(mean_ms, _LATENCY_MS_CAP) / _LATENCY_MS_CAP
+            out[i] = _cap_norm(mean_ms, _LATENCY_MS_CAP)
         return out
 
     @staticmethod
@@ -495,7 +499,7 @@ class StateEncoder:
         if turn_number is None:
             return out
 
-        out[0] = min(turn_number, _MAX_TURNS_CAP) / _MAX_TURNS_CAP
+        out[0] = _cap_norm(turn_number, _MAX_TURNS_CAP)
         max_turns_eff = max_turns if max_turns is not None else _MAX_TURNS_CAP
         out[1] = min(turn_number / max_turns_eff, 1.0)
         return out

@@ -10,6 +10,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+from bicameral_agent.heuristic_controller import TOOL_IDS, Action
 from bicameral_agent.latency import APILatencyModel, LatencyEstimate
 from bicameral_agent.token_estimator import ContextFeatures, TokenEstimate, TokenEstimator
 
@@ -173,7 +174,7 @@ class ToolLatencyModel:
         output_per_call = token_est.output_tokens // max(token_est.num_calls, 1)
         conv = context_features.conversation_length_tokens
 
-        if tool_id == "research_gap_scanner":
+        if tool_id == TOOL_IDS[Action.SCANNER]:
             gaps = token_est.num_calls - 2
             calls = [
                 ("gap_identification", 500 + conv),
