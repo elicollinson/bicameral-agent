@@ -119,6 +119,12 @@ from bicameral_agent.tool_primitive import (
     ToolPrimitive,
     ToolResult,
 )
+from bicameral_agent.training_pipeline import (
+    DISCOUNT_GAMMA,
+    STATE_DIM,
+    TrainingDataPipeline,
+    TrainingExample,
+)
 
 try:
     from bicameral_agent.policy_value_net import (
@@ -154,6 +160,7 @@ __all__ = [
     "ContextQueue",
     "ConversationLogger",
     "CostEstimate",
+    "DISCOUNT_GAMMA",
     "DecisionLog",
     "Controller",
     "DecisionPoint",
@@ -207,6 +214,7 @@ __all__ = [
     "ResponseLatency",
     "RiskLevel",
     "SIGNAL_DIM",
+    "STATE_DIM",
     "SearchResult",
     "SentimentShift",
     "SimulatedUser",
@@ -235,6 +243,8 @@ __all__ = [
     "ToolResult",
     "ToolsConfig",
     "TrainingConfig",
+    "TrainingDataPipeline",
+    "TrainingExample",
     "UserAction",
     "UserEvent",
     "UserEventType",
