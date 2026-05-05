@@ -266,10 +266,12 @@ class SimulatedUser:
         """Parse the LLM's structured response into a UserAction."""
         action_type = ActionType(raw["action_type"])
 
+        # The LLM occasionally treats confidence as a 1-5 scale; clamp to [0, 1].
+        confidence = max(0.0, min(1.0, float(raw.get("confidence", 0.8))))
         kwargs: dict = {
             "action_type": action_type,
             "response_delay_ms": raw.get("response_delay_ms", 500),
-            "confidence": raw.get("confidence", 0.8),
+            "confidence": confidence,
         }
 
         if action_type == ActionType.FOLLOW_UP:
