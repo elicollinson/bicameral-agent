@@ -167,6 +167,7 @@ class EpisodeRunner:
         user_events: list[UserEventType] = []
         pending_injection_indices: list[int] = []
         interrupt_count = 0
+        expired_count = 0
 
         user_message = task.question
 
@@ -186,7 +187,7 @@ class EpisodeRunner:
             )
 
             # (c) Expire stale queue items
-            queue.expire_stale(turn)
+            expired_count += len(queue.expire_stale(turn))
 
             # (d) Run conscious loop turn
             try:
@@ -350,6 +351,7 @@ class EpisodeRunner:
 
         # Store metadata
         log.set_metadata("interrupt_count", interrupt_count)
+        log.set_metadata("expired_queue_items", expired_count)
         log.set_metadata("injection_mode", cfg.injection_mode.value)
         if self._hyper_config is not None:
             log.set_metadata("hyperparameters", self._hyper_config.to_dict())
