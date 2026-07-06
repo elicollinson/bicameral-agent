@@ -1,0 +1,156 @@
+name: Claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request:
+    # synchronize: the AI reviews re-run on every push to an open PR so
+    # review rounds iterate until they pass. They self-skip (in-prompt)
+    # when their prior verdict already passed. Advisory only — these jobs
+    # always conclude "successful" as Actions jobs and must NOT be marked
+    # as required checks.
+    types: [opened, reopened, ready_for_review, synchronize]
+
+jobs:
+  # --- Interactive: runs when you mention @claude in a PR/issue comment ---
+  mention:
+    if: >-
+      (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment')
+      && contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: >-
+            --model claude-fable-5
+            --allowed-tools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(gh pr comment:*)"
+
+  # --- Automatic: runs on every PR push, checks coverage of the linked issue ---
+  coverage-review:
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    concurrency:
+      group: coverage-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            This may be a re-run triggered by a new push. First read the
+            PR's existing comments (`gh pr view --json comments` or
+            `gh pr view --comments`) and find your most recent comment
+            titled "Coverage review". If it exists and its verdict was
+            that the issue is fully covered, stop here without posting
+            anything — do not re-review. If it exists with gaps, focus
+            this round on whether the new commits closed those gaps.
+
+            Identify the issue this PR references. Check the PR title and body
+            for closing keywords (Closes/Fixes/Resolves #N) or any #N reference.
+            If none exists, post a brief comment saying no linked issue was found
+            and stop.
+
+            Otherwise, read that issue with `gh issue view`. Issues in this
+            repo typically carry a "## Dependencies" section, a
+            "## Description", a work list, and an "## Acceptance Criteria"
+            checklist. Assess whether the PR's changes fully cover every
+            requirement and acceptance criterion in the issue. If the issue
+            has a "Blocked by:" line, note whether any listed blockers are
+            still open — the PR may be landing out of order.
+
+            For each requirement or acceptance criterion, state
+            covered / partially covered / not addressed, citing the
+            relevant files. End with an overall coverage verdict.
+
+            The PR branch is already checked out. Post your assessment as a
+            top-level PR comment using `gh pr comment`. Title it
+            "Coverage review".
+          claude_args: >-
+            --model claude-fable-5
+            --allowed-tools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(gh pr comment:*)"
+
+  # --- Automatic: runs on every PR push, reviews design quality / extensibility ---
+  quality-review:
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    concurrency:
+      group: quality-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            This may be a re-run triggered by a new push. First read the
+            PR's existing comments (`gh pr view --json comments` or
+            `gh pr view --comments`) and find your most recent comment
+            titled "Quality review". If it exists and it raised no
+            findings (or explicitly approved), stop here without posting
+            anything — do not re-review. If it exists with findings,
+            focus this round on whether the new commits addressed them,
+            and say so finding-by-finding before raising anything new.
+
+            Review this PR's changes for design quality, focusing on
+            extensibility and maintainability. Read the diff with
+            `gh pr diff`, then read the changed files (and their immediate
+            neighbours) in the checked-out branch for context.
+
+            Look specifically for places where a structural pattern would
+            make the code easier to extend or maintain:
+            - Construction scattered across call sites where a factory or
+              registry would centralize it (e.g. type-discriminated
+              if/elif chains that grow with every new variant)
+            - Hard-coded collaborators (module-level singletons, inline
+              `connect()`/client construction) where dependency injection
+              would decouple components and make them testable
+            - Duplicated shapes that want a shared base/protocol, or
+              config/constants that should be parameterized
+            - Interfaces the rest of the codebase will plug into later
+              that are too concrete to extend without editing
+
+            Bias toward restraint: this is a small research codebase,
+            not an enterprise framework. Only flag a pattern
+            when the diff shows real, present duplication or coupling —
+            not speculative flexibility. If the code is fine as-is, say
+            so briefly and stop. For each finding, cite file:line, explain
+            the concrete maintenance cost it causes today, and sketch the
+            minimal refactor (a few lines, not a rewrite).
+
+            Post your review as a top-level PR comment using
+            `gh pr comment`. Title it "Quality review".
+          claude_args: >-
+            --model claude-fable-5
+            --allowed-tools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(gh pr comment:*)"
