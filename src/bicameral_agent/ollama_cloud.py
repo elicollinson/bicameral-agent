@@ -35,6 +35,19 @@ _MODEL = default_model("ollama")
 _DEFAULT_HOST = "https://ollama.com"
 _TIMEOUT_S = 120.0
 
+# Ollama Cloud does not yet honour the ``format`` schema for grammar-level
+# constrained decoding (verified 2026-07-07: gemma4:31b-cloud and the other
+# -cloud tags return markdown prose even with ``format`` set). The Ollama docs
+# recommend grounding the model by also stating the schema in the prompt; doing
+# so makes gemma return clean parseable JSON. We send both: ``format`` (correct
+# per the API spec, effective for local Ollama and forward-compatible if Cloud
+# adds decoder support) and this prompt grounding (what actually fixes the
+# pilot's 100% judge degradation, issue #82).
+_GROUNDING_TEMPLATE = (
+    "\n\nRespond with a single JSON object matching this schema exactly, and "
+    "nothing else -- no markdown, no code fences, no prose:\n{schema}"
+)
+
 
 class OllamaCloudClient(RetryingClientBase):
     """Thin wrapper around the Ollama Cloud chat API with retry, timing, callbacks.
@@ -89,7 +102,9 @@ class OllamaCloudClient(RetryingClientBase):
             max_output_tokens: Maps to Ollama ``options.num_predict``.
             tools: Function declarations (dicts with 'name', 'description',
                 'parameters_json_schema' keys), translated to Ollama tool format.
-            response_schema: JSON schema dict; passed through to Ollama ``format``.
+            response_schema: JSON schema dict. Sent as Ollama ``format`` and,
+                because Ollama Cloud ignores ``format``, also injected into the
+                system prompt to ground the model (issue #82).
 
         Returns:
             ModelResponse with content, token counts, timing, and finish reason.
@@ -117,7 +132,10 @@ class OllamaCloudClient(RetryingClientBase):
         response_schema: dict | None,
     ) -> dict[str, Any]:
         api_messages: list[dict[str, str]] = []
-        if system_prompt is not None:
+        if response_schema is not None:
+            grounding = _GROUNDING_TEMPLATE.format(schema=json.dumps(response_schema))
+            system_prompt = (system_prompt or "") + grounding
+        if system_prompt:
             api_messages.append({"role": "system", "content": system_prompt})
         for msg in messages:
             if isinstance(msg, ChatMessage):

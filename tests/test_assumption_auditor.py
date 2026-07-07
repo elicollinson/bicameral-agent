@@ -523,3 +523,34 @@ class TestMalformedOutput:
         result = auditor.execute(_make_messages(), _make_state(), _DEFAULT_BUDGET, client)
 
         assert result.metadata.items_found == 1
+
+
+class TestResponseSchemas:
+    """Schema-constrained generation at both auditor call sites (issue #82)."""
+
+    def test_both_llm_calls_pass_their_schemas(self):
+        auditor = AssumptionAuditor()
+        client = _mock_client([_assumption_response(), _evidence_response()])
+        auditor.execute(_make_messages(), _make_state(), _DEFAULT_BUDGET, client)
+
+        calls = client.generate.call_args_list
+        assert len(calls) == 2
+
+        extraction_schema = calls[0].kwargs["response_schema"]
+        assert extraction_schema["required"] == ["assumptions"]
+        item_props = extraction_schema["properties"]["assumptions"]["items"]["properties"]
+        assert set(item_props["risk_level"]["enum"]) == {"safe", "moderate", "high"}
+
+        evidence_schema = calls[1].kwargs["response_schema"]
+        assert evidence_schema["required"] == ["assessments"]
+        assessment = evidence_schema["properties"]["assessments"]["items"]["properties"]
+        assert set(assessment["verdict"]["enum"]) == {
+            "supporting",
+            "contradicting",
+            "inconclusive",
+        }
+        assert set(assessment["suggested_action"]["enum"]) == {
+            "validate",
+            "hedge",
+            "revise",
+        }

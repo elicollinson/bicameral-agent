@@ -14,7 +14,9 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import TYPE_CHECKING, Any
+from collections import Counter
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Iterator
 
 if TYPE_CHECKING:
     from bicameral_agent.schema import Message
@@ -61,8 +63,46 @@ def safe_parse_json(response: Any, *, context: str, default: dict | None = None)
         context,
         getattr(response, "finish_reason", "unknown"),
         len(text),
+        extra={"degradation_component": context},
     )
     return default
+
+
+class DegradationCounter(logging.Handler):
+    """Tallies ``safe_parse_json`` degradations per component (issue #82).
+
+    ``safe_parse_json`` tags its degradation warning with the caller's
+    *context* string; this handler counts those tags, ignoring any other
+    records. Attach via ``count_degradations`` so counts are scoped to one
+    episode -- a module-level counter would bleed across episodes.
+    ``logging`` serializes ``emit`` per handler, so counting is safe under
+    the scorers' worker threads.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(level=logging.WARNING)
+        self.counts: Counter[str] = Counter()
+
+    def emit(self, record: logging.LogRecord) -> None:
+        component = getattr(record, "degradation_component", None)
+        if component is not None:
+            self.counts[component] += 1
+
+
+@contextmanager
+def count_degradations() -> Iterator[DegradationCounter]:
+    """Count safe-parse degradations occurring inside the ``with`` block.
+
+    Yields a ``DegradationCounter`` whose ``counts`` maps component context
+    strings (e.g. ``"TaskScorer"``) to degradation counts. The handler is
+    detached on exit, so counters never observe each other's blocks.
+    """
+    counter = DegradationCounter()
+    logger.addHandler(counter)
+    try:
+        yield counter
+    finally:
+        logger.removeHandler(counter)
 
 
 def clamp(value: Any, low: float, high: float, default: float) -> float:

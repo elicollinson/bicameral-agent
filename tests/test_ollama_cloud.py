@@ -182,6 +182,44 @@ class TestRequestBuilding:
             )
         assert _sent_payload(captured)["format"] == schema
 
+    def test_response_schema_grounds_system_prompt(self):
+        # Ollama Cloud ignores ``format``; the schema is also injected into the
+        # system prompt so the model returns parseable JSON (issue #82).
+        import json
+
+        schema = {"type": "object", "properties": {"q": {"type": "integer"}}}
+        fake, captured = _urlopen_returning(_make_response_body())
+        with patch("urllib.request.urlopen", fake):
+            OllamaCloudClient(api_key="k").generate(
+                [{"role": "user", "content": "x"}],
+                system_prompt="be terse",
+                response_schema=schema,
+            )
+        system_msg = _sent_payload(captured)["messages"][0]
+        assert system_msg["role"] == "system"
+        assert system_msg["content"].startswith("be terse")
+        assert json.dumps(schema) in system_msg["content"]
+
+    def test_response_schema_grounds_without_system_prompt(self):
+        import json
+
+        schema = {"type": "object", "properties": {"q": {"type": "integer"}}}
+        fake, captured = _urlopen_returning(_make_response_body())
+        with patch("urllib.request.urlopen", fake):
+            OllamaCloudClient(api_key="k").generate(
+                [{"role": "user", "content": "x"}], response_schema=schema
+            )
+        messages = _sent_payload(captured)["messages"]
+        assert messages[0]["role"] == "system"
+        assert json.dumps(schema) in messages[0]["content"]
+
+    def test_no_system_message_without_schema_or_prompt(self):
+        fake, captured = _urlopen_returning(_make_response_body())
+        with patch("urllib.request.urlopen", fake):
+            OllamaCloudClient(api_key="k").generate([{"role": "user", "content": "x"}])
+        roles = [m["role"] for m in _sent_payload(captured)["messages"]]
+        assert "system" not in roles
+
     def test_tools_translated_to_ollama_format(self):
         tools = [{
             "name": "get_weather",

@@ -9,8 +9,8 @@ no drift is detected.
 from __future__ import annotations
 
 import enum
-import json
 
+from bicameral_agent.llm_output import safe_parse_json
 from bicameral_agent.queue import Priority, QueueItem
 from bicameral_agent.schema import Message, estimate_text_tokens
 from bicameral_agent.tool_primitive import (
@@ -143,7 +143,14 @@ class ContextRefresher(ToolPrimitive):
                 ),
             )
 
-        parsed = _parse_json(response.content)
+        # Malformed output degrades to "no drift" (the pre-#82 local parser's
+        # fallback), now via safe_parse_json so the degradation is warned and
+        # counted like every other structured-output site.
+        parsed = safe_parse_json(
+            response,
+            context="ContextRefresher",
+            default={"drift_detected": False, "drifts": [], "reminder": None},
+        )
 
         if not parsed.get("drift_detected", False):
             return ToolResult(
@@ -210,24 +217,6 @@ class ContextRefresher(ToolPrimitive):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _parse_json(text: str) -> dict:
-    """Extract and parse JSON from LLM response, handling preamble text."""
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        # Try to find JSON object in the response
-        # Find the first top-level JSON object by matching balanced braces
-        start = text.find("{")
-        if start != -1:
-            decoder = json.JSONDecoder()
-            try:
-                obj, _ = decoder.raw_decode(text, start)
-                return obj
-            except json.JSONDecodeError:
-                pass
-        return {"drift_detected": False, "drifts": [], "reminder": None}
 
 
 def _extract_first_user_message(history: list[Message]) -> Message | None:

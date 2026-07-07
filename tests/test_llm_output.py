@@ -7,7 +7,12 @@ import json
 import pytest
 
 from bicameral_agent.gemini import GeminiResponse
-from bicameral_agent.llm_output import clamp, coerce_int, safe_parse_json
+from bicameral_agent.llm_output import (
+    clamp,
+    coerce_int,
+    count_degradations,
+    safe_parse_json,
+)
 
 
 def _response(content: str, finish_reason: str = "STOP") -> GeminiResponse:
@@ -79,3 +84,40 @@ class TestCoerceInt:
     @pytest.mark.parametrize("value", [None, "good", [], float("nan")])
     def test_non_numeric_returns_default(self, value):
         assert coerce_int(value, 3) == 3
+
+
+class TestCountDegradations:
+    """Episode-scoped degradation counting (issue #82)."""
+
+    def test_counts_per_component(self):
+        with count_degradations() as counter:
+            safe_parse_json(_response("not json"), context="TaskScorer")
+            safe_parse_json(_response("also bad"), context="TaskScorer")
+            safe_parse_json(_response("nope"), context="SimulatedUser.respond")
+        assert counter.counts == {"TaskScorer": 2, "SimulatedUser.respond": 1}
+
+    def test_successful_parse_not_counted(self):
+        with count_degradations() as counter:
+            safe_parse_json(_response('{"a": 1}'), context="TaskScorer")
+        assert counter.counts == {}
+
+    def test_detached_after_exit(self):
+        with count_degradations() as counter:
+            pass
+        safe_parse_json(_response("bad"), context="TaskScorer")
+        assert counter.counts == {}
+
+    def test_ignores_untagged_warnings(self):
+        import logging
+
+        with count_degradations() as counter:
+            logging.getLogger("bicameral_agent.llm_output").warning("unrelated")
+        assert counter.counts == {}
+
+    def test_nested_counters_are_independent(self):
+        with count_degradations() as outer:
+            safe_parse_json(_response("bad"), context="A")
+            with count_degradations() as inner:
+                safe_parse_json(_response("bad"), context="B")
+        assert inner.counts == {"B": 1}
+        assert outer.counts == {"A": 1, "B": 1}
