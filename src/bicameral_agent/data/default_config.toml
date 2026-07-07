@@ -4,6 +4,7 @@
 # Override per-run via TOML file or BICAMERAL_ environment variables.
 
 [model]
+provider = "gemini"        # "gemini" or "ollama"
 name = "gemini-3.1-flash-lite-preview"
 thinking_level = "medium"
 # temperature is unset (uses model default)
@@ -14,6 +15,7 @@ priority_threshold = 3     # interrupt if any item >= CRITICAL (3)
 token_threshold = 1000     # interrupt if total pending tokens reach this
 expiry_turns = 10          # turns before a queue item expires
 max_depth = 3              # queue depth guard for heuristic controller
+persistent_injection = true  # injected context enters history (false = transient one-generation whisper)
 
 [tools]
 # Default budget applied to all tools unless overridden below.

@@ -26,9 +26,19 @@ class ModelConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    provider: str = "gemini"
     name: str = "gemini-3.1-flash-lite-preview"
     thinking_level: str = "medium"
     temperature: float | None = None
+
+    @field_validator("provider")
+    @classmethod
+    def _validate_provider(cls, v: str) -> str:
+        allowed = {"gemini", "ollama"}
+        if v not in allowed:
+            msg = f"provider must be one of {allowed}, got {v!r}"
+            raise ValueError(msg)
+        return v
 
     @field_validator("thinking_level")
     @classmethod
@@ -49,7 +59,7 @@ class ModelConfig(BaseModel):
 
 
 class QueueConfig(BaseModel):
-    """Context queue thresholds."""
+    """Context queue thresholds and injection semantics."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -58,6 +68,7 @@ class QueueConfig(BaseModel):
     token_threshold: int = 1000
     expiry_turns: int = 10
     max_depth: int = 3
+    persistent_injection: bool = True
 
 
 class ToolBudgetConfig(BaseModel):
@@ -223,6 +234,7 @@ class HyperConfig(BaseModel):
             "thinking_level": self.model.thinking_level,
             "interrupt_config": self.to_interrupt_config(),
             "tool_token_budget": self.to_token_budget(),
+            "persistent_injection": self.queue.persistent_injection,
         }
         defaults.update(overrides)
         return EpisodeConfig(**defaults)
@@ -256,6 +268,16 @@ class HyperConfig(BaseModel):
         tracker.set_budget(self.cost.session_budget)
         tracker.set_episode_budget(self.cost.episode_budget)
         return tracker
+
+    def to_model_client(self, *, on_completion=None):
+        """Produce a model client for the configured provider and model."""
+        from bicameral_agent.model_client import build_client
+
+        return build_client(
+            self.model.provider,
+            self.model.name,
+            on_completion=on_completion,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict for episode metadata storage."""

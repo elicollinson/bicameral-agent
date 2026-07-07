@@ -184,6 +184,40 @@ class TestSampleAction:
         # With high temp, should see at least 3 distinct actions
         assert len(counts) >= 3, f"only {len(counts)} distinct actions at high temperature"
 
+    def test_zero_temperature_raises(self, net: PolicyValueNetwork, state: np.ndarray) -> None:
+        with pytest.raises(ValueError):
+            net.sample_action(state, temperature=0.0)
+        with pytest.raises(ValueError):
+            net.sample_action(state, temperature=-1.0)
+
+    def test_generator_makes_sampling_reproducible(
+        self, net: PolicyValueNetwork, state: np.ndarray
+    ) -> None:
+        def sample_seq(seed: int) -> list[Action]:
+            gen = torch.Generator().manual_seed(seed)
+            return [
+                net.sample_action(state, temperature=5.0, generator=gen)
+                for _ in range(20)
+            ]
+
+        assert sample_seq(7) == sample_seq(7)
+
+
+# ---- Input dtype handling ----
+
+
+class TestInputDtype:
+    def test_predict_accepts_float64(self, net: PolicyValueNetwork) -> None:
+        state64 = np.random.default_rng(0).random(FEATURE_DIM)  # float64
+        probs, value = net.predict(state64)
+        assert probs.shape == (NUM_ACTIONS,)
+        assert isinstance(value, float)
+
+    def test_sample_action_accepts_float64(self, net: PolicyValueNetwork) -> None:
+        state64 = np.random.default_rng(0).random(FEATURE_DIM)  # float64
+        action = net.sample_action(state64)
+        assert action in ACTION_ORDER
+
 
 # ---- Action mapping ----
 

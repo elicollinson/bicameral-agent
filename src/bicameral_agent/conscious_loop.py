@@ -3,6 +3,16 @@
 Orchestrates the conscious loop: runs generation turns, injects context from the
 ContextQueue at breakpoints, and handles interrupts when critical context arrives
 mid-generation.
+
+Injection persistence semantics (issue #49): by default injected context is
+*persistent* — the context-augmented user message is what enters conversation
+history, so injected findings remain visible to every subsequent generation.
+Because the queue drain is destructive and the augmented message is stored
+exactly once, the injected text is token-accounted once at injection and then
+carried as ordinary history. Passing ``persistent_injection=False`` restores
+the *transient* "whisper" behavior: context is prepended only for the
+immediate API call and vanishes from history afterwards, so it influences
+exactly one generation.
 """
 
 from __future__ import annotations
@@ -35,6 +45,13 @@ class ConsciousLoop:
     Each call to run_turn() sends a user message, checks for queued context
     at breakpoints, generates a response, and optionally interrupts and
     retries if critical context arrives during generation.
+
+    ``persistent_injection`` controls visibility of injected context across
+    turns. When True (default), the context-augmented user message is stored
+    in history, so injected context stays visible to all later generations
+    and is token-accounted exactly once. When False, injected context is
+    used only for the immediate API call (transient "whisper" mode) and
+    vanishes from history after one generation.
     """
 
     def __init__(
@@ -46,6 +63,7 @@ class ConsciousLoop:
         thinking_level: str = "medium",
         interrupt_config: InterruptConfig | None = None,
         on_completion: Callable[[AssistantResponse], None] | None = None,
+        persistent_injection: bool = True,
     ) -> None:
         self._client = client
         self._queue = queue
@@ -53,6 +71,7 @@ class ConsciousLoop:
         self._thinking_level = thinking_level
         self._interrupt_config = interrupt_config or InterruptConfig()
         self._on_completion = on_completion
+        self._persistent_injection = persistent_injection
         self._history: list[ChatMessage] = []
         self._turn_count = 0
 
@@ -74,7 +93,8 @@ class ConsciousLoop:
         3. Build messages and generate
         4. Check interrupt threshold — if triggered, report wasted tokens,
            freeze, drain again, regenerate
-        5. Unfreeze, append assistant response to history
+        5. Unfreeze; in persistent mode, replace the stored user message with
+           the context-augmented one; append assistant response to history
         6. Fire on_completion callback, return AssistantResponse
         """
         self._turn_count += 1
@@ -118,6 +138,14 @@ class ConsciousLoop:
 
         duration_ms = (time.monotonic_ns() - start_ns) / 1_000_000
 
+        if context_str is not None and self._persistent_injection:
+            # Persist the augmented message so injected context stays visible
+            # on later turns. It enters history exactly once (the drain was
+            # destructive), so its tokens are accounted once at injection.
+            self._history[-1] = ChatMessage(
+                role="user", content=_augment(user_message, context_str)
+            )
+
         self._history.append(ChatMessage(role="model", content=response.content))
 
         total_tokens = (
@@ -146,8 +174,11 @@ class ConsciousLoop:
     def regenerate_with_context(self, context_str: str) -> AssistantResponse:
         """Re-generate the last assistant response with additional context.
 
-        Pops the last model message from history, finds the last user message,
-        and regenerates with the provided context. Does NOT increment turn count.
+        Pops the last model message from history, then regenerates the
+        preceding user message with the provided context. Does NOT increment
+        turn count. In persistent mode, the stored user message is replaced
+        with the context-augmented one so the context stays visible on later
+        turns.
         """
         if not self._history or self._history[-1].role != "model":
             raise ValueError("No model message to replace in history")
@@ -155,18 +186,22 @@ class ConsciousLoop:
         # Pop the last model message
         self._history.pop()
 
-        # Find the last user message
-        last_user_msg = None
-        for msg in reversed(self._history):
-            if msg.role == "user":
-                last_user_msg = msg.content
-                break
-        if last_user_msg is None:
+        # History must now end with the user message that prompted the
+        # replaced response — _generate builds its prompt as history[:-1]
+        # plus the (augmented) last message, so any other shape would
+        # silently duplicate messages.
+        if not self._history or self._history[-1].role != "user":
             raise ValueError("No user message found in history")
+        last_user_msg = self._history[-1].content
 
         start_ns = time.monotonic_ns()
         response = self._generate(last_user_msg, context_str)
         duration_ms = (time.monotonic_ns() - start_ns) / 1_000_000
+
+        if self._persistent_injection:
+            self._history[-1] = ChatMessage(
+                role="user", content=_augment(last_user_msg, context_str)
+            )
 
         self._history.append(ChatMessage(role="model", content=response.content))
 
@@ -187,10 +222,7 @@ class ConsciousLoop:
         """Build messages and call the Gemini API."""
         prior = self._history[:-1]
 
-        if context_str is not None:
-            augmented_content = context_str + "\n\n" + user_message
-        else:
-            augmented_content = user_message
+        augmented_content = _augment(user_message, context_str)
 
         messages = prior + [ChatMessage(role="user", content=augmented_content)]
         return self._client.generate(
@@ -198,3 +230,10 @@ class ConsciousLoop:
             system_prompt=self._system_prompt,
             thinking_level=self._thinking_level,
         )
+
+
+def _augment(user_message: str, context_str: str | None) -> str:
+    """Prepend injected context to a user message."""
+    if context_str is None:
+        return user_message
+    return context_str + "\n\n" + user_message

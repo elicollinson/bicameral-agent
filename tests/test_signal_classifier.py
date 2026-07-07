@@ -210,6 +210,22 @@ class TestSentimentShift:
     def test_no_messages(self):
         assert SignalClassifier._classify_sentiment([]) == SentimentShift.NEUTRAL
 
+    def test_no_inside_know_nothing_is_neutral(self):
+        """Word-boundary matching: "no" must not fire inside know/nothing."""
+        msgs = [
+            _msg("user", "hello there", ts=1000),
+            _msg("user", "I know nothing about this", ts=2000),
+        ]
+        assert SignalClassifier._classify_sentiment(msgs) == SentimentShift.NEUTRAL
+
+    def test_right_inside_bright_is_neutral(self):
+        """Word-boundary matching: "right" must not fire inside "bright"."""
+        msgs = [
+            _msg("user", "hello there", ts=1000),
+            _msg("user", "the bright light", ts=2000),
+        ]
+        assert SignalClassifier._classify_sentiment(msgs) == SentimentShift.NEUTRAL
+
 
 # ---------------------------------------------------------------------------
 # TestSignalVector

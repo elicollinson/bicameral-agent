@@ -10,6 +10,7 @@ from bicameral_agent.encoder import (
     FEATURE_DIM,
     StateEncoder,
     _sentiment_score,
+    encode_queue_state,
 )
 from bicameral_agent.queue import Priority, QueueState
 from bicameral_agent.schema import (
@@ -205,6 +206,24 @@ class TestAC6Documentation:
         from bicameral_agent import FEATURE_DIM as exported
 
         assert exported == 64
+
+
+# ── Feature 0 semantics ──────────────────────────────────────────────
+
+
+class TestTurnNumberFeature:
+    """Feature 0 is the turn number (count of user messages), not the
+    total message count."""
+
+    def test_counts_user_messages_only(self, encoder):
+        msgs = [
+            Message(role="user", content="q1", timestamp_ms=100, token_count=1),
+            Message(role="assistant", content="a1", timestamp_ms=200, token_count=1),
+            Message(role="user", content="q2", timestamp_ms=300, token_count=1),
+            Message(role="assistant", content="a2", timestamp_ms=400, token_count=1),
+        ]
+        vec = encoder.encode(msgs)
+        assert vec[0] == pytest.approx(2 / 100)  # 2 user turns, _TURN_CAP=100
 
 
 # ── Unit tests for private helpers ───────────────────────────────────
@@ -449,6 +468,18 @@ class TestSentimentScore:
     def test_neutral(self):
         assert _sentiment_score("the weather today") == 0
 
+    def test_no_substring_match_negative(self):
+        # "no" must not fire inside "know" / "nothing"
+        assert _sentiment_score("I know nothing about this") == 0
+
+    def test_no_substring_match_positive(self):
+        # "right" must not fire inside "bright"
+        assert _sentiment_score("the bright light") == 0
+
+    def test_word_boundary_still_matches_whole_words(self):
+        assert _sentiment_score("no, that is wrong") < 0
+        assert _sentiment_score("that is right") > 0
+
 
 # ── Queue state encoding tests ──────────────────────────────────────
 
@@ -464,10 +495,25 @@ class TestQueueStateEncoding:
         vec = encoder.encode([], queue_state=sample_queue_state)
         assert vec[53] == pytest.approx(5 / 20)  # depth
         assert vec[54] == pytest.approx(500 / 10_000)  # token_total
-        assert vec[55] == pytest.approx(1 / 3)  # MEDIUM=1, /3.0
+        assert vec[55] == pytest.approx(2 / 4)  # MEDIUM=1, (1+1)/(3+1)
         assert vec[56] == pytest.approx(2.5 / 60)  # time_since_last_drain
         assert vec[57] == pytest.approx(2 / 3)  # pending_tool_count
         assert vec[58] == pytest.approx(1.0 / 30)  # estimated_next_arrival
+
+    def test_low_priority_distinct_from_empty_queue(self):
+        """Priority.LOW must not encode identically to an empty queue."""
+        qs_low = QueueState(
+            depth=1,
+            token_total=10,
+            max_priority=Priority.LOW,
+            time_since_last_drain=0.0,
+            pending_tool_count=1,
+            estimated_next_arrival=0.0,
+        )
+        out = encode_queue_state(qs_low)
+        assert out[2] == pytest.approx(1 / 4)  # LOW=0 -> (0+1)/(3+1)
+        assert out[2] > 0.0
+        np.testing.assert_array_equal(encode_queue_state(None)[2], 0.0)
 
     def test_queue_state_caps(self, encoder):
         qs = QueueState(
@@ -554,6 +600,11 @@ class TestEpisodeProgressEncoding:
         vec = encoder.encode([], turn_number=50)
         assert vec[62] == pytest.approx(50 / 200)
         assert vec[63] == pytest.approx(50 / 200)  # falls back to _MAX_TURNS_CAP
+
+    def test_max_turns_zero_does_not_crash(self, encoder):
+        vec = encoder.encode([], turn_number=5, max_turns=0)
+        assert np.all(np.isfinite(vec))
+        assert vec[63] == pytest.approx(5 / 200)  # falls back to _MAX_TURNS_CAP
 
 
 # ── Backward compatibility tests ─────────────────────────────────────

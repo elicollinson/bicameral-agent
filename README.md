@@ -50,6 +50,8 @@ The hypothesis: a small neural network trained via Monte Carlo Tree Search can l
                          └──────────────────────┘
 ```
 
+**Injection persistence**: by default, context drained from the queue is folded into the user message that enters conversation history, so injected findings stay visible to every later generation (and their tokens are accounted once, at injection). Setting `queue.persistent_injection = false` switches to transient "whisper" mode, where injected context is shown to the model for exactly one generation and then vanishes from history — kept as an experimental variable for A/B comparison.
+
 ## Project Phases
 
 The project is organized into 6 phases with 40 tracked issues:
