@@ -27,9 +27,9 @@ from bicameral_agent.dataset import ResearchQADataset, ResearchQATask, TaskDiffi
 from bicameral_agent.episode_runner import EpisodeRunner
 from bicameral_agent.eval_datasets import build_dataset, dataset_names, resolve_metric
 from bicameral_agent.eval_report import EvalReport
-from bicameral_agent.model_client import build_client, default_model, provider_names
 from bicameral_agent.no_subconscious_controller import NoSubconsciousController
 from bicameral_agent.random_controller import RandomController
+from bicameral_agent.runner_setup import add_model_args, resolve_runner_clients
 from bicameral_agent.schema import Episode
 from bicameral_agent.serialization import episodes_to_parquet
 
@@ -69,24 +69,7 @@ def select_tasks(dataset: ResearchQADataset, total: int) -> list[ResearchQATask]
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", default="data/baseline")
-    parser.add_argument("--config", default=None,
-                        help="Hyperparameter TOML file (defaults to the bundled "
-                             "config; BICAMERAL_ env overrides always apply, "
-                             "CLI flags win over both).")
-    parser.add_argument("--provider", choices=list(provider_names()), default=None,
-                        help="Model backend to run the answerer against "
-                             "(overrides the config file).")
-    parser.add_argument("--model", default=None,
-                        help="Model id/tag (overrides the config file).")
-    parser.add_argument("--judge-provider", choices=list(provider_names()),
-                        default=None,
-                        help="Model backend for the measurement roles (LLM "
-                             "judge and simulated user), held fixed while "
-                             "--provider varies. Defaults to the config's "
-                             "[measurement_model], else gemini.")
-    parser.add_argument("--judge-model", default=None,
-                        help="Measurement model id/tag (overrides the config "
-                             "file; unset uses the judge provider's default).")
+    add_model_args(parser)
     parser.add_argument("--dataset", choices=dataset_names(), default="builtin",
                         help="Evaluation dataset to run against. External "
                              "datasets must be fetched first via "
@@ -98,8 +81,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-turns", type=int, default=10)
     parser.add_argument("--random-seed", type=int, default=42)
     parser.add_argument("--random-probability", type=float, default=0.2)
-    parser.add_argument("--episode-budget", type=float, default=None,
-                        help="Optional per-episode cost ceiling in USD.")
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args(argv)
 
@@ -127,32 +108,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.episode_budget is not None:
         cost_tracker.set_episode_budget(args.episode_budget)
 
-    provider = args.provider or hyper.model.provider
-    # The configured model name only applies to the configured provider.
-    model = args.model or (hyper.model.name if provider == hyper.model.provider else None)
-    client = build_client(provider, model)
-
-    # Measurement roles (LLM judge + simulated user) are pinned independently
-    # of the answerer so cross-model comparisons stay on one judging scale
-    # (issue #53). Precedence mirrors the answerer's: CLI > config > gemini.
-    measurement = hyper.measurement_model
-    judge_provider = args.judge_provider or (
-        measurement.provider if measurement is not None else "gemini"
-    )
-    judge_model = args.judge_model or (
-        measurement.name
-        if measurement is not None and judge_provider == measurement.provider
-        else None
-    )
-    resolved_judge_model = judge_model or default_model(judge_provider)
-    if judge_provider == provider and resolved_judge_model == client.model:
-        judge_client = client
-    else:
-        judge_client = build_client(judge_provider, judge_model)
-    logger.info(
-        "Answerer: %s/%s; measurement (judge + sim-user): %s/%s",
-        provider, client.model, judge_provider, judge_client.model,
-    )
+    client, judge_client, provenance = resolve_runner_clients(args, hyper)
 
     runner = EpisodeRunner(
         client,
@@ -198,8 +154,8 @@ def main(argv: list[str] | None = None) -> int:
         result,
         dataset=args.dataset,
         metric=metric,
-        answerer={"provider": provider, "model": client.model},
-        measurement={"provider": judge_provider, "model": judge_client.model},
+        answerer=provenance["answerer"],
+        measurement=provenance["measurement"],
         tasks_per_condition=args.tasks_per_condition,
         max_turns=args.max_turns,
     )

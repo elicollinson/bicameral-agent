@@ -38,8 +38,8 @@ from bicameral_agent.dataset import (
 )
 from bicameral_agent.episode_runner import EpisodeRunner
 from bicameral_agent.mcts_trainer import MCTSTrainer, MCTSTrainerConfig
-from bicameral_agent.model_client import build_client, default_model, provider_names
 from bicameral_agent.policy_value_net import PolicyValueNetwork
+from bicameral_agent.runner_setup import add_model_args, resolve_runner_clients
 from bicameral_agent.schema import Episode
 from bicameral_agent.serialization import episodes_from_parquet
 from bicameral_agent.training_pipeline import STATE_DIM, TrainingDataPipeline
@@ -102,28 +102,7 @@ def build_runner(args: argparse.Namespace, hyper: HyperConfig) -> tuple[EpisodeR
     if args.episode_budget is not None:
         cost_tracker.set_episode_budget(args.episode_budget)
 
-    provider = args.provider or hyper.model.provider
-    model = args.model or (hyper.model.name if provider == hyper.model.provider else None)
-    client = build_client(provider, model)
-
-    measurement = hyper.measurement_model
-    judge_provider = args.judge_provider or (
-        measurement.provider if measurement is not None else "gemini"
-    )
-    judge_model = args.judge_model or (
-        measurement.name
-        if measurement is not None and judge_provider == measurement.provider
-        else None
-    )
-    resolved_judge_model = judge_model or default_model(judge_provider)
-    if judge_provider == provider and resolved_judge_model == client.model:
-        judge_client = client
-    else:
-        judge_client = build_client(judge_provider, judge_model)
-    logger.info(
-        "Answerer: %s/%s; measurement (judge + sim-user): %s/%s",
-        provider, client.model, judge_provider, judge_client.model,
-    )
+    client, judge_client, _provenance = resolve_runner_clients(args, hyper)
 
     runner = EpisodeRunner(
         client,
@@ -143,21 +122,7 @@ def build_runner(args: argparse.Namespace, hyper: HyperConfig) -> tuple[EpisodeR
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", default="data/mcts_training")
-    parser.add_argument("--config", default=None,
-                        help="Hyperparameter TOML file (defaults to the bundled "
-                             "config; BICAMERAL_ env overrides always apply, "
-                             "CLI flags win over both).")
-    parser.add_argument("--provider", choices=list(provider_names()), default=None,
-                        help="Model backend for episode collection/evaluation "
-                             "(overrides the config file).")
-    parser.add_argument("--model", default=None,
-                        help="Model id/tag (overrides the config file).")
-    parser.add_argument("--judge-provider", choices=list(provider_names()),
-                        default=None,
-                        help="Model backend for the measurement roles (LLM "
-                             "judge and simulated user).")
-    parser.add_argument("--judge-model", default=None,
-                        help="Measurement model id/tag.")
+    add_model_args(parser)
     parser.add_argument("--metric", default="llm_judge",
                         help="Verification metric used to score episodes.")
     parser.add_argument("--iterations", type=int, default=10)
@@ -187,8 +152,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-search", action="store_true",
                         help="Collect and evaluate with the raw policy "
                              "instead of MCTS-improved actions.")
-    parser.add_argument("--episode-budget", type=float, default=None,
-                        help="Optional per-episode cost ceiling in USD.")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args(argv)
