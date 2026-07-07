@@ -26,6 +26,16 @@ class UserEventType(str, enum.Enum):
     TASK_COMPLETE = "task_complete"
 
 
+def estimate_text_tokens(text: str) -> int:
+    """Rough token estimate for text not measured by the API (~4 chars/token).
+
+    Single estimator shared by user-message logging and tool queue deposits so
+    that episode token totals use one unit throughout. Assistant messages keep
+    exact API-reported token counts.
+    """
+    return (len(text) + 3) // 4
+
+
 class Message(BaseModel):
     """A single message in the episode conversation.
 
@@ -231,3 +241,10 @@ class Episode(BaseModel):
         from bicameral_agent.serialization import episode_from_parquet
 
         return episode_from_parquet(path)
+
+
+def episode_completed(episode: Episode) -> bool:
+    """Whether the simulated user marked the task complete in this episode."""
+    return any(
+        e.event_type == UserEventType.TASK_COMPLETE for e in episode.user_events
+    )

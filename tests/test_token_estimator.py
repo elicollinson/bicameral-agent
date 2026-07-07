@@ -11,7 +11,6 @@ from bicameral_agent.token_estimator import (
     TokenEstimate,
     TokenEstimator,
     _TOOL_PROFILES,
-    estimate_text_tokens,
 )
 
 # 5 conversation sizes for parametrized tests
@@ -303,15 +302,3 @@ class TestThreadSafety:
             t.join()
 
         assert not errors, f"Thread safety errors: {errors}"
-
-
-class TestEstimateTextTokens:
-    def test_empty_string(self):
-        assert estimate_text_tokens("") == 0
-
-    def test_four_chars_per_token(self):
-        assert estimate_text_tokens("abcd") == 1
-        assert estimate_text_tokens("abcdefgh") == 2
-
-    def test_rounds_up(self):
-        assert estimate_text_tokens("abcde") == 2

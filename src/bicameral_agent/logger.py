@@ -123,6 +123,12 @@ class ConversationLogger:
             self._check_not_finalized()
             self._wasted_tokens += token_count
 
+    @property
+    def wasted_tokens(self) -> int:
+        """Total tokens recorded via log_wasted_tokens() so far."""
+        with self._lock:
+            return self._wasted_tokens
+
     def log_user_event(
         self, event_type: UserEventType, metadata: dict | None = None
     ) -> None:

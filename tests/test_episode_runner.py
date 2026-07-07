@@ -765,14 +765,20 @@ class TestInjectionModes:
         assert "interrupt_count" in episode.metadata
         assert isinstance(episode.metadata["interrupt_count"], int)
 
-    def _run_mode_with_deposit(self, mode: InjectionMode) -> Episode:
+    def _run_mode_with_deposit(
+        self,
+        mode: InjectionMode,
+        interrupt_config=None,
+    ) -> Episode:
         """Run a single-turn episode where the tool deposits a zero-token item."""
         client = _make_mock_client()
         ctrl = MagicMock(spec=Controller)
         ctrl.decisions = []
         ctrl.decide.return_value = Action.SCANNER
 
-        config = EpisodeConfig(max_turns=1, injection_mode=mode)
+        config = EpisodeConfig(
+            max_turns=1, injection_mode=mode, interrupt_config=interrupt_config
+        )
         runner = EpisodeRunner(client, config)
 
         with patch("bicameral_agent.episode_runner.SimulatedUser") as MockSimUser:
@@ -824,6 +830,21 @@ class TestInjectionModes:
             regen_episode.outcome.total_tokens
             > no_regen_episode.outcome.total_tokens
         )
+
+    def test_interrupt_fires_with_reachable_config(self):
+        """A HIGH-priority deposit fires an interrupt under AB_INTERRUPT_CONFIG."""
+        from bicameral_agent.ab_test import AB_INTERRUPT_CONFIG
+
+        episode = self._run_mode_with_deposit(
+            InjectionMode.INTERRUPT, interrupt_config=AB_INTERRUPT_CONFIG
+        )
+
+        assert episode.metadata["interrupt_count"] == 1
+        # The interrupt discarded one full mock generation (input 10 + output 20)
+        assert episode.metadata["wasted_tokens"] == 30
+        # The deposited context was consumed by the regeneration
+        assert len(episode.context_injections) == 1
+        assert episode.context_injections[0].consumed is True
 
     def test_injection_mode_in_episode_config(self):
         """EpisodeConfig defaults to BREAKPOINT."""

@@ -18,7 +18,7 @@ from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.episode_runner import Controller, EpisodeRunner
 from bicameral_agent.gemini import GeminiClient
 from bicameral_agent.heuristic_controller import Action, DecisionLog, TOOL_IDS
-from bicameral_agent.schema import Episode, UserEventType
+from bicameral_agent.schema import Episode, UserEventType, episode_completed
 
 logger = logging.getLogger(__name__)
 
@@ -85,16 +85,13 @@ def extract_task_metrics(
     user_stops = sum(
         1 for e in episode.user_events if e.event_type == UserEventType.STOP
     )
-    task_completed = int(any(
-        e.event_type == UserEventType.TASK_COMPLETE for e in episode.user_events
-    ))
     drain_count = sum(1 for inj in episode.context_injections if inj.consumed)
     return TaskMetrics(
         quality_score=episode.outcome.quality_score,
         total_tokens=episode.outcome.total_tokens,
         total_turns=episode.outcome.total_turns,
         user_stops=user_stops,
-        task_completed=task_completed,
+        task_completed=int(episode_completed(episode)),
         wall_clock_ms=episode.outcome.wall_clock_ms,
         tool_invocation_count=len(episode.tool_invocations),
         tool_cost_usd=tool_cost,

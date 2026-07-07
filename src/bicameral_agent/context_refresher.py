@@ -13,8 +13,7 @@ import hashlib
 import json
 
 from bicameral_agent.queue import Priority, QueueItem
-from bicameral_agent.schema import Message
-from bicameral_agent.token_estimator import estimate_text_tokens
+from bicameral_agent.schema import Message, estimate_text_tokens
 from bicameral_agent.tool_primitive import (
     BudgetExceededError,
     ToolMetadata,

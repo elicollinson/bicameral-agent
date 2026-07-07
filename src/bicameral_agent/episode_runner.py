@@ -23,11 +23,17 @@ from bicameral_agent.gemini import GeminiClient
 from bicameral_agent.heuristic_controller import Action, DecisionLog, FullState, TOOL_IDS
 from bicameral_agent.logger import ConversationLogger
 from bicameral_agent.queue import ContextQueue, InterruptConfig
-from bicameral_agent.schema import Episode, Message, UserEvent, UserEventType
+from bicameral_agent.schema import (
+    Episode,
+    Message,
+    UserEvent,
+    UserEventType,
+    estimate_text_tokens,
+)
 from bicameral_agent.scorer import LexicalScorer, TaskScorer
 from bicameral_agent.signal_classifier import SignalClassifier
 from bicameral_agent.simulated_user import ActionType, Patience, SimulatedUser, Strictness
-from bicameral_agent.token_estimator import ContextFeatures, estimate_text_tokens
+from bicameral_agent.token_estimator import ContextFeatures
 from bicameral_agent.tool_latency import ToolLatencyModel
 from bicameral_agent.cost_tracker import CostBudgetExceeded, CostTrackedClient, CostTracker
 from bicameral_agent.tool_primitive import BudgetExceededError, TokenBudget
@@ -168,7 +174,6 @@ class EpisodeRunner:
         pending_injection_indices: list[int] = []
         interrupt_count = 0
         expired_count = 0
-        wasted_tokens = 0
 
         user_message = task.question
 
@@ -208,7 +213,6 @@ class EpisodeRunner:
                 response.input_tokens + response.output_tokens
             )
             if loop_waste > 0:
-                wasted_tokens += loop_waste
                 log.log_wasted_tokens(loop_waste)
 
             # (e2) Log assistant message at generation time so that any tool
@@ -303,7 +307,7 @@ class EpisodeRunner:
 
                         # (j2) Mode-specific handling after tool deposit
                         def _drain_and_regenerate():
-                            nonlocal response, wasted_tokens
+                            nonlocal response
                             ctx = queue.drain_at_breakpoint()
                             if ctx is not None:
                                 regen = loop.regenerate_with_context(ctx)
@@ -311,7 +315,6 @@ class EpisodeRunner:
                                     response.input_tokens + response.output_tokens
                                 )
                                 queue.report_wasted_tokens(discarded)
-                                wasted_tokens += discarded
                                 log.log_wasted_tokens(discarded)
                                 response = regen
                                 log.replace_last_message(
@@ -379,7 +382,7 @@ class EpisodeRunner:
         # Store metadata
         log.set_metadata("interrupt_count", interrupt_count)
         log.set_metadata("expired_queue_items", expired_count)
-        log.set_metadata("wasted_tokens", wasted_tokens)
+        log.set_metadata("wasted_tokens", log.wasted_tokens)
         log.set_metadata("injection_mode", cfg.injection_mode.value)
         if self._hyper_config is not None:
             log.set_metadata("hyperparameters", self._hyper_config.to_dict())

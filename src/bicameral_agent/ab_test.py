@@ -24,7 +24,7 @@ from bicameral_agent.episode_runner import (
 from bicameral_agent.followup_classifier import FollowUpType
 from bicameral_agent.gemini import GeminiClient
 from bicameral_agent.queue import InterruptConfig, Priority
-from bicameral_agent.schema import Episode, UserEvent, UserEventType
+from bicameral_agent.schema import Episode, UserEvent, UserEventType, episode_completed
 
 
 # ---------------------------------------------------------------------------
@@ -138,9 +138,7 @@ def extract_metrics(
         interrupt_count=episode.metadata.get("interrupt_count", 0),
         total_turns=episode.outcome.total_turns,
         wall_clock_ms=episode.outcome.wall_clock_ms,
-        task_completed=any(
-            e.event_type == UserEventType.TASK_COMPLETE for e in episode.user_events
-        ),
+        task_completed=episode_completed(episode),
     )
 
 
