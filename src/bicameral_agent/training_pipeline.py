@@ -245,7 +245,7 @@ class TrainingDataPipeline:
         # Build state vectors and per-step rewards
         n = len(decision_points)
         states = [
-            self._build_state_vector(dp.state, dp.action)
+            self.build_state_vector(dp.state, dp.action.timestamp_ms)
             for dp in decision_points
         ]
         next_states = [
@@ -319,16 +319,21 @@ class TrainingDataPipeline:
     # State vector construction
     # ------------------------------------------------------------------
 
-    def _build_state_vector(
+    def build_state_vector(
         self,
         state: ReplayState,
-        action_msg: Message,
+        cutoff_ms: int,
     ) -> np.ndarray:
         """Build the 108-dim state vector at a decision point.
 
-        ``state`` reflects everything before ``action_msg`` (the assistant
-        message about to be produced). No information from after
-        ``action_msg.timestamp_ms`` is used.
+        ``state`` reflects everything before the decision (the assistant
+        message about to be produced); ``cutoff_ms`` is that message's
+        timestamp. No information from after ``cutoff_ms`` is used.
+
+        Public so the serve-time
+        :class:`~bicameral_agent.learned_controller.LearnedPolicyController`
+        can encode live decision points with the exact code path used to
+        build training states (train/serve consistency, issue #29).
         """
         vec = np.zeros(STATE_DIM, dtype=np.float32)
 
@@ -336,7 +341,7 @@ class TrainingDataPipeline:
         user_events = list(state.user_events)
         tool_history = list(state.completed_tool_invocations)
         queue_snapshot = self._reconstruct_queue_state(
-            state.pending_injections, action_msg.timestamp_ms
+            state.pending_injections, cutoff_ms
         )
 
         # Latency context features need ContextFeatures from the
@@ -380,7 +385,7 @@ class TrainingDataPipeline:
 
         # 94–96: time since each of the last 3 invocations
         vec[_OFF_TOOL_TIMES : _OFF_TOOL_TIMES + _TOOL_HISTORY_TIME] = (
-            self._encode_tool_history_times(tool_history, action_msg.timestamp_ms)
+            self._encode_tool_history_times(tool_history, cutoff_ms)
         )
 
         # 97–102: queue state (shared encoding with the StateEncoder slice)
