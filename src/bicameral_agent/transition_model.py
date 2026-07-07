@@ -38,13 +38,13 @@ from __future__ import annotations
 
 import dataclasses
 import time
-from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn as nn
 
 from bicameral_agent.policy_value_net import NUM_ACTIONS
+from bicameral_agent.torch_checkpoint import TorchCheckpointMixin
 from bicameral_agent.training_pipeline import STATE_DIM, TrainingExample
 
 DEFAULT_HIDDEN_DIM: int = 128
@@ -57,7 +57,7 @@ components in ~[0, 1], hence norm <= sqrt(state_dim); the factor leaves
 generous headroom while still catching exponential divergence."""
 
 
-class TransitionModel(nn.Module):
+class TransitionModel(TorchCheckpointMixin, nn.Module):
     """MLP predicting ``(next_state, reward)`` from ``(state, action one-hot)``.
 
     Parameters
@@ -178,28 +178,6 @@ class TransitionModel(nn.Module):
     def param_count(self) -> int:
         """Total number of trainable parameters."""
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
-
-    def save(self, path: str | Path) -> None:
-        """Save model checkpoint to *path*."""
-        torch.save(self.state_dict(), path)
-
-    @classmethod
-    def load(cls, path: str | Path, **kwargs: int) -> TransitionModel:
-        """Load a model checkpoint from *path*.
-
-        Parameters
-        ----------
-        path:
-            File path to a saved state dict.
-        **kwargs:
-            Constructor keyword arguments (``state_dim``, ``num_actions``,
-            ``hidden_dim``) to recreate the architecture before loading
-            weights.
-        """
-        model = cls(**kwargs)
-        model.load_state_dict(torch.load(path, weights_only=True))
-        model.eval()
-        return model
 
 
 # ---------------------------------------------------------------------------

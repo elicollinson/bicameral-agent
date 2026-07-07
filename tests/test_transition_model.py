@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -37,9 +38,14 @@ from bicameral_agent.transition_model import (
     split_examples,
 )
 
-_REPO_ROOT = Path(__file__).resolve().parent.parent
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+# Real pilot-episode directory for the smoke test: repo-relative by
+# default, overridable via BICAMERAL_BASELINE_DATA.
 _PARTIAL_DATA_DIR = Path(
-    "/Users/eli/Documents/Code/bicameral-agent/data/baseline_rerun_partial1"
+    os.environ.get(
+        "BICAMERAL_BASELINE_DATA",
+        _REPO_ROOT / "data" / "baseline_rerun_partial1",
+    )
 )
 
 

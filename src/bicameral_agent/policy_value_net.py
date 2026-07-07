@@ -13,13 +13,13 @@ Architecture
 
 from __future__ import annotations
 
-from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
 
 from bicameral_agent.encoder import FEATURE_DIM
 from bicameral_agent.heuristic_controller import Action
+from bicameral_agent.torch_checkpoint import TorchCheckpointMixin
 
 NUM_ACTIONS: int = 4
 """Number of discrete actions the policy head selects from."""
@@ -33,7 +33,7 @@ ACTION_ORDER: tuple[Action, ...] = (
 """Maps policy output index → Action enum value."""
 
 
-class PolicyValueNetwork(nn.Module):
+class PolicyValueNetwork(TorchCheckpointMixin, nn.Module):
     """Neural network that produces action probabilities and a value estimate.
 
     Parameters
@@ -163,25 +163,3 @@ class PolicyValueNetwork(nn.Module):
     def param_count(self) -> int:
         """Total number of trainable parameters."""
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
-
-    def save(self, path: str | Path) -> None:
-        """Save model checkpoint to *path*."""
-        torch.save(self.state_dict(), path)
-
-    @classmethod
-    def load(cls, path: str | Path, **kwargs: int) -> PolicyValueNetwork:
-        """Load a model checkpoint from *path*.
-
-        Parameters
-        ----------
-        path:
-            File path to a saved state dict.
-        **kwargs:
-            Constructor keyword arguments (``input_dim``, ``hidden_dim``,
-            ``num_actions``) to recreate the architecture before loading
-            weights.
-        """
-        model = cls(**kwargs)
-        model.load_state_dict(torch.load(path, weights_only=True))
-        model.eval()
-        return model
