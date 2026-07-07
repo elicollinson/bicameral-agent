@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import logging
 import random
-import time
 
-from bicameral_agent.heuristic_controller import Action, DecisionLog, FullState
+from bicameral_agent.heuristic_controller import (
+    Action,
+    DecisionLoggingController,
+    FullState,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +22,7 @@ logger = logging.getLogger(__name__)
 _TOOL_ACTIONS = (Action.SCANNER, Action.AUDITOR, Action.REFRESHER)
 
 
-class RandomController:
+class RandomController(DecisionLoggingController):
     """Controller that randomly selects tool actions.
 
     With probability ``action_probability``, picks uniformly from
@@ -32,9 +35,9 @@ class RandomController:
         action_probability: float = 0.2,
         seed: int | None = None,
     ) -> None:
+        super().__init__()
         self._action_probability = action_probability
         self._rng = random.Random(seed)
-        self._decisions: list[DecisionLog] = []
 
     def decide(self, state: FullState) -> Action:
         # Queue depth guard (matches heuristic controller rule 7)
@@ -45,14 +48,7 @@ class RandomController:
         else:
             action = Action.DO_NOTHING
 
-        self._decisions.append(
-            DecisionLog(
-                action=action,
-                rule_fired=0,
-                state=state,
-                timestamp_ms=time.time() * 1000,
-            )
-        )
+        self._record_decision(action, 0, state)
         logger.debug(
             "action=%s turn=%d queue=%d",
             action.value,
@@ -60,7 +56,3 @@ class RandomController:
             state.queue_depth,
         )
         return action
-
-    @property
-    def decisions(self) -> list[DecisionLog]:
-        return list(self._decisions)

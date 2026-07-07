@@ -47,6 +47,20 @@ class LatencyEstimate:
     mean_ms: float
     p25_ms: float
     p75_ms: float
+    sigma_ms: float = 0.0
+    """Std dev of the predicted distribution. Exposed so consumers
+    (e.g. ToolLatencyModel variance aggregation) need not reverse-engineer
+    it from the percentiles, which is lossy when p25 clamps at 0."""
+
+    @classmethod
+    def from_mean_sigma(cls, mean_ms: float, sigma_ms: float) -> LatencyEstimate:
+        """Build an estimate from mean and std dev, deriving p25/p75."""
+        return cls(
+            mean_ms=mean_ms,
+            p25_ms=max(mean_ms - _Z_25 * sigma_ms, 0.0),
+            p75_ms=mean_ms + _Z_25 * sigma_ms,
+            sigma_ms=sigma_ms,
+        )
 
 
 class APILatencyModel:
@@ -150,7 +164,4 @@ class APILatencyModel:
             prior_std = prior_mean * _PRIOR_VARIANCE_FRAC
             spread = (1 - w) * prior_std + w * learned_std
 
-        p25 = max(mean_ms - _Z_25 * spread, 0.0)
-        p75 = mean_ms + _Z_25 * spread
-
-        return LatencyEstimate(mean_ms=mean_ms, p25_ms=p25, p75_ms=p75)
+        return LatencyEstimate.from_mean_sigma(mean_ms, spread)

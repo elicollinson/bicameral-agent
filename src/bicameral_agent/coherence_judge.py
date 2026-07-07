@@ -7,15 +7,13 @@ coherence using Gemini Flash. Thread-safe with caching and batch support.
 from __future__ import annotations
 
 import hashlib
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from pydantic import BaseModel, Field
 
 from bicameral_agent.gemini import GeminiClient
 from bicameral_agent.llm_output import coerce_int, safe_parse_json
 from bicameral_agent.schema import Message
-from bicameral_agent.scorer import _normalize_score
+from bicameral_agent.scorer import CachedConcurrentScorer, _normalize_score
 
 
 class CoherenceScore(BaseModel):
@@ -68,7 +66,7 @@ _JUDGE_RESPONSE_SCHEMA = {
 }
 
 
-class CoherenceJudge:
+class CoherenceJudge(CachedConcurrentScorer):
     """LLM-as-judge for conversation coherence.
 
     Thread-safe with caching. Uses Gemini Flash for scoring.
@@ -79,63 +77,23 @@ class CoherenceJudge:
         client: GeminiClient | None = None,
         max_workers: int = 10,
     ) -> None:
+        super().__init__(max_workers=max_workers)
         self._client = client or GeminiClient()
-        self._max_workers = max_workers
-        self._cache: dict[str, CoherenceScore] = {}
-        self._lock = threading.Lock()
 
     def score(self, messages: list[Message]) -> CoherenceScore:
         """Score a conversation's coherence.
 
         Returns cached result if this conversation was scored before.
         """
-        key = self._cache_key(messages)
-        with self._lock:
-            cached = self._cache.get(key)
-        if cached is not None:
-            return cached
-        result = self._score_uncached(messages)
-        with self._lock:
-            self._cache[key] = result
-        return result
+        return self._score_cached(self._cache_key(messages), messages)
 
     def score_batch(
         self,
         conversations: list[list[Message]],
     ) -> list[CoherenceScore]:
         """Score multiple conversations concurrently."""
-        results: dict[int, CoherenceScore] = {}
-        uncached_indices: list[int] = []
-
-        for i, msgs in enumerate(conversations):
-            key = self._cache_key(msgs)
-            with self._lock:
-                cached = self._cache.get(key)
-            if cached is not None:
-                results[i] = cached
-            else:
-                uncached_indices.append(i)
-
-        if uncached_indices:
-            with ThreadPoolExecutor(max_workers=self._max_workers) as pool:
-                future_to_idx = {
-                    pool.submit(self._score_uncached, conversations[i]): i
-                    for i in uncached_indices
-                }
-                for future in as_completed(future_to_idx):
-                    idx = future_to_idx[future]
-                    score = future.result()
-                    results[idx] = score
-                    key = self._cache_key(conversations[idx])
-                    with self._lock:
-                        self._cache[key] = score
-
-        return [results[i] for i in range(len(conversations))]
-
-    @property
-    def cache_size(self) -> int:
-        with self._lock:
-            return len(self._cache)
+        keys = [self._cache_key(msgs) for msgs in conversations]
+        return self._score_batch_cached(keys, conversations)
 
     @staticmethod
     def _cache_key(messages: list[Message]) -> str:

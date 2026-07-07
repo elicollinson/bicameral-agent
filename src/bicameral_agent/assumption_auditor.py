@@ -8,18 +8,23 @@ as a QueueItem with suggested actions.
 from __future__ import annotations
 
 import enum
-import hashlib
 from dataclasses import dataclass
 
-from bicameral_agent.gap_scanner import MockSearchProvider, SearchProvider, SearchResult
+from bicameral_agent.gap_scanner import (
+    MockSearchProvider,
+    SearchProvider,
+    SearchResult,
+    _format_conversation,
+)
 from bicameral_agent.llm_output import safe_parse_json
 from bicameral_agent.queue import Priority, QueueItem
-from bicameral_agent.schema import Message, estimate_text_tokens
+from bicameral_agent.schema import estimate_text_tokens
 from bicameral_agent.tool_primitive import (
     BudgetExceededError,
     ToolMetadata,
     ToolPrimitive,
     ToolResult,
+    make_dedup_key,
 )
 
 
@@ -293,15 +298,6 @@ class AssumptionAuditor(ToolPrimitive):
 # ---------------------------------------------------------------------------
 
 
-def _format_conversation(history: list[Message]) -> str:
-    """Format last 10 messages as [role]: content lines."""
-    recent = history[-10:]
-    lines = []
-    for msg in recent:
-        lines.append(f"[{msg.role}]: {msg.content}")
-    return "\n".join(lines)
-
-
 def _extract_assumptions(conv_text: str, client) -> list[IdentifiedAssumption]:
     """Call 1: Send conversation to LLM, parse structured assumption JSON."""
     response = client.generate(
@@ -391,7 +387,7 @@ def _assess_evidence(
 
 
 def _make_dedup_key(assumptions: list[IdentifiedAssumption]) -> str:
-    """SHA-256 hash of sorted assumption descriptions, prefixed assumption_auditor:."""
-    descriptions = sorted(a.description for a in assumptions)
-    h = hashlib.sha256("|".join(descriptions).encode()).hexdigest()
-    return f"assumption_auditor:{h}"
+    """Dedup key from assumption descriptions, prefixed assumption_auditor:."""
+    return make_dedup_key(
+        "assumption_auditor", (a.description for a in assumptions)
+    )

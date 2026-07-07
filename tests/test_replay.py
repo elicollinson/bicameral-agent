@@ -6,6 +6,7 @@ import uuid
 import pytest
 
 from bicameral_agent.logger import ConversationLogger
+from bicameral_agent.queue import Priority, QueueItem
 from bicameral_agent.replay import DecisionPoint, EpisodeReplayer, ReplayState
 from bicameral_agent.schema import (
     ContextInjection,
@@ -368,10 +369,12 @@ class TestFidelity:
         tool_idx = logger.log_tool_invocation("search", input_tokens=10)
         # Context injection
         inj_idx = logger.log_context_injection(
-            content="search results",
-            source_tool_id="search",
-            priority=1,
-            token_count=20,
+            QueueItem(
+                content="search results",
+                source_tool_id="search",
+                priority=Priority.MEDIUM,
+                token_count=20,
+            )
         )
         logger.log_tool_completion(tool_idx, output_tokens=15, result_deposited=True)
         # Assistant response

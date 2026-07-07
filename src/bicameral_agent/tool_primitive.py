@@ -8,9 +8,11 @@ enforcement, and latency logging.
 from __future__ import annotations
 
 import abc
+import hashlib
 import logging
 import time
 from dataclasses import dataclass
+from typing import Iterable
 
 import numpy as np
 from pydantic import BaseModel, Field
@@ -23,6 +25,16 @@ logger = logging.getLogger(__name__)
 
 # Type alias: the 64-dim float32 vector produced by StateEncoder.encode()
 StateVector = np.ndarray
+
+
+def make_dedup_key(prefix: str, descriptions: Iterable[str]) -> str:
+    """Stable queue dedup key: SHA-256 of the sorted descriptions, prefixed.
+
+    Shared by all tool primitives so identical findings hash to the same key
+    regardless of ordering, while the prefix namespaces keys per tool.
+    """
+    digest = hashlib.sha256("|".join(sorted(descriptions)).encode()).hexdigest()
+    return f"{prefix}:{digest}"
 
 
 @dataclass(frozen=True, slots=True)

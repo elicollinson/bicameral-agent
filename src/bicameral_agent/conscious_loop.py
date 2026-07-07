@@ -1,8 +1,10 @@
 """Main execution loop driving multi-turn Gemini conversations with context injection.
 
-Orchestrates the conscious loop: runs generation turns, injects context from the
-ContextQueue at breakpoints, and handles interrupts when critical context arrives
-mid-generation.
+Orchestrates the conscious loop: runs generation turns and injects context
+from the ContextQueue at breakpoints. Interrupt handling lives in the
+EpisodeRunner (InjectionMode.INTERRUPT): generation is synchronous, so
+nothing can enqueue while ``generate()`` runs — an in-loop post-generation
+interrupt check could never fire in production and was removed (issue #54).
 
 Injection persistence semantics (issue #49): by default injected context is
 *persistent* — the context-augmented user message is what enters conversation
@@ -22,7 +24,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from bicameral_agent.gemini import ChatMessage, GeminiClient, GeminiResponse
-from bicameral_agent.queue import ContextQueue, InterruptConfig
+from bicameral_agent.queue import ContextQueue
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,18 +35,15 @@ class AssistantResponse:
     turn_number: int
     input_tokens: int
     output_tokens: int
-    total_tokens: int
     duration_ms: float
-    interrupted: bool
     context_injected: bool
 
 
 class ConsciousLoop:
-    """Drives multi-turn Gemini conversations with context injection and interrupts.
+    """Drives multi-turn Gemini conversations with context injection.
 
     Each call to run_turn() sends a user message, checks for queued context
-    at breakpoints, generates a response, and optionally interrupts and
-    retries if critical context arrives during generation.
+    at breakpoints, and generates a response.
 
     ``persistent_injection`` controls visibility of injected context across
     turns. When True (default), the context-augmented user message is stored
@@ -62,7 +61,6 @@ class ConsciousLoop:
         system_prompt: str | None = None,
         thinking_level: str = "medium",
         temperature: float | None = None,
-        interrupt_config: InterruptConfig | None = None,
         on_completion: Callable[[AssistantResponse], None] | None = None,
         persistent_injection: bool = True,
     ) -> None:
@@ -71,7 +69,6 @@ class ConsciousLoop:
         self._system_prompt = system_prompt
         self._thinking_level = thinking_level
         self._temperature = temperature
-        self._interrupt_config = interrupt_config or InterruptConfig()
         self._on_completion = on_completion
         self._persistent_injection = persistent_injection
         self._history: list[ChatMessage] = []
@@ -93,11 +90,9 @@ class ConsciousLoop:
         1. Increment turn number, append user message to history
         2. Drain context at breakpoint
         3. Build messages and generate
-        4. Check interrupt threshold — if triggered, report wasted tokens,
-           freeze, drain again, regenerate
-        5. Unfreeze; in persistent mode, replace the stored user message with
+        4. In persistent mode, replace the stored user message with
            the context-augmented one; append assistant response to history
-        6. Fire on_completion callback, return AssistantResponse
+        5. Fire on_completion callback, return AssistantResponse
         """
         self._turn_count += 1
         self._history.append(ChatMessage(role="user", content=user_message))
@@ -111,33 +106,6 @@ class ConsciousLoop:
         # Build messages with context prepended to user message
         response = self._generate(user_message, context_str)
 
-        interrupted = False
-        wasted_input = 0
-        wasted_output = 0
-
-        # Check interrupt threshold
-        if self._queue.check_interrupt_threshold(self._interrupt_config):
-            interrupted = True
-            wasted_input = response.input_tokens
-            wasted_output = response.output_tokens
-            self._queue.report_wasted_tokens(wasted_input + wasted_output)
-            self._queue.freeze()
-
-            # Drain again and combine contexts
-            new_context = self._queue.drain_at_breakpoint()
-            if new_context is not None:
-                if context_str is not None:
-                    context_str = context_str + "\n" + new_context
-                else:
-                    context_str = new_context
-                context_injected = True
-
-            # Regenerate
-            response = self._generate(user_message, context_str)
-
-        if interrupted:
-            self._queue.unfreeze()
-
         duration_ms = (time.monotonic_ns() - start_ns) / 1_000_000
 
         if context_str is not None and self._persistent_injection:
@@ -150,21 +118,12 @@ class ConsciousLoop:
 
         self._history.append(ChatMessage(role="model", content=response.content))
 
-        total_tokens = (
-            response.input_tokens
-            + response.output_tokens
-            + wasted_input
-            + wasted_output
-        )
-
         result = AssistantResponse(
             content=response.content,
             turn_number=self._turn_count,
             input_tokens=response.input_tokens,
             output_tokens=response.output_tokens,
-            total_tokens=total_tokens,
             duration_ms=duration_ms,
-            interrupted=interrupted,
             context_injected=context_injected,
         )
 
@@ -212,9 +171,7 @@ class ConsciousLoop:
             turn_number=self._turn_count,
             input_tokens=response.input_tokens,
             output_tokens=response.output_tokens,
-            total_tokens=response.input_tokens + response.output_tokens,
             duration_ms=duration_ms,
-            interrupted=False,
             context_injected=True,
         )
 

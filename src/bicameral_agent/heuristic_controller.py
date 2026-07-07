@@ -65,7 +65,12 @@ class FullState:
     followup_type: FollowUpType
     queue_depth: int
     executing_tools: tuple[ExecutingTool, ...]
+    """Tools currently in flight. Always empty today: tools run synchronously
+    within the turn, so nothing is executing when the controller decides.
+    Reserved for async tool execution; until then the stagger guard
+    (rule 8) never fires in production."""
     predicted_latencies: dict[str, float]
+    """Predicted mean latency per tool, keyed by tool_id (``TOOL_IDS`` values)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,7 +83,36 @@ class DecisionLog:
     timestamp_ms: float
 
 
-class HeuristicController:
+class DecisionLoggingController:
+    """Base for controllers: records DecisionLog entries and exposes copies.
+
+    Shared by the heuristic, random, and no-subconscious controllers so the
+    append-a-DecisionLog boilerplate lives in one place (issue #54).
+    """
+
+    def __init__(self) -> None:
+        self._decisions: list[DecisionLog] = []
+
+    def _record_decision(
+        self, action: Action, rule_fired: int, state: FullState
+    ) -> None:
+        """Append a DecisionLog entry stamped with the current time."""
+        self._decisions.append(
+            DecisionLog(
+                action=action,
+                rule_fired=rule_fired,
+                state=state,
+                timestamp_ms=time.time() * 1000,
+            )
+        )
+
+    @property
+    def decisions(self) -> list[DecisionLog]:
+        """Return a copy of all recorded decisions."""
+        return list(self._decisions)
+
+
+class HeuristicController(DecisionLoggingController):
     """Rule-based controller that decides when to invoke tools.
 
     Rules are evaluated in priority order (6→1) to find a candidate
@@ -99,25 +133,19 @@ class HeuristicController:
         queue_depth_guard: int = DEFAULT_QUEUE_DEPTH_GUARD,
         stagger_tolerance_ms: float = DEFAULT_STAGGER_TOLERANCE_MS,
     ) -> None:
+        super().__init__()
         self._scanner_interval = scanner_interval
         self._refresher_interval = refresher_interval
         self._auditor_stop_threshold = auditor_stop_threshold
         self._auditor_high_stop_threshold = auditor_high_stop_threshold
         self._queue_depth_guard = queue_depth_guard
         self._stagger_tolerance_ms = stagger_tolerance_ms
-        self._decisions: list[DecisionLog] = []
 
     def decide(self, state: FullState) -> Action:
         """Evaluate rules against state and return the chosen action."""
         action, rule = self._evaluate(state)
 
-        log_entry = DecisionLog(
-            action=action,
-            rule_fired=rule,
-            state=state,
-            timestamp_ms=time.time() * 1000,
-        )
-        self._decisions.append(log_entry)
+        self._record_decision(action, rule, state)
         logger.debug(
             "rule=%d action=%s turn=%d stop_count=%d queue=%d",
             rule,
@@ -127,11 +155,6 @@ class HeuristicController:
             state.queue_depth,
         )
         return action
-
-    @property
-    def decisions(self) -> list[DecisionLog]:
-        """Return all recorded decisions."""
-        return list(self._decisions)
 
     def _evaluate(self, state: FullState) -> tuple[Action, int]:
         """Return (action, rule_number) after evaluating all rules."""
@@ -160,8 +183,10 @@ class HeuristicController:
         if state.queue_depth >= self._queue_depth_guard:
             return Action.DO_NOTHING, 7
 
-        # Rule 8: stagger guard
-        candidate_latency = state.predicted_latencies.get(candidate.value, 0.0)
+        # Rule 8: stagger guard. predicted_latencies is keyed by tool_id
+        # (the TOOL_IDS convention shared with EpisodeRunner), not by the
+        # Action enum value (issue #54).
+        candidate_latency = state.predicted_latencies.get(TOOL_IDS[candidate], 0.0)
         for tool in state.executing_tools:
             if abs(tool.predicted_remaining_ms - candidate_latency) <= self._stagger_tolerance_ms:
                 return Action.DO_NOTHING, 8
