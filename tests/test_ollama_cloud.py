@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from bicameral_agent.gemini import ChatMessage, GeminiResponse
-from bicameral_agent.model_client import _MAX_RETRIES
+from bicameral_agent.model_client import _MAX_RETRIES, TransportExhausted
 from bicameral_agent.ollama_cloud import OllamaCloudClient
 
 
@@ -318,9 +318,10 @@ class TestRetry:
 
         with patch("urllib.request.urlopen", _fake), \
                 patch("bicameral_agent.model_client.time.sleep") as sleep:
-            with pytest.raises(urllib.error.HTTPError):
+            with pytest.raises(TransportExhausted) as exc_info:
                 OllamaCloudClient(api_key="k").generate([{"role": "user", "content": "x"}])
         assert sleep.call_count == _MAX_RETRIES
+        assert isinstance(exc_info.value.__cause__, urllib.error.HTTPError)
 
 
 # ---------------------------------------------------------------------------
@@ -403,8 +404,9 @@ class TestReadPhaseRetry:
 
         with patch("urllib.request.urlopen", _fake), \
                 patch("bicameral_agent.model_client.time.sleep") as sleep:
-            with pytest.raises(TimeoutError):
+            with pytest.raises(TransportExhausted) as exc_info:
                 OllamaCloudClient(api_key="k").generate(
                     [{"role": "user", "content": "x"}]
                 )
         assert sleep.call_count == _MAX_RETRIES
+        assert isinstance(exc_info.value.__cause__, TimeoutError)

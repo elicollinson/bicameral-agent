@@ -17,6 +17,7 @@ from bicameral_agent.model_client import (
     _BASE_DELAY,
     _BACKOFF_FACTOR,
     _MAX_RETRIES,
+    TransportExhausted,
 )
 
 
@@ -252,9 +253,10 @@ class TestRetryLogic:
         exc_429 = Exception("429 Too Many Requests")
         sdk.models.generate_content.side_effect = exc_429
         with patch("bicameral_agent.model_client.time.sleep"):
-            with pytest.raises(Exception, match="429"):
+            with pytest.raises(TransportExhausted, match="429") as exc_info:
                 client.generate([{"role": "user", "content": "hi"}])
         assert sdk.models.generate_content.call_count == _MAX_RETRIES + 1
+        assert exc_info.value.__cause__ is exc_429
 
     def test_exponential_backoff_timing(self, mock_client):
         client, sdk = mock_client

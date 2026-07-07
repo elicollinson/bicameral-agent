@@ -10,13 +10,21 @@ adapter, and that the Ollama Gemma tag is a known (flat-rate) model for
 from __future__ import annotations
 
 import logging
+from unittest.mock import patch
 
 import pytest
 
 from bicameral_agent.config import HyperConfig, ModelConfig
 from bicameral_agent.cost_tracker import MODEL_PRICING, CostTracker, resolve_pricing
 from bicameral_agent.gemini import GeminiClient
-from bicameral_agent.model_client import build_client, default_model, provider_names
+from bicameral_agent.model_client import (
+    _MAX_RETRIES,
+    RetryingClientBase,
+    TransportExhausted,
+    build_client,
+    default_model,
+    provider_names,
+)
 from bicameral_agent.ollama_cloud import OllamaCloudClient
 
 
@@ -112,6 +120,58 @@ class TestModelConfigProvider:
         client = config.to_model_client()
         assert isinstance(client, OllamaCloudClient)
         assert client.model == "gemma4:31b-cloud"
+
+
+class _TimeoutRetryClient(RetryingClientBase):
+    """Retry-base test double: only TimeoutError is retryable."""
+
+    @staticmethod
+    def _is_retryable(exc: Exception) -> bool:
+        return isinstance(exc, TimeoutError)
+
+
+class TestTransportExhausted:
+    """Issue #81: exhausted retries surface as a typed error callers can catch."""
+
+    def test_exhausted_retries_raise_typed_error_with_cause(self):
+        client = _TimeoutRetryClient()
+        original = TimeoutError("read timed out")
+        calls = {"n": 0}
+
+        def _attempt():
+            calls["n"] += 1
+            raise original
+
+        with patch("bicameral_agent.model_client.time.sleep"):
+            with pytest.raises(TransportExhausted, match="read timed out") as exc_info:
+                client._execute_with_retry(_attempt)
+
+        assert calls["n"] == _MAX_RETRIES + 1
+        assert exc_info.value.__cause__ is original
+        assert exc_info.value.last_error is original
+        assert exc_info.value.attempts == _MAX_RETRIES + 1
+
+    def test_non_retryable_error_propagates_unwrapped(self):
+        client = _TimeoutRetryClient()
+
+        def _attempt():
+            raise ValueError("bad request")
+
+        with pytest.raises(ValueError, match="bad request"):
+            client._execute_with_retry(_attempt)
+
+    def test_success_after_transient_failures_is_not_wrapped(self):
+        client = _TimeoutRetryClient()
+        outcomes = [TimeoutError("t1"), TimeoutError("t2"), "ok"]
+
+        def _attempt():
+            outcome = outcomes.pop(0)
+            if isinstance(outcome, Exception):
+                raise outcome
+            return outcome
+
+        with patch("bicameral_agent.model_client.time.sleep"):
+            assert client._execute_with_retry(_attempt) == "ok"
 
 
 class TestGemmaPricing:

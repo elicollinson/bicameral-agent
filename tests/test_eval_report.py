@@ -3,7 +3,11 @@
 import json
 
 from bicameral_agent.ab_test import compute_summary
-from bicameral_agent.baseline_benchmark import BenchmarkResult, ConditionReport
+from bicameral_agent.baseline_benchmark import (
+    BenchmarkResult,
+    ConditionReport,
+    EpisodeFailure,
+)
 from bicameral_agent.eval_report import EvalReport
 
 # Metrics the ui/ Review screen reads from summary.json
@@ -88,3 +92,34 @@ class TestEvalReport:
         )
         (task_result,) = _make_report(result).results
         assert task_result.detail is None
+
+    def test_contained_transport_failures_serialized(self, make_episode):
+        """Issue #81: contained per-episode failures land in summary.json."""
+        result = BenchmarkResult(
+            episodes={"random": [make_episode(metadata={"task_id": "t1"})]},
+            reports={"random": _condition_report("random")},
+            failures={
+                "random": [
+                    EpisodeFailure(
+                        condition="random", episode_index=2, task_id="t3",
+                        error="transport error persisted after 4 attempts",
+                    )
+                ]
+            },
+        )
+        payload = json.loads(_make_report(result).to_json())
+        assert payload["failures"] == [
+            {
+                "task_id": "t3",
+                "condition": "random",
+                "error": "transport error persisted after 4 attempts",
+            }
+        ]
+
+    def test_failures_key_present_when_empty(self, make_episode):
+        result = BenchmarkResult(
+            episodes={"random": [make_episode()]},
+            reports={"random": _condition_report("random")},
+        )
+        payload = json.loads(_make_report(result).to_json())
+        assert payload["failures"] == []

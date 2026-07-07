@@ -89,18 +89,37 @@ def validate_thinking_level(thinking_level: str) -> str:
     return lowered
 
 
+class TransportExhausted(RuntimeError):
+    """A retryable transport error survived the whole client retry budget.
+
+    Raised by ``RetryingClientBase._execute_with_retry`` in place of the
+    final provider exception (preserved as ``__cause__``) so callers can
+    contain exhausted-retry transport failures narrowly, without also
+    catching non-transient errors such as bad requests or parsing bugs
+    (issue #81).
+    """
+
+    def __init__(self, attempts: int, last_error: Exception) -> None:
+        self.attempts = attempts
+        self.last_error = last_error
+        super().__init__(
+            f"transport error persisted after {attempts} attempts: "
+            f"{type(last_error).__name__}: {last_error}"
+        )
+
+
 class RetryingClientBase:
     """Shared retry/backoff scaffold for concrete model clients.
 
     Subclasses implement ``_is_retryable`` (their typed, provider-specific
     transient-error check) and route each API call through
     ``_execute_with_retry`` with a zero-arg attempt callable that performs
-    one timed request/parse round trip.
+    one timed request/parse round trip. A retryable error that survives
+    the whole budget is raised as ``TransportExhausted``; non-retryable
+    errors propagate unchanged.
     """
 
     def _execute_with_retry(self, attempt: Callable[[], ModelResponse]) -> ModelResponse:
-        last_exc: Exception | None = None
-
         for attempt_idx in range(_MAX_RETRIES + 1):
             if attempt_idx > 0:
                 delay = _BASE_DELAY * (_BACKOFF_FACTOR ** (attempt_idx - 1))
@@ -110,12 +129,12 @@ class RetryingClientBase:
             try:
                 return attempt()
             except Exception as exc:
-                if self._is_retryable(exc) and attempt_idx < _MAX_RETRIES:
-                    last_exc = exc
-                    continue
-                raise
+                if not self._is_retryable(exc):
+                    raise
+                if attempt_idx == _MAX_RETRIES:
+                    raise TransportExhausted(_MAX_RETRIES + 1, exc) from exc
 
-        raise last_exc  # type: ignore[misc]
+        raise AssertionError("unreachable: retry loop always returns or raises")
 
     @staticmethod
     def _is_retryable(exc: Exception) -> bool:

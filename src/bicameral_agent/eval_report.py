@@ -32,6 +32,14 @@ class TaskResult(BaseModel):
     """Verifier-specific report (from episode.metadata["verification"])."""
 
 
+class TaskFailure(BaseModel):
+    """One episode that failed on a contained transport error (issue #81)."""
+
+    task_id: str
+    condition: str
+    error: str
+
+
 class EvalReport(BaseModel):
     """Machine-readable report for one benchmark run."""
 
@@ -44,6 +52,8 @@ class EvalReport(BaseModel):
     conditions: dict[str, dict]
     """Per-condition ConditionReport dicts (summaries with mean/std/CI)."""
     results: list[TaskResult] = Field(default_factory=list)
+    failures: list[TaskFailure] = Field(default_factory=list)
+    """Episodes skipped after transport retries were exhausted."""
 
     @classmethod
     def from_benchmark(
@@ -68,6 +78,13 @@ class EvalReport(BaseModel):
             for condition, episodes in result.episodes.items()
             for episode in episodes
         ]
+        failures = [
+            TaskFailure(
+                task_id=failure.task_id, condition=condition, error=failure.error
+            )
+            for condition, condition_failures in result.failures.items()
+            for failure in condition_failures
+        ]
         return cls(
             dataset=dataset,
             metric=metric,
@@ -80,6 +97,7 @@ class EvalReport(BaseModel):
                 for condition, report in result.reports.items()
             },
             results=results,
+            failures=failures,
         )
 
     def to_json(self) -> str:
