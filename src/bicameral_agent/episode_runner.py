@@ -200,6 +200,13 @@ class EpisodeRunner:
             # (c) Expire stale queue items
             expired_count += len(queue.expire_stale(turn))
 
+            # (c2) Snapshot queue state before run_turn's breakpoint drain.
+            # Taken after the drain it is always empty, which made the
+            # controller's queue_depth feature and the avg_queue_depth
+            # metric structurally zero (issue #45); pre-drain it reflects
+            # deposits pending from earlier turns.
+            queue_snapshot = queue.get_state()
+
             # (d) Run conscious loop turn
             try:
                 response: AssistantResponse = loop.run_turn(user_message)
@@ -255,8 +262,6 @@ class EpisodeRunner:
                 tool_id: latency_model.predict_tool_duration(tool_id, ctx_features).mean_ms
                 for tool_id in tools
             }
-
-            queue_snapshot = queue.get_state()
 
             state = FullState(
                 turn_number=turn,
