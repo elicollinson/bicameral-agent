@@ -33,7 +33,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: >-
-            --model claude-fable-5
+            --model claude-opus-4-8
             --allowed-tools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(gh pr comment:*)"
 
   # --- Automatic: runs on every PR push, checks coverage of the linked issue ---
@@ -89,7 +89,7 @@ jobs:
             top-level PR comment using `gh pr comment`. Title it
             "Coverage review".
           claude_args: >-
-            --model claude-fable-5
+            --model claude-opus-4-8
             --allowed-tools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(gh pr comment:*)"
 
   # --- Automatic: runs on every PR push, reviews design quality / extensibility ---
@@ -154,5 +154,5 @@ jobs:
             Post your review as a top-level PR comment using
             `gh pr comment`. Title it "Quality review".
           claude_args: >-
-            --model claude-fable-5
+            --model claude-opus-4-8
             --allowed-tools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(gh pr comment:*)"
