@@ -19,7 +19,7 @@ from bicameral_agent.followup_classifier import FollowUpType
 from bicameral_agent.gemini import GeminiClient, GeminiResponse
 from bicameral_agent.heuristic_controller import Action, FullState, HeuristicController
 from bicameral_agent.schema import Episode, UserEventType
-from bicameral_agent.simulated_user import ActionType, UserAction
+from bicameral_agent.simulated_user import ActionType, Strictness, UserAction
 from bicameral_agent.cost_tracker import CostBudgetExceeded
 from bicameral_agent.tool_primitive import BudgetExceededError
 
@@ -856,6 +856,186 @@ class TestInjectionModes:
         """EpisodeConfig accepts custom injection mode."""
         cfg = EpisodeConfig(injection_mode=InjectionMode.SYNCHRONOUS)
         assert cfg.injection_mode == InjectionMode.SYNCHRONOUS
+
+
+# ---------------------------------------------------------------------------
+# TestMultiTurnQueueIntegration (issue #45)
+# ---------------------------------------------------------------------------
+
+_COMPLETE_ACTION = {
+    "action_type": "task_complete",
+    "response_delay_ms": 100,
+    "confidence": 0.9,
+}
+
+_SECRET = "SECRET-FINDING-XYZ"
+
+
+def _scripted_client(sim_actions: list[dict]) -> MagicMock:
+    """Mock GeminiClient transport routing sim-user calls vs answerer calls.
+
+    Calls from the real SimulatedUser are identified by their response_schema
+    (it has an "action_type" property) and consume the scripted actions; all
+    other calls are answerer generations, whose content reflects whether the
+    injected tool context is visible in the prompt.
+    """
+    import json
+
+    actions = iter(sim_actions)
+
+    def generate(messages, **kwargs):
+        schema = kwargs.get("response_schema")
+        if schema is not None and "action_type" in schema.get("properties", {}):
+            return GeminiResponse(
+                content=json.dumps(next(actions)),
+                input_tokens=5,
+                output_tokens=5,
+                duration_ms=10.0,
+                finish_reason="STOP",
+            )
+        joined = " ".join(
+            m["content"] if isinstance(m, dict) else m.content for m in messages
+        )
+        if _SECRET in joined:
+            return _mock_gemini_response(content=f"Refined answer using {_SECRET}.")
+        return _mock_gemini_response(content="Preliminary answer without tool context.")
+
+    client = MagicMock(spec=GeminiClient)
+    client.generate.side_effect = generate
+    return client
+
+
+def _deposit_tool() -> MagicMock:
+    """Mock tool that deposits a recognizable context item into the queue."""
+    from bicameral_agent.queue import Priority, QueueItem
+    from bicameral_agent.tool_primitive import ToolMetadata, ToolResult
+
+    mock_tool = MagicMock()
+    mock_tool.execute.return_value = ToolResult(
+        queue_deposit=QueueItem(
+            content=f"{_SECRET}: key evidence found.",
+            priority=Priority.HIGH,
+            source_tool_id="research_gap_scanner",
+            token_count=12,
+        ),
+        metadata=ToolMetadata(
+            tool_id="research_gap_scanner",
+            action_taken="scanned",
+            confidence=0.8,
+            items_found=1,
+            estimated_relevance=0.9,
+            tokens_consumed=30,
+        ),
+    )
+    return mock_tool
+
+
+class TestMultiTurnQueueIntegration:
+    """Multi-turn wiring tests with the real SimulatedUser, queue, and loop.
+
+    Only the LLM transport and the tools are mocked; EpisodeRunner,
+    ConsciousLoop, ContextQueue, and SimulatedUser run for real. The
+    sim-user LLM is scripted to say task_complete on every turn, so any
+    extra turns come from the strictness completion floor (issue #45).
+    """
+
+    def _run(self, config=None, decide=None):
+        client = _scripted_client([_COMPLETE_ACTION] * 8)
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        if decide is None:
+            ctrl.decide.return_value = Action.DO_NOTHING
+        else:
+            ctrl.decide.side_effect = decide
+        runner = EpisodeRunner(client, config or EpisodeConfig(max_turns=8))
+        with patch("bicameral_agent.episode_runner.ResearchGapScanner") as MockScanner:
+            MockScanner.return_value = _deposit_tool()
+            episode = runner.run_episode(_make_task(), ctrl)
+        return episode
+
+    def test_completion_floor_makes_default_episode_multiturn(self):
+        """Default (medium) strictness: turn-1 task_complete becomes a probe."""
+        episode = self._run()
+        assert episode.outcome.total_turns == 2
+        followups = [
+            e for e in episode.user_events if e.event_type == UserEventType.FOLLOW_UP
+        ]
+        assert len(followups) == 1
+        assert any(
+            e.event_type == UserEventType.TASK_COMPLETE for e in episode.user_events
+        )
+
+    def test_high_strictness_floor_gives_three_turns(self):
+        episode = self._run(
+            config=EpisodeConfig(max_turns=8, strictness=Strictness.HIGH)
+        )
+        assert episode.outcome.total_turns == 3
+
+    def test_turn1_deposit_consumed_turn2_and_changes_scored_answer(self):
+        recorded: list[FullState] = []
+
+        def decide(state):
+            recorded.append(state)
+            return Action.SCANNER if state.turn_number == 1 else Action.DO_NOTHING
+
+        episode = self._run(decide=decide)
+
+        assert episode.outcome.total_turns == 2
+        # The turn-1 deposit was drained and consumed at turn 2
+        assert len(episode.context_injections) == 1
+        inj = episode.context_injections[0]
+        assert inj.consumed is True
+        assert inj.consumed_at_turn == 2
+        # Pre-drain snapshot: the turn-2 decision saw the pending item
+        assert recorded[0].queue_depth == 0
+        assert recorded[1].queue_depth == 1
+        # The final (scored) answer reflects the turn-1 tool deposit
+        final = [m for m in episode.messages if m.role == "assistant"][-1]
+        assert _SECRET in final.content
+
+    def test_without_tools_final_answer_lacks_injected_context(self):
+        episode = self._run()
+        assert len(episode.context_injections) == 0
+        final = [m for m in episode.messages if m.role == "assistant"][-1]
+        assert _SECRET not in final.content
+        assert "Preliminary answer" in final.content
+
+    def test_short_expiry_expires_deposit_before_consumption(self):
+        def decide(state):
+            return Action.SCANNER if state.turn_number == 1 else Action.DO_NOTHING
+
+        episode = self._run(
+            config=EpisodeConfig(max_turns=8, queue_expiry_turns=1),
+            decide=decide,
+        )
+
+        assert episode.metadata["expired_queue_items"] == 1
+        assert episode.context_injections[0].consumed is False
+        final = [m for m in episode.messages if m.role == "assistant"][-1]
+        assert _SECRET not in final.content
+
+    def test_queue_metrics_nontrivial_with_real_controller(self):
+        """avg_queue_depth and drain_count are non-zero in a multi-turn run."""
+        from bicameral_agent.baseline_benchmark import extract_task_metrics
+
+        client = _scripted_client([_COMPLETE_ACTION] * 8)
+        ctrl = RandomController(action_probability=1.0, seed=7)
+        runner = EpisodeRunner(client, EpisodeConfig(max_turns=8))
+        with (
+            patch("bicameral_agent.episode_runner.ResearchGapScanner") as MockScanner,
+            patch("bicameral_agent.episode_runner.AssumptionAuditor") as MockAuditor,
+            patch("bicameral_agent.episode_runner.ContextRefresher") as MockRefresher,
+        ):
+            MockScanner.return_value = _deposit_tool()
+            MockAuditor.return_value = _deposit_tool()
+            MockRefresher.return_value = _deposit_tool()
+            episode = runner.run_episode(_make_task(), ctrl)
+
+        metrics = extract_task_metrics(episode, ctrl.decisions)
+        assert metrics.total_turns >= 2
+        assert metrics.drain_count >= 1
+        assert metrics.avg_queue_depth > 0
+        assert metrics.task_completed == 1
 
 
 # ---------------------------------------------------------------------------

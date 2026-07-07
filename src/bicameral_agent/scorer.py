@@ -50,10 +50,14 @@ class TaskScore(BaseModel):
 
 
 _JUDGE_SYSTEM_PROMPT = (
-    "You are an expert evaluator scoring research question answers against a "
-    "reference answer and rubric. Your scores must be strict, consistent, and "
-    "justified solely by the rubric criteria. Do not give the benefit of the "
-    "doubt — score only what is explicitly present in the answer."
+    "You are a demanding expert evaluator scoring research question answers "
+    "against a reference answer and rubric. Use the full 1-5 range: a merely "
+    "reasonable answer earns 3, and 5 is reserved for flawless answers that "
+    "cover every key point of the reference with no errors. Score only what "
+    "is explicitly present in the answer — never give the benefit of the "
+    "doubt, and when torn between two adjacent scores, choose the lower one. "
+    "Justify your scores against specific reference key points before giving "
+    "them."
 )
 
 _JUDGE_USER_TEMPLATE = """\
@@ -69,23 +73,47 @@ Question: {question}
 ## Agent Answer to Score
 {agent_answer}
 
-Rate the agent answer on each dimension using an integer from 1 to 5:
-- quality: Overall quality according to the scoring rubric above. \
-Match the agent answer to the closest rubric level.
-- completeness: How thoroughly the answer covers the key points from the \
-reference answer (5 = all key points, 1 = none).
-- accuracy: Factual correctness compared to the reference answer \
-(5 = fully correct, 1 = major errors or fabrications)."""
+First, in "justification", state concretely which key points of the \
+reference answer the agent answer covers, which it misses, and any factual \
+errors (1-3 sentences).
 
+Then rate the agent answer on each dimension using an integer from 1 to 5, \
+anchored as follows:
+- 5 = flawless: every key point of the reference covered accurately; top \
+rubric level; nothing missing, nothing wrong. This should be rare.
+- 4 = strong: at most one minor omission or imprecision; no factual errors.
+- 3 = adequate: the central idea is right but key points are missing, \
+vague, or shallow. This is the expected score for a merely reasonable answer.
+- 2 = weak: touches the topic but misses most key points, or contains a \
+significant factual error.
+- 1 = failing: wrong, off-topic, empty, or fabricated.
+
+Dimensions:
+- quality: overall quality according to the scoring rubric above.
+- completeness: coverage of the reference answer's key points.
+- accuracy: factual correctness relative to the reference answer.
+
+Hard caps: if any key point is missing, completeness is at most 3. If there \
+is any factual error, accuracy is at most 3; if the error is major or \
+fabricated, at most 2."""
+
+# "justification" is deliberately first: the judge must commit to a concrete
+# coverage/error analysis before emitting scores (rationale-first scoring),
+# which is what breaks the reflexive 5/5/5 ceiling.
 _JUDGE_RESPONSE_SCHEMA = {
     "type": "object",
     "properties": {
+        "justification": {"type": "string"},
         "quality": {"type": "integer"},
         "completeness": {"type": "integer"},
         "accuracy": {"type": "integer"},
     },
-    "required": ["quality", "completeness", "accuracy"],
+    "required": ["justification", "quality", "completeness", "accuracy"],
 }
+
+# The old cap of 100 tokens left no room for any reasoning before the
+# scores; 400 accommodates the rationale-first justification.
+_JUDGE_MAX_OUTPUT_TOKENS = 400
 
 
 class TaskScorer:
@@ -194,7 +222,7 @@ class TaskScorer:
             system_prompt=_JUDGE_SYSTEM_PROMPT,
             thinking_level="minimal",
             temperature=0,
-            max_output_tokens=100,
+            max_output_tokens=_JUDGE_MAX_OUTPUT_TOKENS,
             response_schema=_JUDGE_RESPONSE_SCHEMA,
         )
         # Malformed/truncated judge output degrades to a neutral mid-scale
