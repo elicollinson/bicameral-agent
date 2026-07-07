@@ -21,6 +21,15 @@ from bicameral_agent.followup_classifier import FollowUpType
 
 logger = logging.getLogger(__name__)
 
+# Default rule thresholds. Single source of truth shared with
+# ``config.HeuristicConfig``; override per-run via constructor kwargs.
+DEFAULT_SCANNER_INTERVAL = 5
+DEFAULT_REFRESHER_INTERVAL = 8
+DEFAULT_AUDITOR_STOP_THRESHOLD = 1
+DEFAULT_AUDITOR_HIGH_STOP_THRESHOLD = 2
+DEFAULT_QUEUE_DEPTH_GUARD = 3
+DEFAULT_STAGGER_TOLERANCE_MS = 1000.0
+
 
 class Action(str, enum.Enum):
     """Tool invocation actions the controller can select."""
@@ -74,9 +83,28 @@ class HeuristicController:
 
     Rules are evaluated in priority order (6→1) to find a candidate
     tool action, then guard rules (7–8) may suppress it.
+
+    Thresholds are constructor parameters so they can be swept as
+    hyperparameters (see ``HyperConfig.to_heuristic_controller``);
+    defaults match the original hardcoded rule set.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        scanner_interval: int = DEFAULT_SCANNER_INTERVAL,
+        refresher_interval: int = DEFAULT_REFRESHER_INTERVAL,
+        auditor_stop_threshold: int = DEFAULT_AUDITOR_STOP_THRESHOLD,
+        auditor_high_stop_threshold: int = DEFAULT_AUDITOR_HIGH_STOP_THRESHOLD,
+        queue_depth_guard: int = DEFAULT_QUEUE_DEPTH_GUARD,
+        stagger_tolerance_ms: float = DEFAULT_STAGGER_TOLERANCE_MS,
+    ) -> None:
+        self._scanner_interval = scanner_interval
+        self._refresher_interval = refresher_interval
+        self._auditor_stop_threshold = auditor_stop_threshold
+        self._auditor_high_stop_threshold = auditor_high_stop_threshold
+        self._queue_depth_guard = queue_depth_guard
+        self._stagger_tolerance_ms = stagger_tolerance_ms
         self._decisions: list[DecisionLog] = []
 
     def decide(self, state: FullState) -> Action:
@@ -105,8 +133,7 @@ class HeuristicController:
         """Return all recorded decisions."""
         return list(self._decisions)
 
-    @staticmethod
-    def _evaluate(state: FullState) -> tuple[Action, int]:
+    def _evaluate(self, state: FullState) -> tuple[Action, int]:
         """Return (action, rule_number) after evaluating all rules."""
         # --- Candidate selection: rules 6→1 ---
         candidate: Action | None = None
@@ -114,13 +141,13 @@ class HeuristicController:
 
         if state.followup_type == FollowUpType.REDIRECT:
             candidate, rule = Action.REFRESHER, 6
-        elif state.turn_number % 8 == 0:
+        elif state.turn_number % self._refresher_interval == 0:
             candidate, rule = Action.REFRESHER, 5
-        elif state.stop_count >= 2:
+        elif state.stop_count >= self._auditor_high_stop_threshold:
             candidate, rule = Action.AUDITOR, 4
-        elif state.stop_count >= 1:
+        elif state.stop_count >= self._auditor_stop_threshold:
             candidate, rule = Action.AUDITOR, 3
-        elif state.turn_number % 5 == 0 and state.turn_number > 1:
+        elif state.turn_number % self._scanner_interval == 0 and state.turn_number > 1:
             candidate, rule = Action.SCANNER, 2
         elif state.turn_number == 1:
             candidate, rule = Action.SCANNER, 1
@@ -130,13 +157,13 @@ class HeuristicController:
 
         # --- Guard rules: override candidate to DO_NOTHING ---
         # Rule 7: queue depth guard
-        if state.queue_depth >= 3:
+        if state.queue_depth >= self._queue_depth_guard:
             return Action.DO_NOTHING, 7
 
         # Rule 8: stagger guard
         candidate_latency = state.predicted_latencies.get(candidate.value, 0.0)
         for tool in state.executing_tools:
-            if abs(tool.predicted_remaining_ms - candidate_latency) <= 1000:
+            if abs(tool.predicted_remaining_ms - candidate_latency) <= self._stagger_tolerance_ms:
                 return Action.DO_NOTHING, 8
 
         return candidate, rule

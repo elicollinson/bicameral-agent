@@ -61,6 +61,7 @@ class ConsciousLoop:
         *,
         system_prompt: str | None = None,
         thinking_level: str = "medium",
+        temperature: float | None = None,
         interrupt_config: InterruptConfig | None = None,
         on_completion: Callable[[AssistantResponse], None] | None = None,
         persistent_injection: bool = True,
@@ -69,6 +70,7 @@ class ConsciousLoop:
         self._queue = queue
         self._system_prompt = system_prompt
         self._thinking_level = thinking_level
+        self._temperature = temperature
         self._interrupt_config = interrupt_config or InterruptConfig()
         self._on_completion = on_completion
         self._persistent_injection = persistent_injection
@@ -229,6 +231,7 @@ class ConsciousLoop:
             messages,
             system_prompt=self._system_prompt,
             thinking_level=self._thinking_level,
+            temperature=self._temperature,
         )
 
 

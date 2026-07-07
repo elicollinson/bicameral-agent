@@ -15,6 +15,14 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from bicameral_agent.heuristic_controller import (
+    DEFAULT_AUDITOR_HIGH_STOP_THRESHOLD,
+    DEFAULT_AUDITOR_STOP_THRESHOLD,
+    DEFAULT_QUEUE_DEPTH_GUARD,
+    DEFAULT_REFRESHER_INTERVAL,
+    DEFAULT_SCANNER_INTERVAL,
+    DEFAULT_STAGGER_TOLERANCE_MS,
+)
 from bicameral_agent.queue import InterruptConfig, Priority
 
 
@@ -24,7 +32,7 @@ _DEFAULT_TOML = files("bicameral_agent.data").joinpath("default_config.toml")
 class ModelConfig(BaseModel):
     """LLM model configuration."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     provider: str = "gemini"
     name: str = "gemini-3.1-flash-lite-preview"
@@ -43,7 +51,7 @@ class ModelConfig(BaseModel):
     @field_validator("thinking_level")
     @classmethod
     def _validate_thinking_level(cls, v: str) -> str:
-        allowed = {"none", "low", "medium", "high"}
+        allowed = {"minimal", "low", "medium", "high"}
         if v not in allowed:
             msg = f"thinking_level must be one of {allowed}, got {v!r}"
             raise ValueError(msg)
@@ -61,20 +69,27 @@ class ModelConfig(BaseModel):
 class QueueConfig(BaseModel):
     """Context queue thresholds and injection semantics."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     count_threshold: int = 5
     priority_threshold: int = 3
     token_threshold: int = 1000
-    expiry_turns: int = 10
-    max_depth: int = 3
+    expiry_turns: int | None = None
     persistent_injection: bool = True
+
+    @field_validator("expiry_turns")
+    @classmethod
+    def _validate_expiry_turns(cls, v: int | None) -> int | None:
+        if v is not None and v < 1:
+            msg = f"expiry_turns must be >= 1, got {v}"
+            raise ValueError(msg)
+        return v
 
 
 class ToolBudgetConfig(BaseModel):
     """Token budget for a single tool."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     max_calls: int = 10
     max_input_tokens: int = 50_000
@@ -82,32 +97,31 @@ class ToolBudgetConfig(BaseModel):
 
 
 class ToolsConfig(BaseModel):
-    """Tool budget and priority configuration."""
+    """Tool budget configuration."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     default_budget: ToolBudgetConfig = Field(default_factory=ToolBudgetConfig)
     budgets: dict[str, ToolBudgetConfig] = Field(default_factory=dict)
-    priority_map: dict[str, int] = Field(default_factory=dict)
 
 
 class HeuristicConfig(BaseModel):
     """Heuristic controller tuning parameters."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
-    scanner_interval: int = 5
-    refresher_interval: int = 8
-    auditor_stop_threshold: int = 1
-    auditor_high_stop_threshold: int = 2
-    queue_depth_guard: int = 3
-    stagger_tolerance_ms: float = 1000.0
+    scanner_interval: int = Field(default=DEFAULT_SCANNER_INTERVAL, ge=1)
+    refresher_interval: int = Field(default=DEFAULT_REFRESHER_INTERVAL, ge=1)
+    auditor_stop_threshold: int = DEFAULT_AUDITOR_STOP_THRESHOLD
+    auditor_high_stop_threshold: int = DEFAULT_AUDITOR_HIGH_STOP_THRESHOLD
+    queue_depth_guard: int = DEFAULT_QUEUE_DEPTH_GUARD
+    stagger_tolerance_ms: float = DEFAULT_STAGGER_TOLERANCE_MS
 
 
 class TrainingConfig(BaseModel):
     """RL training hyperparameters."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     learning_rate: float = 1e-3
     batch_size: int = 32
@@ -141,7 +155,7 @@ class TrainingConfig(BaseModel):
 class MCTSConfig(BaseModel):
     """Monte Carlo Tree Search hyperparameters."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     c_puct: float = 1.4
     dirichlet_alpha: float = 0.3
@@ -152,7 +166,7 @@ class MCTSConfig(BaseModel):
 class CostConfig(BaseModel):
     """Cost tracking and budget configuration."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     session_budget: float | None = None
     episode_budget: float | None = None
@@ -161,7 +175,7 @@ class CostConfig(BaseModel):
 class EvaluationConfig(BaseModel):
     """Evaluation run configuration."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     num_tasks: int = 10
     random_seed: int = 42
@@ -175,7 +189,7 @@ class HyperConfig(BaseModel):
     ``InterruptConfig``, ``TokenBudget``).
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     model: ModelConfig = Field(default_factory=ModelConfig)
     queue: QueueConfig = Field(default_factory=QueueConfig)
@@ -232,12 +246,27 @@ class HyperConfig(BaseModel):
 
         defaults = {
             "thinking_level": self.model.thinking_level,
+            "temperature": self.model.temperature,
             "interrupt_config": self.to_interrupt_config(),
             "tool_token_budget": self.to_token_budget(),
             "persistent_injection": self.queue.persistent_injection,
+            "queue_expiry_turns": self.queue.expiry_turns,
         }
         defaults.update(overrides)
         return EpisodeConfig(**defaults)
+
+    def to_heuristic_controller(self):
+        """Produce a ``HeuristicController`` tuned by heuristic settings."""
+        from bicameral_agent.heuristic_controller import HeuristicController
+
+        return HeuristicController(
+            scanner_interval=self.heuristic.scanner_interval,
+            refresher_interval=self.heuristic.refresher_interval,
+            auditor_stop_threshold=self.heuristic.auditor_stop_threshold,
+            auditor_high_stop_threshold=self.heuristic.auditor_high_stop_threshold,
+            queue_depth_guard=self.heuristic.queue_depth_guard,
+            stagger_tolerance_ms=self.heuristic.stagger_tolerance_ms,
+        )
 
     def to_interrupt_config(self) -> InterruptConfig:
         """Produce an ``InterruptConfig`` from queue settings."""
