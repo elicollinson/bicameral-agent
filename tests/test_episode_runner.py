@@ -550,6 +550,67 @@ class TestEpisodeRunner:
         assistant_msg = next(m for m in episode.messages if m.role == "assistant")
         assert assistant_msg.timestamp_ms <= episode.tool_invocations[0].invoked_at_ms
 
+    def test_live_logged_tool_action_round_trips_through_pipeline(self):
+        """Regression (#80): a live-logged tool action is not mislabeled DO_NOTHING.
+
+        Runs an episode through the real runner/logger (assistant message
+        logged before tool events, per #50) and asserts the pipeline
+        attributes the tool action to the turn that took it.
+        """
+        from bicameral_agent.replay import EpisodeReplayer
+        from bicameral_agent.training_pipeline import (
+            TrainingDataPipeline,
+            _ACTION_INDEX,
+        )
+
+        client = _make_mock_client()
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.SCANNER
+
+        runner = EpisodeRunner(client, EpisodeConfig(max_turns=1))
+
+        with patch("bicameral_agent.episode_runner.SimulatedUser") as MockSimUser:
+            mock_sim = MagicMock()
+            mock_sim.respond.return_value = UserAction(
+                action_type=ActionType.TASK_COMPLETE,
+                response_delay_ms=100,
+                confidence=0.9,
+            )
+            MockSimUser.return_value = mock_sim
+
+            with patch("bicameral_agent.episode_runner.ResearchGapScanner") as MockScanner:
+                from bicameral_agent.tool_primitive import ToolMetadata, ToolResult
+
+                mock_tool = MagicMock()
+                mock_tool.execute.return_value = ToolResult(
+                    queue_deposit=None,
+                    metadata=ToolMetadata(
+                        tool_id="research_gap_scanner",
+                        action_taken="scanned",
+                        confidence=0.8,
+                        items_found=0,
+                        estimated_relevance=0.0,
+                        tokens_consumed=50,
+                    ),
+                )
+                MockScanner.return_value = mock_tool
+
+                episode = runner.run_episode(_make_task(), ctrl)
+
+        inv = episode.tool_invocations[0]
+        assert inv.turn == 1
+
+        examples = TrainingDataPipeline().process_episode(episode)
+        assert examples[0].action == _ACTION_INDEX[Action.SCANNER]
+
+        # Alignment with replay's strict decision-point cutoff (#51): the
+        # invocation labeled as this turn's action happened at/after the
+        # assistant message, so it must not leak into the decision state.
+        dp = next(EpisodeReplayer(episode).iter_decision_points())
+        assert inv not in dp.state.active_tool_invocations
+        assert inv not in dp.state.completed_tool_invocations
+
     def test_sim_user_receives_runner_turn(self):
         """The runner passes its own turn to the sim-user (no off-by-one).
 
