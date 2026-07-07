@@ -102,6 +102,8 @@ ruff check src/ tests/
 pytest --cov=bicameral_agent
 ```
 
+A React Ink terminal console for launching, tracking, and reviewing benchmark runs lives in [`ui/`](ui/README.md).
+
 ## Model Providers
 
 Two backends satisfy the same client contract (`src/bicameral_agent/model_client.py`), so episodes and benchmarks are provider-agnostic:
