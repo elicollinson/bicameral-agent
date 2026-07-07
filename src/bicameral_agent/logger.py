@@ -251,6 +251,41 @@ class ConversationLogger:
                 update={"consumed": True, "consumed_at_turn": turn_number}
             )
 
+    def snapshot(self) -> Episode:
+        """Return a non-finalizing Episode view of everything logged so far.
+
+        Used by controllers that need the live episode context at decision
+        time (issue #29): the returned Episode contains the messages, user
+        events, context injections, and *completed* tool invocations logged
+        so far — the same records a post-hoc
+        :class:`~bicameral_agent.replay.EpisodeReplayer` would see at this
+        point. Pending (started, uncompleted) tool invocations are excluded,
+        matching how they would appear mid-flight. The outcome carries
+        placeholder totals; it exists only to satisfy the Episode schema.
+
+        Does not finalize: logging can continue afterwards.
+        """
+        with self._lock:
+            tool_invocations = [
+                t
+                for _, t in sorted(
+                    self._tool_invocations, key=lambda pair: (pair[1].invoked_at_ms, pair[0])
+                )
+            ]
+            return Episode(
+                messages=list(self._messages),
+                user_events=list(self._user_events),
+                context_injections=list(self._context_injections),
+                tool_invocations=tool_invocations,
+                outcome=EpisodeOutcome(
+                    quality_score=None,
+                    total_tokens=0,
+                    total_turns=sum(1 for m in self._messages if m.role == "user"),
+                    wall_clock_ms=0,
+                ),
+                metadata=dict(self._metadata),
+            )
+
     def finalize(self, quality_score: float | None = None) -> Episode:
         """Finalize the episode and return a validated Episode object.
 

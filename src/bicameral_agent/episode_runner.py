@@ -292,7 +292,15 @@ class EpisodeRunner:
                 predicted_latencies=predicted_latencies,
             )
 
-            # (i) Controller decides
+            # (i) Controller decides. Controllers that encode the full
+            # episode context at decision time (LearnedPolicyController,
+            # issue #29) expose an ``observe_episode`` hook; give them a
+            # snapshot of everything logged so far, which at this point
+            # ends with the current assistant message — exactly the last
+            # decision point a post-hoc EpisodeReplayer would yield.
+            observe = getattr(controller, "observe_episode", None)
+            if observe is not None:
+                observe(log.snapshot())
             action = controller.decide(state)
 
             # Set when a cost-budget trip mid-turn must end the episode after
