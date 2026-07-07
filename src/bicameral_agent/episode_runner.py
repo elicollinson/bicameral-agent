@@ -101,6 +101,14 @@ class EpisodeRunner:
 
     Wires together ConsciousLoop, Controller, SimulatedUser, SignalClassifier,
     ConversationLogger, tool primitives, and ContextQueue.
+
+    Per-role clients (issue #53): ``client`` drives the system under test --
+    the answerer (ConsciousLoop) *and* the subconscious tools, which are part
+    of that system and deliberately follow the answerer. ``judge_client`` and
+    ``sim_user_client`` drive the measurement apparatus (TaskScorer LLM judge
+    and SimulatedUser); hold them fixed while ``client`` varies so
+    cross-model comparisons stay on one judging scale. Both default to
+    ``client`` for back-compat.
     """
 
     def __init__(
@@ -109,8 +117,14 @@ class EpisodeRunner:
         config: EpisodeConfig | None = None,
         hyper_config: HyperConfig | None = None,
         cost_tracker: CostTracker | None = None,
+        judge_client: ModelClient | None = None,
+        sim_user_client: ModelClient | None = None,
     ) -> None:
         self._client = client
+        self._judge_client = judge_client if judge_client is not None else client
+        self._sim_user_client = (
+            sim_user_client if sim_user_client is not None else client
+        )
         if config is not None:
             self._config = config
         elif hyper_config is not None:
@@ -141,11 +155,24 @@ class EpisodeRunner:
         """
         cfg = self._config
 
-        # Cost tracking: reset episode, wrap client
+        # Cost tracking: reset episode, wrap every role's client so judge and
+        # sim-user calls hit the same budget and accounting as the answerer.
         active_client: ModelClient = self._client
+        judge_client: ModelClient = self._judge_client
+        sim_user_client: ModelClient = self._sim_user_client
         if self._cost_tracker is not None:
             self._cost_tracker.reset_episode()
             active_client = CostTrackedClient(self._client, self._cost_tracker)
+            judge_client = (
+                active_client
+                if self._judge_client is self._client
+                else CostTrackedClient(self._judge_client, self._cost_tracker)
+            )
+            sim_user_client = (
+                active_client
+                if self._sim_user_client is self._client
+                else CostTrackedClient(self._sim_user_client, self._cost_tracker)
+            )
 
         # Initialize components
         queue = ContextQueue()
@@ -160,7 +187,7 @@ class EpisodeRunner:
             persistent_injection=cfg.persistent_injection,
         )
         sim_user = SimulatedUser(
-            client=active_client,
+            client=sim_user_client,
             patience=cfg.patience,
             strictness=cfg.strictness,
         )
@@ -423,6 +450,25 @@ class EpisodeRunner:
         log.set_metadata("injection_mode", cfg.injection_mode.value)
         if self._hyper_config is not None:
             log.set_metadata("hyperparameters", self._hyper_config.to_dict())
+
+        # Score if requested. The LLM judge uses the (cost-tracked) judge
+        # client, so its calls count toward budgets and episode cost.
+        quality_score: float | None = None
+        if cfg.score_episode:
+            last_assistant = next(
+                (m.content for m in reversed(schema_messages) if m.role == "assistant"),
+                None,
+            )
+            if last_assistant is not None:
+                scorer = LexicalScorer() if cfg.use_lexical_scorer else TaskScorer(client=judge_client)
+                try:
+                    quality_score = scorer.score(task, last_assistant).overall
+                except CostBudgetExceeded:
+                    logger.warning(
+                        "CostBudgetExceeded while scoring, leaving quality_score unset"
+                    )
+
+        # Capture episode cost after scoring so judge calls are included.
         if self._cost_tracker is not None:
             episode_cost = self._cost_tracker.get_episode_cost()
             log.set_metadata("episode_cost", {
@@ -431,16 +477,5 @@ class EpisodeRunner:
                 "total": episode_cost.total,
                 "call_count": episode_cost.call_count,
             })
-
-        # Score if requested
-        quality_score: float | None = None
-        if cfg.score_episode:
-            last_assistant = next(
-                (m.content for m in reversed(schema_messages) if m.role == "assistant"),
-                None,
-            )
-            if last_assistant is not None:
-                scorer = LexicalScorer() if cfg.use_lexical_scorer else TaskScorer(client=self._client)
-                quality_score = scorer.score(task, last_assistant).overall
 
         return log.finalize(quality_score)

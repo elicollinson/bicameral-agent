@@ -216,6 +216,16 @@ class HyperConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     model: ModelConfig = Field(default_factory=ModelConfig)
+    measurement_model: ModelConfig | None = None
+    """Model pinned for the measurement roles (LLM judge and simulated user).
+
+    A single section rather than per-role ones: judge and sim-user together
+    form the measurement apparatus, which issue #53 requires held fixed as
+    one unit while ``[model]`` (the answerer) varies. ``None`` means the
+    measurement roles use the answerer's client (back-compat). Only
+    ``provider``/``name`` are consumed; the measurement roles manage their
+    own generation settings.
+    """
     queue: QueueConfig = Field(default_factory=QueueConfig)
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
     heuristic: HeuristicConfig = Field(default_factory=HeuristicConfig)

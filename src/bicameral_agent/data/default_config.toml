@@ -9,6 +9,13 @@ provider = "gemini"        # "gemini" or "ollama"
 thinking_level = "medium"  # "minimal", "low", "medium", or "high"
 # temperature is unset (uses model default)
 
+# [measurement_model]
+# Model held fixed for the measurement roles (LLM judge + simulated user) so
+# cross-model answerer comparisons stay on one judging scale (issue #53).
+# Unset = measurement roles use [model]. Only provider/name are consumed.
+# provider = "gemini"
+# name is unset (uses the provider's default model from the registry)
+
 [queue]
 count_threshold = 5        # interrupt if queue depth reaches this
 priority_threshold = 3     # interrupt if any item >= CRITICAL (3)

@@ -20,7 +20,11 @@ from bicameral_agent.gemini import GeminiClient, GeminiResponse
 from bicameral_agent.heuristic_controller import Action, FullState, HeuristicController
 from bicameral_agent.schema import Episode, UserEventType
 from bicameral_agent.simulated_user import ActionType, Strictness, UserAction
-from bicameral_agent.cost_tracker import CostBudgetExceeded
+from bicameral_agent.cost_tracker import (
+    CostBudgetExceeded,
+    CostTrackedClient,
+    CostTracker,
+)
 from bicameral_agent.tool_primitive import BudgetExceededError
 
 
@@ -1130,6 +1134,101 @@ class TestIntegrationControllerSwap:
 # ---------------------------------------------------------------------------
 # TestCostBudgetHandling (issue #47)
 # ---------------------------------------------------------------------------
+
+
+class TestPerRoleClients:
+    """Issue #53: judge and sim-user clients are selectable per role."""
+
+    _PRICED_MODEL = "gemini-3.1-flash-lite-preview"
+
+    def _run_episode(self, runner: EpisodeRunner):
+        """Run a one-turn scored episode; return the SimulatedUser and
+        TaskScorer mock classes so tests can inspect construction kwargs."""
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.DO_NOTHING
+
+        with patch(
+            "bicameral_agent.episode_runner.SimulatedUser"
+        ) as MockSimUser, patch(
+            "bicameral_agent.episode_runner.TaskScorer"
+        ) as MockScorer:
+            mock_sim = MagicMock()
+            mock_sim.respond.return_value = UserAction(
+                action_type=ActionType.TASK_COMPLETE,
+                response_delay_ms=100,
+                confidence=0.9,
+            )
+            MockSimUser.return_value = mock_sim
+            mock_scorer = MagicMock()
+            mock_scorer.score.return_value = MagicMock(overall=0.5)
+            MockScorer.return_value = mock_scorer
+
+            runner.run_episode(_make_task(), ctrl)
+
+        return MockSimUser, MockScorer
+
+    def test_roles_default_to_main_client(self):
+        """Back-compat: without per-role clients, everyone gets the main one."""
+        client = _make_mock_client()
+        runner = EpisodeRunner(
+            client, EpisodeConfig(max_turns=1, score_episode=True)
+        )
+        MockSimUser, MockScorer = self._run_episode(runner)
+        assert MockSimUser.call_args.kwargs["client"] is client
+        assert MockScorer.call_args.kwargs["client"] is client
+
+    def test_judge_and_sim_user_clients_override(self):
+        """Per-role clients reach the scorer and sim-user, not the answerer's."""
+        client = _make_mock_client()
+        judge = _make_mock_client()
+        sim = _make_mock_client()
+        runner = EpisodeRunner(
+            client,
+            EpisodeConfig(max_turns=1, score_episode=True),
+            judge_client=judge,
+            sim_user_client=sim,
+        )
+        MockSimUser, MockScorer = self._run_episode(runner)
+        assert MockSimUser.call_args.kwargs["client"] is sim
+        assert MockScorer.call_args.kwargs["client"] is judge
+
+    def test_measurement_clients_cost_tracked(self):
+        """With a cost tracker, judge and sim-user clients are wrapped too."""
+        client = _make_mock_client()
+        client.model = self._PRICED_MODEL
+        judge = _make_mock_client()
+        judge.model = self._PRICED_MODEL
+        sim = _make_mock_client()
+        sim.model = self._PRICED_MODEL
+        runner = EpisodeRunner(
+            client,
+            EpisodeConfig(max_turns=1, score_episode=True),
+            cost_tracker=CostTracker(),
+            judge_client=judge,
+            sim_user_client=sim,
+        )
+        MockSimUser, MockScorer = self._run_episode(runner)
+        judge_arg = MockScorer.call_args.kwargs["client"]
+        sim_arg = MockSimUser.call_args.kwargs["client"]
+        assert isinstance(judge_arg, CostTrackedClient)
+        assert isinstance(sim_arg, CostTrackedClient)
+        assert judge_arg._inner is judge
+        assert sim_arg._inner is sim
+
+    def test_default_judge_cost_tracked(self):
+        """Judge calls no longer bypass cost tracking (issue #53)."""
+        client = _make_mock_client()
+        client.model = self._PRICED_MODEL
+        runner = EpisodeRunner(
+            client,
+            EpisodeConfig(max_turns=1, score_episode=True),
+            cost_tracker=CostTracker(),
+        )
+        _, MockScorer = self._run_episode(runner)
+        judge_arg = MockScorer.call_args.kwargs["client"]
+        assert isinstance(judge_arg, CostTrackedClient)
+        assert judge_arg._inner is client
 
 
 class TestCostBudgetHandling:
