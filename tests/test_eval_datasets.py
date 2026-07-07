@@ -116,3 +116,25 @@ class TestAdapterLifecycle:
     def test_hard_benchmark_rejects_flat_limit(self):
         with pytest.raises(ValueError, match="frames_n/crepe_n"):
             HardBenchmark(frames_n=2, crepe_n=2).build(limit=3)
+
+
+class TestRunnableMetricGuard:
+    """The benchmark script's metric -> use_lexical_scorer collapse must fail
+    loudly for any future verifier the runner cannot express yet."""
+
+    @pytest.fixture()
+    def ensure_runnable_metric(self, monkeypatch):
+        monkeypatch.syspath_prepend(str(REPO_ROOT / "scripts"))
+        from run_baseline_benchmark import ensure_runnable_metric
+
+        return ensure_runnable_metric
+
+    def test_runnable_metrics_pass_through(self, ensure_runnable_metric):
+        assert ensure_runnable_metric("llm_judge") == "llm_judge"
+        assert ensure_runnable_metric("lexical") == "lexical"
+
+    def test_unwired_metric_raises_instead_of_llm_judge_fallback(
+        self, ensure_runnable_metric
+    ):
+        with pytest.raises(ValueError, match="build_verifier"):
+            ensure_runnable_metric("exact_match")

@@ -36,6 +36,26 @@ from bicameral_agent.serialization import episodes_to_parquet
 
 logger = logging.getLogger(__name__)
 
+# EpisodeRunner expresses scorer choice as a boolean (use_lexical_scorer)
+# today -- #45 owns that wiring -- so only these two metrics are runnable.
+_RUNNABLE_METRICS = ("llm_judge", "lexical")
+
+
+def ensure_runnable_metric(metric: str) -> str:
+    """Refuse metrics EpisodeRunner cannot express yet.
+
+    Guards the metric -> use_lexical_scorer boolean collapse below: a future
+    verifier registered in ``bicameral_agent.verifiers`` must fail loudly here
+    rather than silently fall back to the LLM judge.
+    """
+    if metric not in _RUNNABLE_METRICS:
+        raise ValueError(
+            f"Metric {metric!r} cannot be run by EpisodeRunner yet; runnable "
+            f"metrics: {list(_RUNNABLE_METRICS)}. New verifiers need runner "
+            "wiring through bicameral_agent.verifiers.build_verifier first."
+        )
+    return metric
+
 
 def select_tasks(dataset: ResearchQADataset, total: int) -> list[ResearchQATask]:
     """Stratified pick of eval tasks across typical / hard / tricky.
@@ -108,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
     ).with_env_overrides()
 
     eval_dataset = build_dataset(args.dataset)
-    metric = resolve_metric(eval_dataset, args.metric)
+    metric = ensure_runnable_metric(resolve_metric(eval_dataset, args.metric))
     dataset = eval_dataset.load()
     tasks = select_tasks(dataset, args.tasks_per_condition)
     logger.info(
@@ -123,9 +143,8 @@ def main(argv: list[str] | None = None) -> int:
     # The configured model name only applies to the configured provider.
     model = args.model or (hyper.model.name if provider == hyper.model.provider else None)
     client = build_client(provider, model)
-    # EpisodeRunner's internal scorer selection is a boolean today (#45 owns
-    # that wiring); the two runnable metrics map onto it. The verifier
-    # registry (bicameral_agent.verifiers) is the named superset.
+    # The resolved metric passed ensure_runnable_metric, so this boolean
+    # collapse is exhaustive over _RUNNABLE_METRICS.
     runner = EpisodeRunner(
         client,
         config=hyper.to_episode_config(
