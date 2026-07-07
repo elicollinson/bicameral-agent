@@ -59,7 +59,7 @@ class ModelConfig(BaseModel):
 
 
 class QueueConfig(BaseModel):
-    """Context queue thresholds."""
+    """Context queue thresholds and injection semantics."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -68,6 +68,7 @@ class QueueConfig(BaseModel):
     token_threshold: int = 1000
     expiry_turns: int = 10
     max_depth: int = 3
+    persistent_injection: bool = True
 
 
 class ToolBudgetConfig(BaseModel):
@@ -233,6 +234,7 @@ class HyperConfig(BaseModel):
             "thinking_level": self.model.thinking_level,
             "interrupt_config": self.to_interrupt_config(),
             "tool_token_budget": self.to_token_budget(),
+            "persistent_injection": self.queue.persistent_injection,
         }
         defaults.update(overrides)
         return EpisodeConfig(**defaults)

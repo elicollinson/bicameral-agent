@@ -32,6 +32,7 @@ def _make_loop(
     system_prompt=None,
     interrupt_config=None,
     on_completion=None,
+    persistent_injection=True,
 ) -> tuple[ConsciousLoop, MagicMock, ContextQueue]:
     """Create a ConsciousLoop with a mocked GeminiClient."""
     client = MagicMock(spec=GeminiClient)
@@ -46,6 +47,7 @@ def _make_loop(
         system_prompt=system_prompt,
         interrupt_config=interrupt_config,
         on_completion=on_completion,
+        persistent_injection=persistent_injection,
     )
     return loop, client, queue
 
@@ -166,18 +168,151 @@ class TestBreakpointInjection:
         last_msg = messages[-1]
         assert last_msg.content == "Hi"
 
-    def test_history_stores_original_message(self):
-        """History should store the original user message, not the augmented one."""
-        loop, _, queue = _make_loop()
+class TestInjectionPersistence:
+    """Visibility semantics of injected context across turns (issue #49)."""
+
+    @staticmethod
+    def _enqueue(queue: ContextQueue, content: str = "INJECTED FACT") -> None:
         queue.enqueue(QueueItem(
-            content="Context",
+            content=content,
             priority=Priority.HIGH,
             source_tool_id="tool1",
             token_count=5,
         ))
+
+    def test_persistent_history_stores_augmented_message(self):
+        """Default (persistent): history stores context + user message."""
+        loop, _, queue = _make_loop()
+        self._enqueue(queue)
+        loop.run_turn("Hello")
+
+        assert "INJECTED FACT" in loop.history[0].content
+        assert "Hello" in loop.history[0].content
+
+    def test_persistent_context_visible_on_later_turns(self):
+        """Default (persistent): injected context reaches turn N+1's API call."""
+        responses = [_make_response("r1"), _make_response("r2")]
+        loop, client, queue = _make_loop(generate_side_effect=responses)
+        self._enqueue(queue)
+        loop.run_turn("msg1")
+        loop.run_turn("msg2")
+
+        second_call_msgs = client.generate.call_args_list[1][0][0]
+        prior_contents = [m.content for m in second_call_msgs[:-1]]
+        assert any("INJECTED FACT" in c for c in prior_contents)
+
+    def test_persistent_context_appears_exactly_once(self):
+        """Injected text enters the prompt once — no duplicate accounting."""
+        responses = [_make_response("r1"), _make_response("r2")]
+        loop, client, queue = _make_loop(generate_side_effect=responses)
+        self._enqueue(queue)
+        loop.run_turn("msg1")
+        loop.run_turn("msg2")
+
+        second_call_msgs = client.generate.call_args_list[1][0][0]
+        joined = "\n".join(m.content for m in second_call_msgs)
+        assert joined.count("INJECTED FACT") == 1
+
+    def test_transient_history_stores_original_message(self):
+        """Transient: history stores the raw user message, not the augmented one."""
+        loop, _, queue = _make_loop(persistent_injection=False)
+        self._enqueue(queue)
         loop.run_turn("Hello")
 
         assert loop.history[0].content == "Hello"
+
+    def test_transient_context_vanishes_after_one_generation(self):
+        """Transient: context is in turn N's call but absent from turn N+1's."""
+        responses = [_make_response("r1"), _make_response("r2")]
+        loop, client, queue = _make_loop(
+            generate_side_effect=responses, persistent_injection=False,
+        )
+        self._enqueue(queue)
+        loop.run_turn("msg1")
+        loop.run_turn("msg2")
+
+        first_call_msgs = client.generate.call_args_list[0][0][0]
+        assert "INJECTED FACT" in first_call_msgs[-1].content
+
+        second_call_msgs = client.generate.call_args_list[1][0][0]
+        assert all("INJECTED FACT" not in m.content for m in second_call_msgs)
+
+    def test_persistent_regenerate_updates_history(self):
+        """Default (persistent): regeneration context persists in history."""
+        loop, client, _ = _make_loop()
+        loop.run_turn("Hello")
+
+        client.generate.return_value = _make_response("regen")
+        loop.regenerate_with_context("NEW CONTEXT")
+
+        assert "NEW CONTEXT" in loop.history[0].content
+        assert "Hello" in loop.history[0].content
+
+    def test_transient_regenerate_keeps_history_raw(self):
+        """Transient: regeneration context does not enter history."""
+        loop, client, _ = _make_loop(persistent_injection=False)
+        loop.run_turn("Hello")
+
+        client.generate.return_value = _make_response("regen")
+        loop.regenerate_with_context("NEW CONTEXT")
+
+        assert loop.history[0].content == "Hello"
+
+    def test_persistent_interrupt_combined_context_persists(self):
+        """Persistent: breakpoint + interrupt context both persist across turns."""
+        responses = [
+            _make_response("first"),
+            _make_response("second"),
+            _make_response("r2"),
+        ]
+        loop, client, queue = _make_loop(
+            interrupt_config=InterruptConfig(priority_threshold=Priority.CRITICAL),
+        )
+        # Breakpoint item drained before generation; a critical item arrives
+        # during the first generation and triggers the interrupt path.
+        self._enqueue(queue, content="BREAKPOINT FACT")
+        client.generate.side_effect = _enqueue_on_generate(
+            queue, responses, content="INTERRUPT FACT",
+        )
+
+        result = loop.run_turn("msg1")
+
+        assert result.interrupted
+        stored = loop.history[0].content
+        assert "BREAKPOINT FACT" in stored
+        assert "INTERRUPT FACT" in stored
+        assert "msg1" in stored
+
+        # The combined context is visible in the next turn's API call.
+        loop.run_turn("msg2")
+        third_call_msgs = client.generate.call_args_list[2][0][0]
+        prior = "\n".join(m.content for m in third_call_msgs[:-1])
+        assert "BREAKPOINT FACT" in prior
+        assert "INTERRUPT FACT" in prior
+
+    def test_transient_interrupt_context_not_persisted(self):
+        """Transient: interrupt context vanishes from history after the turn."""
+        responses = [
+            _make_response("first"),
+            _make_response("second"),
+            _make_response("r2"),
+        ]
+        loop, client, queue = _make_loop(
+            interrupt_config=InterruptConfig(priority_threshold=Priority.CRITICAL),
+            persistent_injection=False,
+        )
+        client.generate.side_effect = _enqueue_on_generate(
+            queue, responses, content="INTERRUPT FACT",
+        )
+
+        result = loop.run_turn("msg1")
+
+        assert result.interrupted
+        assert loop.history[0].content == "msg1"
+
+        loop.run_turn("msg2")
+        third_call_msgs = client.generate.call_args_list[2][0][0]
+        assert all("INTERRUPT FACT" not in m.content for m in third_call_msgs)
 
 
 class TestInterrupt:
@@ -411,7 +546,10 @@ class TestRegenerateWithContext:
         assert loop.turn_count == 2  # unchanged
         assert len(loop.history) == 4  # unchanged
         assert loop.history[-1].content == "r2_regen"
-        assert loop.history[-2].content == "msg2"
+        # Persistent injection (default): the stored user message now carries
+        # the regeneration context alongside the original text.
+        assert "msg2" in loop.history[-2].content
+        assert "new info" in loop.history[-2].content
 
 
 class TestMultiTurnConversation:
