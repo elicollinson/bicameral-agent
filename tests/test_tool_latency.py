@@ -57,13 +57,22 @@ class TestComposition:
         assert abs(pred.latency.mean_ms - sub_mean_sum) < 1e-6
 
     @pytest.mark.parametrize("tool_id", _TOOL_IDS)
-    def test_sub_call_tokens_match_aggregate(self, tool_id):
-        """Sum of sub-call input tokens matches aggregate TokenEstimate."""
+    @pytest.mark.parametrize(
+        "ctx", _CONV_SIZES, ids=lambda c: f"conv={c.conversation_length_tokens}"
+    )
+    def test_sub_call_tokens_match_aggregate(self, tool_id, ctx):
+        """Sub-call decomposition is consistent with the aggregate TokenEstimate.
+
+        Both sides are derived from token_estimator.sub_call_inputs (the
+        single source of truth), so the sub-call input tokens must sum to
+        the aggregate input estimate and the sub-call count must match
+        the estimated num_calls.
+        """
         model = ToolLatencyModel()
-        ctx = ContextFeatures(conversation_length_tokens=4000, conversation_turn_count=15)
         pred = model.predict(tool_id, ctx)
         total_input = sum(sc.input_tokens for sc in pred.sub_calls)
         assert total_input == pred.token_estimate.input_tokens
+        assert len(pred.sub_calls) == pred.token_estimate.num_calls
 
 
 class TestScannerDecomposition:

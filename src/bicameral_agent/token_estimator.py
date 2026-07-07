@@ -73,6 +73,33 @@ AUDITOR_ASSESSMENT_INPUT_TOKENS = 1200
 _EMA_ALPHA = 0.3
 
 
+def sub_call_inputs(
+    tool_id: str, context_features: ContextFeatures
+) -> list[tuple[str, int]]:
+    """Per-sub-call ``(label, input_tokens)`` breakdown for a tool invocation.
+
+    Single source of truth for the sub-call input structure: TokenEstimator
+    sums it for the aggregate input estimate, and ToolLatencyModel iterates
+    it for per-sub-call latency predictions, so the two cannot drift apart.
+    """
+    conv = context_features.conversation_length_tokens
+    if tool_id == TOOL_IDS[Action.SCANNER]:
+        return [
+            ("gap_identification", 500 + conv),
+            ("result_ranking", SCANNER_RANKING_INPUT_TOKENS),
+        ]
+    if tool_id == TOOL_IDS[Action.AUDITOR]:
+        return [
+            ("assumption_extraction", 400 + conv),
+            ("evidence_assessment", AUDITOR_ASSESSMENT_INPUT_TOKENS),
+        ]
+    if tool_id == TOOL_IDS[Action.REFRESHER]:
+        avg_msg = conv / max(context_features.conversation_turn_count, 1)
+        bounded = min(4 * avg_msg, conv)
+        return [(tool_id, 300 + int(bounded))]
+    return [(tool_id, conv)]
+
+
 class TokenEstimator:
     """Per-tool token estimator with online learning.
 
@@ -106,11 +133,10 @@ class TokenEstimator:
         if profile is None:
             raise ValueError(f"Unknown tool: {tool_id!r}")
 
-        conv = context_features.conversation_length_tokens
-        turns = context_features.conversation_turn_count
-
         num_calls = profile.num_calls
-        input_tokens = self._compute_input_tokens(tool_id, conv, turns)
+        input_tokens = sum(
+            inp for _, inp in sub_call_inputs(tool_id, context_features)
+        )
 
         with self._lock:
             obs = self._observations.get(tool_id)
@@ -155,15 +181,3 @@ class TokenEstimator:
                 old_mean, count = obs
                 new_mean = (1 - _EMA_ALPHA) * old_mean + _EMA_ALPHA * per_call
                 self._observations[tool_id] = (new_mean, count + 1)
-
-    @staticmethod
-    def _compute_input_tokens(tool_id: str, conv: int, turns: int) -> int:
-        if tool_id == TOOL_IDS[Action.SCANNER]:
-            return (500 + conv) + SCANNER_RANKING_INPUT_TOKENS
-        if tool_id == TOOL_IDS[Action.AUDITOR]:
-            return (400 + conv) + AUDITOR_ASSESSMENT_INPUT_TOKENS
-        if tool_id == TOOL_IDS[Action.REFRESHER]:
-            avg_msg = conv / max(turns, 1)
-            bounded = min(4 * avg_msg, conv)
-            return 300 + int(bounded)
-        return conv
