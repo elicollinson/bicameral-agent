@@ -42,25 +42,27 @@ def _feature_vector(input_tokens: int, output_tokens: int) -> np.ndarray:
 
 @dataclass(frozen=True, slots=True)
 class LatencyEstimate:
-    """Predicted latency distribution for an API call."""
+    """Predicted latency distribution for an API call.
+
+    Mean and std dev are the only stored spread state; the p25/p75
+    percentiles are derived properties, so they can never disagree with
+    ``sigma_ms`` (consumers like ToolLatencyModel's variance aggregation
+    read ``sigma_ms`` directly).
+    """
 
     mean_ms: float
-    p25_ms: float
-    p75_ms: float
     sigma_ms: float = 0.0
-    """Std dev of the predicted distribution. Exposed so consumers
-    (e.g. ToolLatencyModel variance aggregation) need not reverse-engineer
-    it from the percentiles, which is lossy when p25 clamps at 0."""
+    """Std dev of the predicted distribution."""
 
-    @classmethod
-    def from_mean_sigma(cls, mean_ms: float, sigma_ms: float) -> LatencyEstimate:
-        """Build an estimate from mean and std dev, deriving p25/p75."""
-        return cls(
-            mean_ms=mean_ms,
-            p25_ms=max(mean_ms - _Z_25 * sigma_ms, 0.0),
-            p75_ms=mean_ms + _Z_25 * sigma_ms,
-            sigma_ms=sigma_ms,
-        )
+    @property
+    def p25_ms(self) -> float:
+        """25th percentile (normal approximation), clamped at 0."""
+        return max(self.mean_ms - _Z_25 * self.sigma_ms, 0.0)
+
+    @property
+    def p75_ms(self) -> float:
+        """75th percentile (normal approximation)."""
+        return self.mean_ms + _Z_25 * self.sigma_ms
 
 
 class APILatencyModel:
@@ -164,4 +166,4 @@ class APILatencyModel:
             prior_std = prior_mean * _PRIOR_VARIANCE_FRAC
             spread = (1 - w) * prior_std + w * learned_std
 
-        return LatencyEstimate.from_mean_sigma(mean_ms, spread)
+        return LatencyEstimate(mean_ms=mean_ms, sigma_ms=spread)

@@ -200,7 +200,7 @@ class ToolLatencyModel:
         """Sum sub-call latencies assuming sequential independent calls."""
         total_mean = sum(sc.latency.mean_ms for sc in sub_calls)
         total_var = sum(sc.latency.sigma_ms**2 for sc in sub_calls)
-        return LatencyEstimate.from_mean_sigma(total_mean, math.sqrt(total_var))
+        return LatencyEstimate(mean_ms=total_mean, sigma_ms=math.sqrt(total_var))
 
     @staticmethod
     def _compute_cost(token_est: TokenEstimate) -> CostEstimate:
