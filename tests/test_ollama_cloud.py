@@ -15,10 +15,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from bicameral_agent.gemini import ChatMessage, GeminiResponse
-from bicameral_agent.ollama_cloud import (
-    _MAX_RETRIES,
-    OllamaCloudClient,
-)
+from bicameral_agent.model_client import _MAX_RETRIES
+from bicameral_agent.ollama_cloud import OllamaCloudClient
 
 
 # ---------------------------------------------------------------------------
@@ -280,7 +278,7 @@ class TestRetry:
             return _FakeHTTPResponse(_make_response_body(content="ok"))
 
         with patch("urllib.request.urlopen", _fake), \
-                patch("bicameral_agent.ollama_cloud.time.sleep"):
+                patch("bicameral_agent.model_client.time.sleep"):
             result = OllamaCloudClient(api_key="k").generate(
                 [{"role": "user", "content": "x"}]
             )
@@ -297,7 +295,7 @@ class TestRetry:
             return _FakeHTTPResponse(_make_response_body())
 
         with patch("urllib.request.urlopen", _fake), \
-                patch("bicameral_agent.ollama_cloud.time.sleep"):
+                patch("bicameral_agent.model_client.time.sleep"):
             OllamaCloudClient(api_key="k").generate([{"role": "user", "content": "x"}])
         assert calls["n"] == 2
 
@@ -309,7 +307,7 @@ class TestRetry:
             raise _http_error(400)
 
         with patch("urllib.request.urlopen", _fake), \
-                patch("bicameral_agent.ollama_cloud.time.sleep"):
+                patch("bicameral_agent.model_client.time.sleep"):
             with pytest.raises(urllib.error.HTTPError):
                 OllamaCloudClient(api_key="k").generate([{"role": "user", "content": "x"}])
         assert calls["n"] == 1
@@ -319,7 +317,7 @@ class TestRetry:
             raise _http_error(500)
 
         with patch("urllib.request.urlopen", _fake), \
-                patch("bicameral_agent.ollama_cloud.time.sleep") as sleep:
+                patch("bicameral_agent.model_client.time.sleep") as sleep:
             with pytest.raises(urllib.error.HTTPError):
                 OllamaCloudClient(api_key="k").generate([{"role": "user", "content": "x"}])
         assert sleep.call_count == _MAX_RETRIES
@@ -356,7 +354,7 @@ class TestReadPhaseRetry:
             return _FakeHTTPResponse(_make_response_body(content="ok"))
 
         with patch("urllib.request.urlopen", _fake), \
-                patch("bicameral_agent.ollama_cloud.time.sleep"):
+                patch("bicameral_agent.model_client.time.sleep"):
             result = OllamaCloudClient(api_key="k").generate(
                 [{"role": "user", "content": "x"}]
             )
@@ -392,7 +390,7 @@ class TestReadPhaseRetry:
             return _FakeHTTPResponse(_make_response_body(content="ok"))
 
         with patch("urllib.request.urlopen", _fake), \
-                patch("bicameral_agent.ollama_cloud.time.sleep"):
+                patch("bicameral_agent.model_client.time.sleep"):
             result = OllamaCloudClient(api_key="k").generate(
                 [{"role": "user", "content": "x"}]
             )
@@ -404,7 +402,7 @@ class TestReadPhaseRetry:
             return self._FailingReadResponse(TimeoutError("read timed out"))
 
         with patch("urllib.request.urlopen", _fake), \
-                patch("bicameral_agent.ollama_cloud.time.sleep") as sleep:
+                patch("bicameral_agent.model_client.time.sleep") as sleep:
             with pytest.raises(TimeoutError):
                 OllamaCloudClient(api_key="k").generate(
                     [{"role": "user", "content": "x"}]
