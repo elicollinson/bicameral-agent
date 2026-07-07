@@ -82,8 +82,13 @@ if TYPE_CHECKING:  # pragma: no cover
 # Tool vocabulary (order matters for one-hot indexing)
 _TOOL_VOCAB: tuple[str, ...] = tuple(TOOL_IDS.values())  # 3 tools
 
-_TOOL_HISTORY_ONEHOT = 12  # 3 slots × 4 tools (scanner/auditor/refresher/none)
-_TOOL_HISTORY_TIME = 3
+_TOOL_HISTORY_SLOTS = 3  # how many recent invocations are encoded
+# Per-slot one-hot width: one index per tool plus a trailing "none/unknown"
+# entry. Derived from the vocabulary so adding a tool cannot silently
+# collide with the "none" index.
+_TOOL_ONEHOT_WIDTH = len(_TOOL_VOCAB) + 1
+_TOOL_HISTORY_ONEHOT = _TOOL_HISTORY_SLOTS * _TOOL_ONEHOT_WIDTH  # 12
+_TOOL_HISTORY_TIME = _TOOL_HISTORY_SLOTS
 _QUEUE_DIMS = QUEUE_STATE_DIM
 _LATENCY_DIMS = len(_TOOL_VOCAB)  # one slot per tool in the vocabulary
 _PROGRESS_DIMS = 2
@@ -397,23 +402,25 @@ class TrainingDataPipeline:
     def _encode_tool_history_onehot(
         tool_history: list[ToolInvocation],
     ) -> np.ndarray:
-        """One-hot encode the last 3 tool invocations.
+        """One-hot encode the last ``_TOOL_HISTORY_SLOTS`` tool invocations.
 
-        Layout: 3 consecutive 4-slot chunks, ordered most-recent-first.
-        Each chunk: [scanner, auditor, refresher, none/unknown].
+        Layout: consecutive ``_TOOL_ONEHOT_WIDTH``-wide chunks, ordered
+        most-recent-first. Each chunk: one index per tool in
+        ``_TOOL_VOCAB`` order, then a trailing "none/unknown" index.
         """
         out = np.zeros(_TOOL_HISTORY_ONEHOT, dtype=np.float32)
-        recent = list(tool_history)[-3:][::-1]  # most recent first
-        for slot in range(3):
-            base = slot * 4
+        none_idx = len(_TOOL_VOCAB)
+        recent = list(tool_history)[-_TOOL_HISTORY_SLOTS:][::-1]  # most recent first
+        for slot in range(_TOOL_HISTORY_SLOTS):
+            base = slot * _TOOL_ONEHOT_WIDTH
             if slot < len(recent):
                 tool_id = recent[slot].tool_id
                 if tool_id in _TOOL_VOCAB:
                     out[base + _TOOL_VOCAB.index(tool_id)] = 1.0
                 else:
-                    out[base + 3] = 1.0
+                    out[base + none_idx] = 1.0
             else:
-                out[base + 3] = 1.0  # "none"
+                out[base + none_idx] = 1.0  # "none"
         return out
 
     @staticmethod
@@ -421,14 +428,14 @@ class TrainingDataPipeline:
         tool_history: list[ToolInvocation],
         cutoff_ms: int,
     ) -> np.ndarray:
-        """Time since each of the last 3 invocations (normalized seconds).
+        """Time since each recent invocation (normalized seconds).
 
         Slot order matches the one-hot encoding (most recent first).
         Elapsed seconds are capped at ``_TOOL_RECENCY_SECONDS_CAP``.
         Missing slots are 1.0 (treated as "long ago / never").
         """
         out = np.ones(_TOOL_HISTORY_TIME, dtype=np.float32)
-        recent = list(tool_history)[-3:][::-1]
+        recent = list(tool_history)[-_TOOL_HISTORY_SLOTS:][::-1]
         for slot, inv in enumerate(recent):
             elapsed_s = max(0.0, (cutoff_ms - inv.completed_at_ms) / 1000.0)
             out[slot] = _cap_norm(elapsed_s, _TOOL_RECENCY_SECONDS_CAP)

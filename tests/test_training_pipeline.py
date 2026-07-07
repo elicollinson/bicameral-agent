@@ -466,6 +466,15 @@ def test_action_order_matches_policy_value_net() -> None:
     assert _ACTION_ORDER == ACTION_ORDER
 
 
+def test_default_max_turns_matches_episode_config() -> None:
+    """DEFAULT_MAX_TURNS must stay identical to EpisodeConfig.max_turns,
+    otherwise a config-default change silently mis-scales the
+    completion-fraction features (dims 63/107)."""
+    from bicameral_agent.episode_runner import EpisodeConfig
+
+    assert DEFAULT_MAX_TURNS == EpisodeConfig().max_turns
+
+
 def test_queue_slices_identical_between_encoder_and_pipeline(
     pipeline: TrainingDataPipeline,
 ) -> None:
