@@ -197,3 +197,19 @@ class TestMalformedJudgeOutput:
         assert score.logical_flow == 1.0
         assert score.consistency == 0.5
         assert score.overall == 0.5
+
+
+class TestResponseSchema:
+    """Schema-constrained generation at the judge call site (issue #82)."""
+
+    def test_score_passes_response_schema(self):
+        client = MagicMock(spec=GeminiClient)
+        client.generate.return_value = _mock_judge_response()
+        judge = CoherenceJudge(client=client)
+        judge.score(_make_messages(("user", "q"), ("assistant", "a")))
+
+        schema = client.generate.call_args.kwargs["response_schema"]
+        assert schema["type"] == "object"
+        assert set(schema["required"]) == {"logical_flow", "consistency", "overall"}
+        for field in ("logical_flow", "consistency", "overall"):
+            assert schema["properties"][field]["type"] == "integer"

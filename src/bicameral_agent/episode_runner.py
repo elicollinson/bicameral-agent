@@ -20,6 +20,7 @@ from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.encoder import StateEncoder
 from bicameral_agent.gap_scanner import ResearchGapScanner
 from bicameral_agent.heuristic_controller import Action, DecisionLog, FullState, TOOL_IDS
+from bicameral_agent.llm_output import DegradationCounter, count_degradations
 from bicameral_agent.logger import ConversationLogger
 from bicameral_agent.model_client import ModelClient
 from bicameral_agent.queue import ContextQueue, InterruptConfig
@@ -158,6 +159,19 @@ class EpisodeRunner:
         Episode
             A validated Episode capturing the full conversation.
         """
+        # Episode-scoped degradation counting (issue #82): every
+        # structured-output site funnels through safe_parse_json, whose
+        # degradation warning this handler tallies -- no counter threading
+        # through the six components (sim-user, tools, scorer/verifiers).
+        with count_degradations() as degradations:
+            return self._run_episode(task, controller, degradations)
+
+    def _run_episode(
+        self,
+        task: ResearchQATask,
+        controller: Controller,
+        degradations: DegradationCounter,
+    ) -> Episode:
         cfg = self._config
 
         # Cost tracking: reset episode, wrap every role's client so judge and
@@ -477,5 +491,9 @@ class EpisodeRunner:
                 "total": episode_cost.total,
                 "call_count": episode_cost.call_count,
             })
+
+        # After scoring, so judge/verifier degradations are included. Always
+        # present (empty dict on a clean episode) so runs can report a rate.
+        log.set_metadata("parse_degradations", dict(degradations.counts))
 
         return log.finalize(quality_score)

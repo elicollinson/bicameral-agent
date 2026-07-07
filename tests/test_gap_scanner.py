@@ -533,3 +533,25 @@ class TestMalformedOutput:
         # Non-numeric score coerces to 0.0 -> filtered out -> gaps-only deposit
         assert result.queue_deposit is not None
         assert "Research gaps identified" in result.queue_deposit.content
+
+
+class TestResponseSchemas:
+    """Schema-constrained generation at both scanner call sites (issue #82)."""
+
+    def test_both_llm_calls_pass_their_schemas(self):
+        scanner = ResearchGapScanner()
+        client = _mock_client([_gap_response(), _ranking_response()])
+        scanner.execute(_make_messages(), _make_state(), _DEFAULT_BUDGET, client)
+
+        calls = client.generate.call_args_list
+        assert len(calls) == 2
+
+        gap_schema = calls[0].kwargs["response_schema"]
+        assert set(gap_schema["required"]) == {"has_gaps", "gaps"}
+        category = gap_schema["properties"]["gaps"]["items"]["properties"]["category"]
+        assert set(category["enum"]) == {"core_claim", "supplementary", "nice_to_have"}
+
+        rank_schema = calls[1].kwargs["response_schema"]
+        assert set(rank_schema["required"]) == {"overall_confidence", "ranked_results"}
+        item_props = rank_schema["properties"]["ranked_results"]["items"]["properties"]
+        assert "relevance_score" in item_props

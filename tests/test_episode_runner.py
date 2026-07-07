@@ -1328,3 +1328,52 @@ class TestCostBudgetHandling:
         assert isinstance(episode, Episode)
         assert episode.outcome.total_turns == 1
         assert mock_sim.respond.call_count == 1
+
+
+# ---------------------------------------------------------------------------
+# TestParseDegradationMetadata
+# ---------------------------------------------------------------------------
+
+
+class TestParseDegradationMetadata:
+    """Per-episode structured-output degradation counts (issue #82)."""
+
+    @staticmethod
+    def _run(client) -> Episode:
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.DO_NOTHING
+        runner = EpisodeRunner(client, EpisodeConfig(max_turns=1))
+        return runner.run_episode(_make_task(), ctrl)
+
+    def test_clean_episode_reports_empty_counts(self):
+        client = _scripted_client(
+            [{"action_type": "task_complete", "response_delay_ms": 100, "confidence": 0.9}]
+        )
+        episode = self._run(client)
+        assert episode.metadata["parse_degradations"] == {}
+
+    def test_sim_user_degradation_counted(self):
+        # _make_mock_client returns non-JSON prose for every call, so the
+        # real SimulatedUser's safe-parse degrades on its one call.
+        episode = self._run(_make_mock_client())
+        assert episode.metadata["parse_degradations"] == {"SimulatedUser.respond": 1}
+
+    def test_counts_do_not_cross_episodes(self):
+        client = _make_mock_client()
+        self._run(client)
+        second = self._run(client)
+        assert second.metadata["parse_degradations"] == {"SimulatedUser.respond": 1}
+
+    def test_scorer_degradation_counted(self):
+        client = _make_mock_client()
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.DO_NOTHING
+        runner = EpisodeRunner(
+            client, EpisodeConfig(max_turns=1, score_episode=True, metric="llm_judge")
+        )
+        episode = runner.run_episode(_make_task(), ctrl)
+        counts = episode.metadata["parse_degradations"]
+        assert counts["TaskScorer"] == 1
+        assert counts["SimulatedUser.respond"] == 1

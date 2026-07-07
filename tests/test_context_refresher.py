@@ -617,3 +617,32 @@ class TestNullReminderDrift:
         result = refresher.execute(_make_history(), _make_state(), _DEFAULT_BUDGET, client)
 
         assert result.queue_deposit is None
+
+
+class TestResponseSchema:
+    """Schema-constrained generation at the refresher call site (issue #82)."""
+
+    def test_execute_passes_response_schema(self):
+        client = _mock_client(_no_drift_response())
+        refresher = ContextRefresher()
+        refresher.execute(_make_history(), _make_state(), _DEFAULT_BUDGET, client)
+
+        schema = client.generate.call_args.kwargs["response_schema"]
+        assert set(schema["required"]) == {"drift_detected", "drifts", "reminder"}
+        categories = schema["properties"]["drifts"]["items"]["properties"]["category"]
+        assert set(categories["enum"]) == {
+            "constraint_violation",
+            "scope_creep",
+            "requirement_ignored",
+        }
+
+    def test_malformed_output_degrades_to_no_drift_and_warns(self, caplog):
+        client = _mock_client(_fake_response("I could not produce JSON."))
+        refresher = ContextRefresher()
+        with caplog.at_level("WARNING"):
+            result = refresher.execute(
+                _make_history(), _make_state(), _DEFAULT_BUDGET, client
+            )
+
+        assert result.queue_deposit is None
+        assert "ContextRefresher" in caplog.text
