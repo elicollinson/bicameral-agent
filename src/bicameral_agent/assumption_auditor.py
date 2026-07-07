@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import enum
 import hashlib
-import json
 from dataclasses import dataclass
 
 from bicameral_agent.gap_scanner import MockSearchProvider, SearchProvider, SearchResult
+from bicameral_agent.llm_output import safe_parse_json
 from bicameral_agent.queue import Priority, QueueItem
 from bicameral_agent.schema import Message, estimate_text_tokens
 from bicameral_agent.tool_primitive import (
@@ -313,9 +313,15 @@ def _extract_assumptions(conv_text: str, client) -> list[IdentifiedAssumption]:
         response_schema=_ASSUMPTION_EXTRACTION_SCHEMA,
     )
 
-    parsed = json.loads(response.content)
+    parsed = safe_parse_json(
+        response,
+        context="assumption_auditor._extract_assumptions",
+        default={"assumptions": []},
+    )
     assumptions = []
     for item in parsed.get("assumptions", []):
+        if not isinstance(item, dict) or not item.get("description"):
+            continue
         try:
             risk = RiskLevel(item["risk_level"])
         except (ValueError, KeyError):
@@ -359,9 +365,15 @@ def _assess_evidence(
         response_schema=_EVIDENCE_ASSESSMENT_SCHEMA,
     )
 
-    parsed = json.loads(response.content)
+    parsed = safe_parse_json(
+        response,
+        context="assumption_auditor._assess_evidence",
+        default={"assessments": []},
+    )
     evidence_map: dict[str, EvidenceResult] = {}
     for item in parsed.get("assessments", []):
+        if not isinstance(item, dict) or not item.get("assumption_description"):
+            continue
         try:
             verdict = EvidenceVerdict(item["verdict"])
             action = SuggestedAction(item["suggested_action"])

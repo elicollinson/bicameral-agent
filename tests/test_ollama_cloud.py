@@ -6,6 +6,7 @@ so no live calls and no API key are required.
 
 from __future__ import annotations
 
+import http.client
 import io
 import json
 import urllib.error
@@ -321,4 +322,91 @@ class TestRetry:
                 patch("bicameral_agent.ollama_cloud.time.sleep") as sleep:
             with pytest.raises(urllib.error.HTTPError):
                 OllamaCloudClient(api_key="k").generate([{"role": "user", "content": "x"}])
+        assert sleep.call_count == _MAX_RETRIES
+
+
+# ---------------------------------------------------------------------------
+# Read-phase failure retry (issue #47)
+# ---------------------------------------------------------------------------
+
+
+class TestReadPhaseRetry:
+    class _FailingReadResponse:
+        """Context-manager response whose read() raises *exc*."""
+
+        def __init__(self, exc: Exception) -> None:
+            self._exc = exc
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self):
+            raise self._exc
+
+    def _generate_with_first_call_failing(self, exc: Exception):
+        calls = {"n": 0}
+
+        def _fake(request, timeout=None):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return self._FailingReadResponse(exc)
+            return _FakeHTTPResponse(_make_response_body(content="ok"))
+
+        with patch("urllib.request.urlopen", _fake), \
+                patch("bicameral_agent.ollama_cloud.time.sleep"):
+            result = OllamaCloudClient(api_key="k").generate(
+                [{"role": "user", "content": "x"}]
+            )
+        return result, calls["n"]
+
+    def test_timeout_during_read_retried(self):
+        result, n = self._generate_with_first_call_failing(TimeoutError("read timed out"))
+        assert result.content == "ok"
+        assert n == 2
+
+    def test_connection_reset_during_read_retried(self):
+        result, n = self._generate_with_first_call_failing(
+            ConnectionResetError(54, "Connection reset by peer")
+        )
+        assert result.content == "ok"
+        assert n == 2
+
+    def test_incomplete_read_retried(self):
+        result, n = self._generate_with_first_call_failing(
+            http.client.IncompleteRead(b"partial")
+        )
+        assert result.content == "ok"
+        assert n == 2
+
+    def test_truncated_200_body_retried(self):
+        """A 200 whose body is truncated mid-JSON is retried, not raised."""
+        calls = {"n": 0}
+
+        def _fake(request, timeout=None):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return _FakeHTTPResponse(_make_response_body()[:20])
+            return _FakeHTTPResponse(_make_response_body(content="ok"))
+
+        with patch("urllib.request.urlopen", _fake), \
+                patch("bicameral_agent.ollama_cloud.time.sleep"):
+            result = OllamaCloudClient(api_key="k").generate(
+                [{"role": "user", "content": "x"}]
+            )
+        assert result.content == "ok"
+        assert calls["n"] == 2
+
+    def test_persistent_read_failure_raises_after_max_retries(self):
+        def _fake(request, timeout=None):
+            return self._FailingReadResponse(TimeoutError("read timed out"))
+
+        with patch("urllib.request.urlopen", _fake), \
+                patch("bicameral_agent.ollama_cloud.time.sleep") as sleep:
+            with pytest.raises(TimeoutError):
+                OllamaCloudClient(api_key="k").generate(
+                    [{"role": "user", "content": "x"}]
+                )
         assert sleep.call_count == _MAX_RETRIES

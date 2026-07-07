@@ -635,3 +635,60 @@ def _count_corrections(task: ResearchQATask, strictness: Strictness, n_responses
                 and action.followup_type == FollowUpType.CORRECTION):
             count += 1
     return count
+
+
+# ---------------------------------------------------------------------------
+# TestMalformedOutput (issue #47)
+# ---------------------------------------------------------------------------
+
+
+class TestMalformedOutput:
+    def _respond(self, response):
+        user, _ = _make_simulated_user(response=response)
+        return user.respond(_make_task(), "Some answer.", [], turn_number=1)
+
+    @staticmethod
+    def _raw_response(content, finish_reason="MAX_TOKENS"):
+        response = MagicMock()
+        response.content = content
+        response.finish_reason = finish_reason
+        return response
+
+    def test_truncated_json_degrades_to_neutral_followup(self):
+        action = self._respond(self._raw_response('{"action_type": "follo'))
+        assert action.action_type == ActionType.FOLLOW_UP
+        assert action.followup_type == FollowUpType.ELABORATION
+        assert action.message
+
+    def test_empty_content_degrades_to_neutral_followup(self):
+        action = self._respond(self._raw_response(""))
+        assert action.action_type == ActionType.FOLLOW_UP
+
+    def test_invalid_action_type_degrades(self):
+        action = self._respond(self._raw_response(json.dumps({
+            "action_type": "give_up", "response_delay_ms": 100, "confidence": 0.5,
+        })))
+        assert action.action_type == ActionType.FOLLOW_UP
+
+    def test_negative_response_delay_clamped(self):
+        action = self._respond(
+            _mock_gemini_response(action_type="task_complete", response_delay_ms=-200)
+        )
+        assert action.response_delay_ms == 0
+
+    def test_non_numeric_response_delay_defaults(self):
+        action = self._respond(
+            _mock_gemini_response(action_type="task_complete", response_delay_ms="fast")
+        )
+        assert action.response_delay_ms == 500
+
+    def test_invalid_followup_type_degrades_to_elaboration(self):
+        action = self._respond(self._raw_response(json.dumps({
+            "action_type": "follow_up",
+            "message": "And?",
+            "followup_type": "new_task",
+            "response_delay_ms": 100,
+            "confidence": 0.5,
+        })))
+        assert action.action_type == ActionType.FOLLOW_UP
+        assert action.followup_type == FollowUpType.ELABORATION

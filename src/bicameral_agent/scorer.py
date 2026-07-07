@@ -7,7 +7,6 @@ for evaluating agent answers against research QA tasks with scoring rubrics.
 from __future__ import annotations
 
 import hashlib
-import json
 import re
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -16,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.gemini import GeminiClient
+from bicameral_agent.llm_output import coerce_int, safe_parse_json
 
 
 def _normalize_score(v: int) -> float:
@@ -197,7 +197,15 @@ class TaskScorer:
             max_output_tokens=100,
             response_schema=_JUDGE_RESPONSE_SCHEMA,
         )
-        return TaskScore.from_raw(**json.loads(response.content))
+        # Malformed/truncated judge output degrades to a neutral mid-scale
+        # score; missing or non-integer dimensions default to 3 (from_raw
+        # normalizes 3 -> 0.5). Extra keys are ignored rather than splatted.
+        parsed = safe_parse_json(response, context="TaskScorer", default={})
+        return TaskScore.from_raw(
+            quality=coerce_int(parsed.get("quality"), 3),
+            completeness=coerce_int(parsed.get("completeness"), 3),
+            accuracy=coerce_int(parsed.get("accuracy"), 3),
+        )
 
 
 def _tokenize(text: str) -> list[str]:

@@ -20,6 +20,7 @@ from bicameral_agent.gemini import GeminiClient, GeminiResponse
 from bicameral_agent.heuristic_controller import Action, FullState, HeuristicController
 from bicameral_agent.schema import Episode, UserEventType
 from bicameral_agent.simulated_user import ActionType, UserAction
+from bicameral_agent.cost_tracker import CostBudgetExceeded
 from bicameral_agent.tool_primitive import BudgetExceededError
 
 
@@ -944,3 +945,67 @@ class TestIntegrationControllerSwap:
         ep_r = runner.run_episode(task, RandomController(seed=42))
         assert isinstance(ep_h, Episode)
         assert isinstance(ep_r, Episode)
+
+
+# ---------------------------------------------------------------------------
+# TestCostBudgetHandling (issue #47)
+# ---------------------------------------------------------------------------
+
+
+class TestCostBudgetHandling:
+    def test_budget_trip_in_tool_ends_episode_gracefully(self):
+        """CostBudgetExceeded from a tool call ends the episode, not the run."""
+        client = _make_mock_client()
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.SCANNER
+
+        runner = EpisodeRunner(client, EpisodeConfig(max_turns=5))
+
+        with patch("bicameral_agent.episode_runner.SimulatedUser") as MockSimUser:
+            mock_sim = MagicMock()
+            mock_sim.respond.return_value = UserAction(
+                action_type=ActionType.FOLLOW_UP,
+                message="More?",
+                followup_type=FollowUpType.ELABORATION,
+                response_delay_ms=100,
+                confidence=0.8,
+            )
+            MockSimUser.return_value = mock_sim
+
+            with patch(
+                "bicameral_agent.episode_runner.ResearchGapScanner"
+            ) as MockScanner:
+                mock_tool = MagicMock()
+                mock_tool.execute.side_effect = CostBudgetExceeded("episode budget")
+                MockScanner.return_value = mock_tool
+
+                episode = runner.run_episode(_make_task(), ctrl)
+
+        assert isinstance(episode, Episode)
+        # Episode ended on the first turn (no sim-user follow-ups consumed)
+        assert episode.outcome.total_turns == 1
+        assert len(episode.tool_invocations) == 1
+        assert episode.tool_invocations[0].budget_exceeded is True
+        # Sim user never reached: episode ended before the respond() call
+        mock_sim.respond.assert_not_called()
+
+    def test_budget_trip_in_sim_user_ends_episode_gracefully(self):
+        """CostBudgetExceeded from the sim-user call ends the episode, not the run."""
+        client = _make_mock_client()
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.DO_NOTHING
+
+        runner = EpisodeRunner(client, EpisodeConfig(max_turns=5))
+
+        with patch("bicameral_agent.episode_runner.SimulatedUser") as MockSimUser:
+            mock_sim = MagicMock()
+            mock_sim.respond.side_effect = CostBudgetExceeded("episode budget")
+            MockSimUser.return_value = mock_sim
+
+            episode = runner.run_episode(_make_task(), ctrl)
+
+        assert isinstance(episode, Episode)
+        assert episode.outcome.total_turns == 1
+        assert mock_sim.respond.call_count == 1
