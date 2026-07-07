@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from bicameral_agent.cost_tracker import (
-    GEMINI_PRICING,
+    MODEL_PRICING,
     CostBudgetExceeded,
     CostReport,
     CostTrackedClient,
@@ -16,7 +16,7 @@ from bicameral_agent.cost_tracker import (
 )
 
 _MODEL = "gemini-3.1-flash-lite-preview"
-_PRICING = GEMINI_PRICING[_MODEL]
+_PRICING = MODEL_PRICING[_MODEL]
 
 
 class TestRecordCall:
@@ -246,6 +246,39 @@ class TestCostTrackedClient:
         tracker = CostTracker()
         wrapped = CostTrackedClient(client, tracker)
         assert wrapped.model == _MODEL
+
+
+class _StubClient:
+    """Minimal ModelClient stand-in with a fixed model tag and provider."""
+
+    def __init__(self, model: str, provider: str | None = None) -> None:
+        self.model = model
+        if provider is not None:
+            self.provider = provider
+
+    def generate(self, *args, **kwargs):
+        response = MagicMock()
+        response.input_tokens = 1000
+        response.output_tokens = 500
+        return response
+
+
+class TestCostTrackedClientFailFast:
+    """Pricing is validated at construction, never after a paid call (issue #52)."""
+
+    def test_unknown_model_rejected_at_construction(self):
+        with pytest.raises(ValueError, match="Unknown model"):
+            CostTrackedClient(_StubClient("not-a-real-model"), CostTracker())
+
+    def test_flat_rate_provider_unknown_tag_records_zero_cost(self):
+        tracker = CostTracker()
+        wrapped = CostTrackedClient(
+            _StubClient("qwen8:8b-cloud", provider="ollama"), tracker
+        )
+        wrapped.generate([])
+        report = tracker.get_total()
+        assert report.call_count == 1
+        assert report.total == 0.0
 
 
 class TestCostConfig:

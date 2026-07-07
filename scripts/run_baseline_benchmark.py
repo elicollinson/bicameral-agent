@@ -28,7 +28,7 @@ from bicameral_agent.config import HyperConfig
 from bicameral_agent.dataset import ResearchQADataset, ResearchQATask, TaskDifficulty
 from bicameral_agent.episode_runner import EpisodeRunner
 from bicameral_agent.eval_datasets import build_dataset, dataset_names, resolve_metric
-from bicameral_agent.model_client import build_client
+from bicameral_agent.model_client import build_client, provider_names
 from bicameral_agent.no_subconscious_controller import NoSubconsciousController
 from bicameral_agent.random_controller import RandomController
 from bicameral_agent.schema import Episode
@@ -94,7 +94,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="Hyperparameter TOML file (defaults to the bundled "
                              "config; BICAMERAL_ env overrides always apply, "
                              "CLI flags win over both).")
-    parser.add_argument("--provider", choices=["gemini", "ollama"], default=None,
+    parser.add_argument("--provider", choices=list(provider_names()), default=None,
                         help="Model backend to run the answerer against "
                              "(overrides the config file).")
     parser.add_argument("--model", default=None,
