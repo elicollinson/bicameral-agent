@@ -1,5 +1,13 @@
 # Harder benchmark integration (Issue #42)
 
+> **Note (Issue #56):** the implementation now lives in the
+> `bicameral_agent.eval_datasets` package (`frames`, `crepe`, `hf_fetch`,
+> `hard`); `bicameral_agent.hard_benchmark` remains as a re-exporting shim, so
+> everything below still works as written. Datasets are also selectable by
+> name: `scripts/fetch_dataset.py --dataset hard_benchmark` to fetch, and
+> `scripts/run_baseline_benchmark.py --dataset hard_benchmark [--metric ...]`
+> to run against it.
+
 Replaces the saturated `research_qa` evaluation pool (which a frontier answerer
 one-shots, pinning the judge at ceiling — see the RCA in #41) with two harder,
 externally-sourced task pools that map onto the existing `ResearchQATask` shape.

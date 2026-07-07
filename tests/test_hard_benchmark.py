@@ -3,6 +3,11 @@
 Runs fully offline: the upstream mappers are exercised against synthetic raw
 rows, and the loader against a committed author-owned fixture. No network and
 no externally-licensed data are required.
+
+Since Issue #56 the implementation lives in ``bicameral_agent.eval_datasets``;
+everything here imports through the ``bicameral_agent.hard_benchmark`` shim to
+prove the original surface still works, while monkeypatches target the modules
+that now own the code (``hf_fetch``, ``frames``, ``crepe``).
 """
 
 import urllib.error
@@ -10,9 +15,12 @@ from pathlib import Path
 
 import pytest
 
-from bicameral_agent import hard_benchmark
+from bicameral_agent.eval_datasets import crepe as crepe_mod
+from bicameral_agent.eval_datasets import frames as frames_mod
+from bicameral_agent.eval_datasets import hf_fetch
 from bicameral_agent.dataset import ResearchQADataset, TaskDifficulty, TaskSplit
 from bicameral_agent.hard_benchmark import (
+    _DEFAULT_CACHE,
     build_hard_benchmark,
     crepe_row_to_task,
     fetch_crepe,
@@ -85,7 +93,7 @@ class TestPager:
             calls.append((offset, length))
             return pages.pop(0)
 
-        monkeypatch.setattr(hard_benchmark, "_fetch_page", fake_fetch_page)
+        monkeypatch.setattr(hf_fetch, "fetch_page", fake_fetch_page)
         tasks = fetch_frames(limit=5)
         assert len(tasks) == 5
         assert [t.task_id for t in tasks] == [f"frames_hard_{i:03d}" for i in range(1, 6)]
@@ -99,7 +107,7 @@ class TestPager:
             [_crepe_row(0), _crepe_row(1, valid=False), _crepe_row(2), _crepe_row(3, valid=False)],
             [],
         ]
-        monkeypatch.setattr(hard_benchmark, "_fetch_page", lambda *a: pages.pop(0))
+        monkeypatch.setattr(hf_fetch, "fetch_page", lambda *a: pages.pop(0))
         tasks = fetch_crepe(limit=10)
         assert len(tasks) == 2
         assert all(t.difficulty == TaskDifficulty.TRICKY for t in tasks)
@@ -107,14 +115,14 @@ class TestPager:
 
     def test_error_payload_raises_instead_of_empty_page(self, monkeypatch):
         monkeypatch.setattr(
-            hard_benchmark, "_http_get_json", lambda url: {"error": "rate limited"}
+            hf_fetch, "http_get_json", lambda url: {"error": "rate limited"}
         )
         with pytest.raises(RuntimeError, match="rate limited"):
-            hard_benchmark._fetch_page("some/dataset", "test", 0, 100)
+            hf_fetch.fetch_page("some/dataset", "test", 0, 100)
 
     def test_http_get_json_retries_transient_errors(self, monkeypatch):
         sleeps: list[float] = []
-        monkeypatch.setattr(hard_benchmark.time, "sleep", sleeps.append)
+        monkeypatch.setattr(hf_fetch.time, "sleep", sleeps.append)
         attempts = iter([
             urllib.error.HTTPError("u", 429, "rate limited", None, None),
             urllib.error.URLError("conn reset"),
@@ -136,35 +144,35 @@ class TestPager:
             except StopIteration:
                 return FakeResponse()
 
-        monkeypatch.setattr(hard_benchmark.urllib.request, "urlopen", fake_urlopen)
-        assert hard_benchmark._http_get_json("http://x") == {"rows": []}
+        monkeypatch.setattr(hf_fetch.urllib.request, "urlopen", fake_urlopen)
+        assert hf_fetch.http_get_json("http://x") == {"rows": []}
         assert len(sleeps) == 2  # backed off before each retry
 
     def test_http_get_json_gives_up_after_max_attempts(self, monkeypatch):
-        monkeypatch.setattr(hard_benchmark.time, "sleep", lambda s: None)
+        monkeypatch.setattr(hf_fetch.time, "sleep", lambda s: None)
 
         def always_503(req, timeout):
             raise urllib.error.HTTPError("u", 503, "unavailable", None, None)
 
-        monkeypatch.setattr(hard_benchmark.urllib.request, "urlopen", always_503)
+        monkeypatch.setattr(hf_fetch.urllib.request, "urlopen", always_503)
         with pytest.raises(RuntimeError, match="Giving up"):
-            hard_benchmark._http_get_json("http://x")
+            hf_fetch.http_get_json("http://x")
 
     def test_non_retryable_http_error_raises_immediately(self, monkeypatch):
         def not_found(req, timeout):
             raise urllib.error.HTTPError("u", 404, "not found", None, None)
 
-        monkeypatch.setattr(hard_benchmark.urllib.request, "urlopen", not_found)
+        monkeypatch.setattr(hf_fetch.urllib.request, "urlopen", not_found)
         with pytest.raises(urllib.error.HTTPError):
-            hard_benchmark._http_get_json("http://x")
+            hf_fetch.http_get_json("http://x")
 
 
 class TestBuildHardBenchmark:
     def test_short_fetch_refuses_to_write_cache(self, monkeypatch, tmp_path):
         monkeypatch.setattr(
-            hard_benchmark, "fetch_frames", lambda n: [frames_row_to_task(_frames_row(1), 1)]
+            frames_mod, "fetch_frames", lambda n: [frames_row_to_task(_frames_row(1), 1)]
         )
-        monkeypatch.setattr(hard_benchmark, "fetch_crepe", lambda n: [])
+        monkeypatch.setattr(crepe_mod, "fetch_crepe", lambda n: [])
         cache = tmp_path / "cache.json"
         with pytest.raises(RuntimeError, match="short benchmark"):
             build_hard_benchmark(frames_n=5, crepe_n=5, cache_path=cache)
@@ -173,8 +181,8 @@ class TestBuildHardBenchmark:
     def test_full_fetch_writes_cache(self, monkeypatch, tmp_path):
         frames = [frames_row_to_task(_frames_row(i), i) for i in range(1, 3)]
         crepe = [crepe_row_to_task(_crepe_row(i), i) for i in range(1, 3)]
-        monkeypatch.setattr(hard_benchmark, "fetch_frames", lambda n: frames)
-        monkeypatch.setattr(hard_benchmark, "fetch_crepe", lambda n: crepe)
+        monkeypatch.setattr(frames_mod, "fetch_frames", lambda n: frames)
+        monkeypatch.setattr(crepe_mod, "fetch_crepe", lambda n: crepe)
         cache = tmp_path / "cache.json"
         tasks = build_hard_benchmark(frames_n=2, crepe_n=2, cache_path=cache)
         assert len(tasks) == 4
@@ -182,7 +190,7 @@ class TestBuildHardBenchmark:
 
     def test_default_cache_is_repo_root_anchored(self):
         repo_root = Path(__file__).resolve().parents[1]
-        assert hard_benchmark._DEFAULT_CACHE == (
+        assert _DEFAULT_CACHE == (
             repo_root / "data" / "external" / "hard_benchmark.json"
         )
 
@@ -201,5 +209,5 @@ class TestLoader:
 
     def test_load_hard_benchmark_missing_cache_is_actionable(self, tmp_path):
         missing = tmp_path / "nope.json"
-        with pytest.raises(FileNotFoundError, match="fetch_hard_benchmark"):
+        with pytest.raises(FileNotFoundError, match="fetch_dataset"):
             load_hard_benchmark(missing)
