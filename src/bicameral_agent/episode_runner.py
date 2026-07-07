@@ -85,7 +85,9 @@ class EpisodeConfig:
     tool_token_budget: TokenBudget = _DEFAULT_TOKEN_BUDGET
     system_prompt: str = _DEFAULT_SYSTEM_PROMPT
     thinking_level: str = "medium"
+    temperature: float | None = None
     interrupt_config: InterruptConfig | None = None
+    queue_expiry_turns: int | None = None
     patience: Patience = Patience.MEDIUM
     strictness: Strictness = Strictness.MEDIUM
     score_episode: bool = False
@@ -153,6 +155,7 @@ class EpisodeRunner:
             queue,
             system_prompt=cfg.system_prompt,
             thinking_level=cfg.thinking_level,
+            temperature=cfg.temperature,
             interrupt_config=cfg.interrupt_config,
             persistent_injection=cfg.persistent_injection,
         )
@@ -295,8 +298,11 @@ class EpisodeRunner:
 
                     # Deposit to queue and log context injection
                     if result.queue_deposit is not None:
+                        deposit_update: dict = {"enqueued_at_turn": turn}
+                        if cfg.queue_expiry_turns is not None:
+                            deposit_update["expiry_turns"] = cfg.queue_expiry_turns
                         deposit = result.queue_deposit.model_copy(
-                            update={"enqueued_at_turn": turn}
+                            update=deposit_update
                         )
                         queue.enqueue(deposit)
                         inj_idx = log.log_context_injection(

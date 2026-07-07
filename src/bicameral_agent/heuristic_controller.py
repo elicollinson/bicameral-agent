@@ -74,9 +74,28 @@ class HeuristicController:
 
     Rules are evaluated in priority order (6→1) to find a candidate
     tool action, then guard rules (7–8) may suppress it.
+
+    Thresholds are constructor parameters so they can be swept as
+    hyperparameters (see ``HyperConfig.to_heuristic_controller``);
+    defaults match the original hardcoded rule set.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        scanner_interval: int = 5,
+        refresher_interval: int = 8,
+        auditor_stop_threshold: int = 1,
+        auditor_high_stop_threshold: int = 2,
+        queue_depth_guard: int = 3,
+        stagger_tolerance_ms: float = 1000.0,
+    ) -> None:
+        self._scanner_interval = scanner_interval
+        self._refresher_interval = refresher_interval
+        self._auditor_stop_threshold = auditor_stop_threshold
+        self._auditor_high_stop_threshold = auditor_high_stop_threshold
+        self._queue_depth_guard = queue_depth_guard
+        self._stagger_tolerance_ms = stagger_tolerance_ms
         self._decisions: list[DecisionLog] = []
 
     def decide(self, state: FullState) -> Action:
@@ -105,8 +124,7 @@ class HeuristicController:
         """Return all recorded decisions."""
         return list(self._decisions)
 
-    @staticmethod
-    def _evaluate(state: FullState) -> tuple[Action, int]:
+    def _evaluate(self, state: FullState) -> tuple[Action, int]:
         """Return (action, rule_number) after evaluating all rules."""
         # --- Candidate selection: rules 6→1 ---
         candidate: Action | None = None
@@ -114,13 +132,13 @@ class HeuristicController:
 
         if state.followup_type == FollowUpType.REDIRECT:
             candidate, rule = Action.REFRESHER, 6
-        elif state.turn_number % 8 == 0:
+        elif state.turn_number % self._refresher_interval == 0:
             candidate, rule = Action.REFRESHER, 5
-        elif state.stop_count >= 2:
+        elif state.stop_count >= self._auditor_high_stop_threshold:
             candidate, rule = Action.AUDITOR, 4
-        elif state.stop_count >= 1:
+        elif state.stop_count >= self._auditor_stop_threshold:
             candidate, rule = Action.AUDITOR, 3
-        elif state.turn_number % 5 == 0 and state.turn_number > 1:
+        elif state.turn_number % self._scanner_interval == 0 and state.turn_number > 1:
             candidate, rule = Action.SCANNER, 2
         elif state.turn_number == 1:
             candidate, rule = Action.SCANNER, 1
@@ -130,13 +148,13 @@ class HeuristicController:
 
         # --- Guard rules: override candidate to DO_NOTHING ---
         # Rule 7: queue depth guard
-        if state.queue_depth >= 3:
+        if state.queue_depth >= self._queue_depth_guard:
             return Action.DO_NOTHING, 7
 
         # Rule 8: stagger guard
         candidate_latency = state.predicted_latencies.get(candidate.value, 0.0)
         for tool in state.executing_tools:
-            if abs(tool.predicted_remaining_ms - candidate_latency) <= 1000:
+            if abs(tool.predicted_remaining_ms - candidate_latency) <= self._stagger_tolerance_ms:
                 return Action.DO_NOTHING, 8
 
         return candidate, rule

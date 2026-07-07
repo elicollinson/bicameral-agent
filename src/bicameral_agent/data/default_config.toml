@@ -6,15 +6,14 @@
 [model]
 provider = "gemini"        # "gemini" or "ollama"
 name = "gemini-3.1-flash-lite-preview"
-thinking_level = "medium"
+thinking_level = "medium"  # "minimal", "low", "medium", or "high"
 # temperature is unset (uses model default)
 
 [queue]
 count_threshold = 5        # interrupt if queue depth reaches this
 priority_threshold = 3     # interrupt if any item >= CRITICAL (3)
 token_threshold = 1000     # interrupt if total pending tokens reach this
-expiry_turns = 10          # turns before a queue item expires
-max_depth = 3              # queue depth guard for heuristic controller
+# expiry_turns = 3         # expiry applied to every tool deposit (unset = per-tool defaults: refresher 3, others 10)
 persistent_injection = true  # injected context enters history (false = transient one-generation whisper)
 
 [tools]
@@ -30,11 +29,6 @@ max_output_tokens = 20_000
 # max_calls = 5
 # max_input_tokens = 25_000
 # max_output_tokens = 10_000
-
-# Tool priority map (empty by default).
-# Example:
-# [tools.priority_map]
-# assumption_auditor = 2
 
 [heuristic]
 scanner_interval = 5            # invoke scanner every N turns
