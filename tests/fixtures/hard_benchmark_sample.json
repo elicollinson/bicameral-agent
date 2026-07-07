@@ -1,0 +1,35 @@
+[
+  {
+    "task_id": "frames_hard_001",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "The author who wrote the novel that won the first Booker Prize was born in a country that later changed its name. What is that country's current name?",
+    "gold_answer": "Sri Lanka",
+    "scoring_rubric": "5: States the correct answer ('Sri Lanka') and shows the multi-hop reasoning linking the required facts. 4: Correct answer with thin justification. 3: Partially correct, or correct answer with no reasoning. 2: Relevant facts but wrong final answer. 1: Incorrect.",
+    "known_gaps": null,
+    "known_assumptions": null
+  },
+  {
+    "task_id": "frames_hard_002",
+    "difficulty": "hard",
+    "split": "eval",
+    "question": "How many years passed between the founding of the city that hosted the first modern Olympic Games and the founding of the city that hosted the second?",
+    "gold_answer": "Synthetic placeholder answer for offline schema testing.",
+    "scoring_rubric": "5: States the correct answer and shows the multi-hop reasoning linking the required facts. 4: Correct answer with thin justification. 3: Partially correct, or correct answer with no reasoning. 2: Relevant facts but wrong final answer. 1: Incorrect.",
+    "known_gaps": null,
+    "known_assumptions": null
+  },
+  {
+    "task_id": "crepe_tricky_001",
+    "difficulty": "tricky",
+    "split": "eval",
+    "question": "Why does the Great Wall of China stay warm enough at night to be visible by its heat signature from the Moon?",
+    "gold_answer": "The Great Wall is not warm enough to be visible from the Moon by heat signature, nor is it visible from the Moon at all; the premise is false.",
+    "scoring_rubric": "5: Flags that the question rests on a false presupposition AND states the correction. 4: Identifies the false premise but corrects it vaguely. 3: Hedges or only partially questions the premise. 2: Answers as asked without noticing the false premise. 1: Affirms the false premise.",
+    "known_gaps": null,
+    "known_assumptions": [
+      "The Great Wall of China is visible from the Moon.",
+      "The Great Wall emits a detectable heat signature at night."
+    ]
+  }
+]
