@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import importlib.util
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -616,3 +618,28 @@ class TestTransportFailureContainment:
         assert result.failures["random"] == []
         assert result.reports["heuristic"].n_episodes == 3
         assert result.reports["random"].n_episodes == 4
+
+
+def _load_benchmark_script():
+    """Import scripts/run_baseline_benchmark.py (not a package) by path."""
+    path = (
+        Path(__file__).resolve().parent.parent / "scripts" / "run_baseline_benchmark.py"
+    )
+    spec = importlib.util.spec_from_file_location("run_baseline_benchmark", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class TestBuildConditions:
+    """The script's factories must stay in sync with CONDITION_NAMES."""
+
+    def test_factories_cover_all_condition_names(self):
+        script = _load_benchmark_script()
+        conditions = script.build_conditions(MagicMock(), MagicMock(), CONDITION_NAMES)
+        assert tuple(conditions) == CONDITION_NAMES
+
+    def test_subset_builds_only_selected(self):
+        script = _load_benchmark_script()
+        conditions = script.build_conditions(MagicMock(), MagicMock(), ("heuristic",))
+        assert list(conditions) == ["heuristic"]

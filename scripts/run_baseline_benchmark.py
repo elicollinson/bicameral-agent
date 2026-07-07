@@ -20,6 +20,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import Callable
 
 from bicameral_agent.baseline_benchmark import (
     CONDITION_NAMES,
@@ -69,6 +70,33 @@ def select_tasks(dataset: ResearchQADataset, total: int) -> list[ResearchQATask]
                 if len(selected) == total:
                     break
     return selected[:total]
+
+
+def build_conditions(
+    args: argparse.Namespace, hyper: HyperConfig, selected: tuple[str, ...]
+) -> dict[str, Callable]:
+    """Map the selected condition names to their controller factories.
+
+    Raises:
+        RuntimeError: If the factories here drift out of sync with
+            ``CONDITION_NAMES`` (which ``--conditions`` is validated
+            against), so a mismatch fails loudly at startup instead of
+            KeyError-ing mid-run or silently dropping a condition.
+    """
+    factories = {
+        "no_subconscious": lambda _idx: NoSubconsciousController(),
+        "random": lambda idx: RandomController(
+            action_probability=args.random_probability,
+            seed=args.random_seed + idx,
+        ),
+        "heuristic": lambda _idx: hyper.to_heuristic_controller(),
+    }
+    if set(factories) != set(CONDITION_NAMES):
+        raise RuntimeError(
+            f"Controller factories {sorted(factories)} are out of sync with "
+            f"CONDITION_NAMES {sorted(CONDITION_NAMES)}; update both together."
+        )
+    return {name: factories[name] for name in selected}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -137,15 +165,7 @@ def main(argv: list[str] | None = None) -> int:
         sim_user_client=judge_client,
     )
 
-    factories = {
-        "no_subconscious": lambda _idx: NoSubconsciousController(),
-        "random": lambda idx: RandomController(
-            action_probability=args.random_probability,
-            seed=args.random_seed + idx,
-        ),
-        "heuristic": lambda _idx: hyper.to_heuristic_controller(),
-    }
-    conditions = {name: factories[name] for name in selected_conditions}
+    conditions = build_conditions(args, hyper, selected_conditions)
 
     # Persist episodes incrementally: rewrite the condition's parquet after
     # every completed episode so a late crash keeps all prior results.
