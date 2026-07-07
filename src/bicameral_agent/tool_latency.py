@@ -10,9 +10,13 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from bicameral_agent.heuristic_controller import TOOL_IDS, Action
 from bicameral_agent.latency import APILatencyModel, LatencyEstimate
-from bicameral_agent.token_estimator import ContextFeatures, TokenEstimate, TokenEstimator
+from bicameral_agent.token_estimator import (
+    ContextFeatures,
+    TokenEstimate,
+    TokenEstimator,
+    sub_call_inputs,
+)
 
 # Normal distribution z-score for 25th percentile
 _Z_25 = 0.6745
@@ -170,36 +174,26 @@ class ToolLatencyModel:
         context_features: ContextFeatures,
         token_est: TokenEstimate,
     ) -> tuple[SubCallPrediction, ...]:
-        """Break a tool invocation into per-sub-call predictions."""
+        """Break a tool invocation into per-sub-call predictions.
+
+        The per-sub-call input breakdown comes from
+        :func:`bicameral_agent.token_estimator.sub_call_inputs`, the single
+        source of truth also summed by the TokenEstimator, so sub-call
+        inputs always add up to the aggregate estimate. Sub-call structure
+        mirrors the actual tool implementations: the scanner makes two LLM
+        calls (gap identification + result ranking; searches run against a
+        local provider), the auditor makes two (assumption extraction +
+        evidence assessment), and the refresher makes a single call.
+        """
         output_per_call = token_est.output_tokens // max(token_est.num_calls, 1)
-        conv = context_features.conversation_length_tokens
-
-        if tool_id == TOOL_IDS[Action.SCANNER]:
-            gaps = token_est.num_calls - 2
-            calls = [
-                ("gap_identification", 500 + conv),
-                *((f"search_{i + 1}", 2000) for i in range(gaps)),
-                ("synthesis", 500 + conv + gaps * 2000),
-            ]
-            return tuple(
-                SubCallPrediction(
-                    label=label,
-                    input_tokens=inp,
-                    output_tokens=output_per_call,
-                    latency=self._latency_model.predict(inp, output_per_call),
-                )
-                for label, inp in calls
-            )
-
-        return (
+        return tuple(
             SubCallPrediction(
-                label=tool_id,
-                input_tokens=token_est.input_tokens,
-                output_tokens=token_est.output_tokens,
-                latency=self._latency_model.predict(
-                    token_est.input_tokens, token_est.output_tokens
-                ),
-            ),
+                label=label,
+                input_tokens=inp,
+                output_tokens=output_per_call,
+                latency=self._latency_model.predict(inp, output_per_call),
+            )
+            for label, inp in sub_call_inputs(tool_id, context_features)
         )
 
     @staticmethod
