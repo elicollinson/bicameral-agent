@@ -12,6 +12,8 @@ from bicameral_agent.gemini import (
     ChatMessage,
     GeminiClient,
     GeminiResponse,
+)
+from bicameral_agent.model_client import (
     _BASE_DELAY,
     _BACKOFF_FACTOR,
     _MAX_RETRIES,
@@ -186,7 +188,7 @@ class TestRetryLogic:
         sdk.models.generate_content.side_effect = [
             exc_429, exc_429, _make_mock_response()
         ]
-        with patch("bicameral_agent.gemini.time.sleep"):
+        with patch("bicameral_agent.model_client.time.sleep"):
             result = client.generate([{"role": "user", "content": "hi"}])
         assert result.content == "Hello!"
         assert sdk.models.generate_content.call_count == 3
@@ -199,7 +201,7 @@ class TestRetryLogic:
         sdk.models.generate_content.side_effect = [
             exc_500, _make_mock_response()
         ]
-        with patch("bicameral_agent.gemini.time.sleep"):
+        with patch("bicameral_agent.model_client.time.sleep"):
             result = client.generate([{"role": "user", "content": "hi"}])
         assert result.content == "Hello!"
         assert sdk.models.generate_content.call_count == 2
@@ -212,7 +214,7 @@ class TestRetryLogic:
         sdk.models.generate_content.side_effect = [
             exc_429, _make_mock_response()
         ]
-        with patch("bicameral_agent.gemini.time.sleep"):
+        with patch("bicameral_agent.model_client.time.sleep"):
             result = client.generate([{"role": "user", "content": "hi"}])
         assert result.content == "Hello!"
         assert sdk.models.generate_content.call_count == 2
@@ -249,7 +251,7 @@ class TestRetryLogic:
         client, sdk = mock_client
         exc_429 = Exception("429 Too Many Requests")
         sdk.models.generate_content.side_effect = exc_429
-        with patch("bicameral_agent.gemini.time.sleep"):
+        with patch("bicameral_agent.model_client.time.sleep"):
             with pytest.raises(Exception, match="429"):
                 client.generate([{"role": "user", "content": "hi"}])
         assert sdk.models.generate_content.call_count == _MAX_RETRIES + 1
@@ -261,8 +263,8 @@ class TestRetryLogic:
             exc_429, exc_429, _make_mock_response()
         ]
         sleep_calls = []
-        with patch("bicameral_agent.gemini.time.sleep", side_effect=lambda d: sleep_calls.append(d)):
-            with patch("bicameral_agent.gemini.random.uniform", return_value=0.0):
+        with patch("bicameral_agent.model_client.time.sleep", side_effect=lambda d: sleep_calls.append(d)):
+            with patch("bicameral_agent.model_client.random.uniform", return_value=0.0):
                 client.generate([{"role": "user", "content": "hi"}])
 
         assert len(sleep_calls) == 2
@@ -746,7 +748,7 @@ class TestBlockedResponses:
             instance = MockClient.return_value
             instance.models.generate_content.return_value = response
             client = GeminiClient(api_key="key")
-            with patch("bicameral_agent.gemini.time.sleep"):
+            with patch("bicameral_agent.model_client.time.sleep"):
                 with pytest.raises(BlockedResponseError):
                     client.generate([{"role": "user", "content": "hi"}])
         assert instance.models.generate_content.call_count == 1

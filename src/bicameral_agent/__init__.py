@@ -32,6 +32,7 @@ from bicameral_agent.tool_latency import (
 )
 from bicameral_agent.conscious_loop import AssistantResponse, ConsciousLoop
 from bicameral_agent.gemini import ChatMessage, GeminiClient, GeminiResponse
+from bicameral_agent.model_client import ModelClient, ModelResponse, build_client
 from bicameral_agent.dataset import (
     ResearchQADataset,
     ResearchQATask,
@@ -196,8 +197,10 @@ __all__ = [
     "LexicalScorer",
     "MCTSConfig",
     "Message",
+    "ModelClient",
     "ModelConfig",
     "ModelPricing",
+    "ModelResponse",
     "MockSearchProvider",
     "NUM_ACTIONS",
     "Patience",
@@ -249,6 +252,7 @@ __all__ = [
     "UserEvent",
     "UserEventType",
     "ValidationResult",
+    "build_client",
     "default_conditions",
     "episode_from_parquet",
     "episode_to_parquet",

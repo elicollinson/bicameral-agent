@@ -2,7 +2,7 @@
 
 A drop-in alternative to ``GeminiClient`` for running episodes/benchmarks
 against an open Gemma-class model. Mirrors the ``GeminiClient`` interface
-exactly -- same ``generate(...)`` signature, same ``GeminiResponse`` return
+exactly -- same ``generate(...)`` signature, same ``ModelResponse`` return
 type, same retry/timing/callback behaviour -- so it is interchangeable at every
 call site (``EpisodeRunner``, ``SimulatedUser``, ``TaskScorer``, tools).
 
@@ -18,30 +18,31 @@ from __future__ import annotations
 import http.client
 import json
 import os
-import random
 import time
 import urllib.error
 import urllib.request
 from typing import Any, Callable
 
-from bicameral_agent.gemini import ChatMessage, GeminiResponse
+from bicameral_agent.model_client import (
+    ChatMessage,
+    ModelResponse,
+    RetryingClientBase,
+    default_model,
+    validate_thinking_level,
+)
 
-_MODEL = "gemma4:31b-cloud"
+_MODEL = default_model("ollama")
 _DEFAULT_HOST = "https://ollama.com"
-_MAX_RETRIES = 3
-_BASE_DELAY = 1.0
-_BACKOFF_FACTOR = 2.0
-_MAX_JITTER = 0.5
 _TIMEOUT_S = 120.0
 
-_VALID_THINKING_LEVELS = {"minimal", "low", "medium", "high"}
 
-
-class OllamaCloudClient:
+class OllamaCloudClient(RetryingClientBase):
     """Thin wrapper around the Ollama Cloud chat API with retry, timing, callbacks.
 
     Thread-safe: no mutable state after __init__.
     """
+
+    provider = "ollama"
 
     def __init__(
         self,
@@ -75,7 +76,7 @@ class OllamaCloudClient:
         max_output_tokens: int | None = None,
         tools: list[dict] | None = None,
         response_schema: dict | None = None,
-    ) -> GeminiResponse:
+    ) -> ModelResponse:
         """Generate a response from the Ollama Cloud chat API.
 
         Args mirror ``GeminiClient.generate`` for drop-in compatibility:
@@ -91,24 +92,18 @@ class OllamaCloudClient:
             response_schema: JSON schema dict; passed through to Ollama ``format``.
 
         Returns:
-            GeminiResponse with content, token counts, timing, and finish reason.
+            ModelResponse with content, token counts, timing, and finish reason.
         """
-        if thinking_level.lower() not in _VALID_THINKING_LEVELS:
-            raise ValueError(
-                f"Invalid thinking_level {thinking_level!r}; "
-                f"must be one of {sorted(_VALID_THINKING_LEVELS)}"
-            )
-
         payload = self._build_payload(
             messages,
             system_prompt=system_prompt,
-            thinking_level=thinking_level.lower(),
+            thinking_level=validate_thinking_level(thinking_level),
             temperature=temperature,
             max_output_tokens=max_output_tokens,
             tools=tools,
             response_schema=response_schema,
         )
-        return self._execute_with_retry(payload)
+        return self._execute_with_retry(lambda: self._attempt(payload))
 
     def _build_payload(
         self,
@@ -168,28 +163,12 @@ class OllamaCloudClient:
 
         return payload
 
-    def _execute_with_retry(self, payload: dict[str, Any]) -> GeminiResponse:
-        last_exc: Exception | None = None
-
-        for attempt in range(_MAX_RETRIES + 1):
-            if attempt > 0:
-                delay = _BASE_DELAY * (_BACKOFF_FACTOR ** (attempt - 1))
-                jitter = random.uniform(0, _MAX_JITTER)
-                time.sleep(delay + jitter)
-
-            try:
-                start_ns = time.monotonic_ns()
-                data = self._post(payload)
-                duration_ms = (time.monotonic_ns() - start_ns) / 1_000_000
-                return self._parse_response(data, duration_ms)
-
-            except Exception as exc:
-                if self._is_retryable(exc) and attempt < _MAX_RETRIES:
-                    last_exc = exc
-                    continue
-                raise
-
-        raise last_exc  # type: ignore[misc]
+    def _attempt(self, payload: dict[str, Any]) -> ModelResponse:
+        """One timed request/parse round trip (retried by the base class)."""
+        start_ns = time.monotonic_ns()
+        data = self._post(payload)
+        duration_ms = (time.monotonic_ns() - start_ns) / 1_000_000
+        return self._parse_response(data, duration_ms)
 
     def _post(self, payload: dict[str, Any]) -> dict[str, Any]:
         body = json.dumps(payload).encode("utf-8")
@@ -205,7 +184,7 @@ class OllamaCloudClient:
         with urllib.request.urlopen(request, timeout=_TIMEOUT_S) as response:
             return json.loads(response.read().decode("utf-8"))
 
-    def _parse_response(self, data: dict[str, Any], duration_ms: float) -> GeminiResponse:
+    def _parse_response(self, data: dict[str, Any], duration_ms: float) -> ModelResponse:
         input_tokens = data.get("prompt_eval_count") or 0
         output_tokens = data.get("eval_count") or 0
         finish_reason = data.get("done_reason") or "stop"
@@ -224,7 +203,7 @@ class OllamaCloudClient:
         if self._on_completion is not None:
             self._on_completion(input_tokens, output_tokens, duration_ms)
 
-        return GeminiResponse(
+        return ModelResponse(
             content=content,
             input_tokens=input_tokens,
             output_tokens=output_tokens,

@@ -13,8 +13,14 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from bicameral_agent.model_client import (
+    VALID_THINKING_LEVELS,
+    default_model,
+    provider_names,
+    validate_provider_model,
+)
 from bicameral_agent.heuristic_controller import (
     DEFAULT_AUDITOR_HIGH_STOP_THRESHOLD,
     DEFAULT_AUDITOR_STOP_THRESHOLD,
@@ -30,19 +36,33 @@ _DEFAULT_TOML = files("bicameral_agent.data").joinpath("default_config.toml")
 
 
 class ModelConfig(BaseModel):
-    """LLM model configuration."""
+    """LLM model configuration.
+
+    ``name`` left unset defaults to the provider's default model from the
+    ``model_client`` registry, and is cross-checked against ``provider`` so
+    e.g. provider='ollama' with a Gemini tag is rejected at config time.
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     provider: str = "gemini"
-    name: str = "gemini-3.1-flash-lite-preview"
+    name: str = ""  # empty -> the provider's default model (see below)
     thinking_level: str = "medium"
     temperature: float | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_provider_default_name(cls, data: Any) -> Any:
+        if isinstance(data, dict) and not data.get("name"):
+            provider = data.get("provider", "gemini")
+            if provider in provider_names():
+                data = {**data, "name": default_model(provider)}
+        return data
 
     @field_validator("provider")
     @classmethod
     def _validate_provider(cls, v: str) -> str:
-        allowed = {"gemini", "ollama"}
+        allowed = set(provider_names())
         if v not in allowed:
             msg = f"provider must be one of {allowed}, got {v!r}"
             raise ValueError(msg)
@@ -51,11 +71,15 @@ class ModelConfig(BaseModel):
     @field_validator("thinking_level")
     @classmethod
     def _validate_thinking_level(cls, v: str) -> str:
-        allowed = {"minimal", "low", "medium", "high"}
-        if v not in allowed:
-            msg = f"thinking_level must be one of {allowed}, got {v!r}"
+        if v not in VALID_THINKING_LEVELS:
+            msg = f"thinking_level must be one of {sorted(VALID_THINKING_LEVELS)}, got {v!r}"
             raise ValueError(msg)
         return v
+
+    @model_validator(mode="after")
+    def _cross_validate_name(self) -> ModelConfig:
+        validate_provider_model(self.provider, self.name)
+        return self
 
     @field_validator("temperature")
     @classmethod
@@ -234,6 +258,15 @@ class HyperConfig(BaseModel):
             return self
 
         current = self.model_dump()
+        # A provider override without an explicit name drops the old
+        # provider's model name so the new provider's default applies.
+        model_ov = overrides.get("model")
+        if (
+            isinstance(model_ov, dict)
+            and "name" not in model_ov
+            and model_ov.get("provider") not in (None, self.model.provider)
+        ):
+            current["model"].pop("name", None)
         _deep_merge(current, overrides)
         return HyperConfig.model_validate(current)
 

@@ -10,22 +10,28 @@ APILatencyModel.
 from __future__ import annotations
 
 import os
-import random
 import time
-from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from google import genai
 from google.genai import errors as genai_errors
 from google.genai import types
 
-_MODEL = "gemini-3.1-flash-lite-preview"
-_MAX_RETRIES = 3
-_BASE_DELAY = 1.0
-_BACKOFF_FACTOR = 2.0
-_MAX_JITTER = 0.5
+from bicameral_agent.model_client import (
+    ChatMessage,
+    ModelResponse,
+    RetryingClientBase,
+    default_model,
+    validate_thinking_level,
+)
 
-_VALID_THINKING_LEVELS = {"minimal", "low", "medium", "high"}
+_MODEL = default_model("gemini")
+
+# Back-compat alias: the response dataclass now lives provider-neutrally in
+# model_client; existing imports of GeminiResponse keep working.
+GeminiResponse = ModelResponse
+
+__all__ = ["BlockedResponseError", "ChatMessage", "GeminiClient", "GeminiResponse"]
 
 
 class BlockedResponseError(RuntimeError):
@@ -41,35 +47,13 @@ class BlockedResponseError(RuntimeError):
         super().__init__(f"Gemini returned no usable content (reason: {reason})")
 
 
-@dataclass(frozen=True, slots=True)
-class ChatMessage:
-    """A message in the conversation for the Gemini API.
-
-    Lighter than schema.Message -- no timestamp/token_count fields,
-    since those are logging concerns, not API input concerns.
-    """
-
-    role: str
-    content: str
-
-
-@dataclass(frozen=True, slots=True)
-class GeminiResponse:
-    """Response from a Gemini API call with metadata."""
-
-    content: str
-    input_tokens: int
-    output_tokens: int
-    duration_ms: float
-    finish_reason: str
-    function_calls: list[dict[str, Any]] | None = field(default=None)
-
-
-class GeminiClient:
+class GeminiClient(RetryingClientBase):
     """Thin wrapper around the Gemini API with retry, timing, and callbacks.
 
     Thread-safe: no mutable state after __init__.
     """
+
+    provider = "gemini"
 
     def __init__(
         self,
@@ -117,22 +101,16 @@ class GeminiClient:
         Returns:
             GeminiResponse with content, token counts, timing, and finish reason.
         """
-        if thinking_level.lower() not in _VALID_THINKING_LEVELS:
-            raise ValueError(
-                f"Invalid thinking_level {thinking_level!r}; "
-                f"must be one of {sorted(_VALID_THINKING_LEVELS)}"
-            )
-
         contents = self._build_contents(messages)
         config = self._build_config(
             system_prompt=system_prompt,
-            thinking_level=thinking_level.lower(),
+            thinking_level=validate_thinking_level(thinking_level),
             temperature=temperature,
             max_output_tokens=max_output_tokens,
             tools=tools,
             response_schema=response_schema,
         )
-        return self._execute_with_retry(contents, config)
+        return self._execute_with_retry(lambda: self._attempt(contents, config))
 
     @staticmethod
     def _build_contents(
@@ -190,36 +168,20 @@ class GeminiClient:
 
         return types.GenerateContentConfig(**kwargs)
 
-    def _execute_with_retry(
+    def _attempt(
         self,
         contents: list[types.Content],
         config: types.GenerateContentConfig,
     ) -> GeminiResponse:
-        last_exc: Exception | None = None
-
-        for attempt in range(_MAX_RETRIES + 1):
-            if attempt > 0:
-                delay = _BASE_DELAY * (_BACKOFF_FACTOR ** (attempt - 1))
-                jitter = random.uniform(0, _MAX_JITTER)
-                time.sleep(delay + jitter)
-
-            try:
-                start_ns = time.monotonic_ns()
-                response = self._client.models.generate_content(
-                    model=self._model,
-                    contents=contents,
-                    config=config,
-                )
-                duration_ms = (time.monotonic_ns() - start_ns) / 1_000_000
-                return self._parse_response(response, duration_ms)
-
-            except Exception as exc:
-                if self._is_retryable(exc) and attempt < _MAX_RETRIES:
-                    last_exc = exc
-                    continue
-                raise
-
-        raise last_exc  # type: ignore[misc]
+        """One timed request/parse round trip (retried by the base class)."""
+        start_ns = time.monotonic_ns()
+        response = self._client.models.generate_content(
+            model=self._model,
+            contents=contents,
+            config=config,
+        )
+        duration_ms = (time.monotonic_ns() - start_ns) / 1_000_000
+        return self._parse_response(response, duration_ms)
 
     def _parse_response(self, response: Any, duration_ms: float) -> GeminiResponse:
         usage = response.usage_metadata

@@ -1,4 +1,4 @@
-"""Cost tracking and budget enforcement for Gemini API calls.
+"""Cost tracking and budget enforcement for model API calls.
 
 Monitors API spend across all calls and enforces configurable session-level
 and episode-level budget limits. Thread-safe via ``threading.Lock``.
@@ -6,10 +6,13 @@ and episode-level budget limits. Thread-safe via ``threading.Lock``.
 
 from __future__ import annotations
 
+import logging
 import threading
 from dataclasses import dataclass
 
-from bicameral_agent.gemini import GeminiClient, GeminiResponse
+from bicameral_agent.model_client import PROVIDERS, ModelClient, ModelResponse
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,8 +37,43 @@ MODEL_PRICING: dict[str, ModelPricing] = {
     ),
 }
 
-# Backwards-compatible alias (the dict previously held only Gemini models).
-GEMINI_PRICING = MODEL_PRICING
+_FLAT_RATE = ModelPricing(input_cost_per_token=0.0, output_cost_per_token=0.0)
+
+# Tags already warned about, so flat-rate fallbacks log once per process.
+_warned_flat_rate: set[str] = set()
+
+
+def resolve_pricing(model: str, provider: str | None = None) -> ModelPricing:
+    """Resolve per-token pricing for *model*, failing fast on unknown tags.
+
+    Tags registered in ``MODEL_PRICING`` resolve directly. Unknown tags on a
+    flat-rate (subscription) provider fall back to $0/token with a one-time
+    warning, so any Ollama Cloud ``--model`` override works without a
+    registry edit. Unknown tags on metered providers raise, so a typo'd
+    Gemini tag is rejected at client-build time -- never after a paid call.
+
+    Raises:
+        ValueError: If *model* is unpriced and *provider* is not flat-rate.
+    """
+    pricing = MODEL_PRICING.get(model)
+    if pricing is not None:
+        return pricing
+
+    spec = PROVIDERS.get(provider) if provider is not None else None
+    if spec is not None and spec.flat_rate:
+        if model not in _warned_flat_rate:
+            _warned_flat_rate.add(model)
+            logger.warning(
+                "No pricing registered for model %r; provider %r is "
+                "subscription-flat, recording $0/token.",
+                model,
+                provider,
+            )
+        return _FLAT_RATE
+
+    raise ValueError(
+        f"Unknown model {model!r}; known models: {sorted(MODEL_PRICING)}"
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,17 +111,27 @@ class CostTracker:
         self._session_budget: float | None = None
         self._episode_budget: float | None = None
 
-    def record_call(self, input_tokens: int, output_tokens: int, model: str) -> None:
+    def record_call(
+        self,
+        input_tokens: int,
+        output_tokens: int,
+        model: str,
+        pricing: ModelPricing | None = None,
+    ) -> None:
         """Record a completed API call and accumulate costs.
 
+        Args:
+            input_tokens: Prompt tokens consumed by the call.
+            output_tokens: Completion tokens produced by the call.
+            model: Model tag the call was made against.
+            pricing: Pre-resolved pricing (skips the registry lookup).
+
         Raises:
-            ValueError: If *model* is not in ``MODEL_PRICING``.
+            ValueError: If *pricing* is omitted and *model* is not in
+                ``MODEL_PRICING``.
         """
-        pricing = MODEL_PRICING.get(model)
         if pricing is None:
-            raise ValueError(
-                f"Unknown model {model!r}; known models: {sorted(MODEL_PRICING)}"
-            )
+            pricing = resolve_pricing(model)
         input_cost = input_tokens * pricing.input_cost_per_token
         output_cost = output_tokens * pricing.output_cost_per_token
 
@@ -156,23 +204,29 @@ class CostTracker:
 
 
 class CostTrackedClient:
-    """Wraps a ``GeminiClient`` with cost tracking and budget enforcement.
+    """Wraps a model client with cost tracking and budget enforcement.
 
     Calls ``check_budget()`` before each ``generate()`` and
     ``record_call()`` after, following the same wrapper pattern as
     ``_TrackedClient`` in ``tool_primitive.py``.
+
+    Pricing for the wrapped client's model is resolved once at construction,
+    so an unpriced tag fails fast here -- never after a paid call.
     """
 
-    def __init__(self, inner: GeminiClient, tracker: CostTracker) -> None:
+    def __init__(self, inner: ModelClient, tracker: CostTracker) -> None:
         self._inner = inner
         self._tracker = tracker
+        self._pricing = resolve_pricing(
+            inner.model, provider=getattr(inner, "provider", None)
+        )
 
     @property
     def model(self) -> str:
         """Expose the underlying client's model name."""
         return self._inner.model
 
-    def generate(self, *args, **kwargs) -> GeminiResponse:
+    def generate(self, *args, **kwargs) -> ModelResponse:
         """Generate with pre-call budget check and post-call cost recording."""
         self._tracker.check_budget()
         response = self._inner.generate(*args, **kwargs)
@@ -180,5 +234,6 @@ class CostTrackedClient:
             response.input_tokens,
             response.output_tokens,
             self._inner.model,
+            pricing=self._pricing,
         )
         return response
