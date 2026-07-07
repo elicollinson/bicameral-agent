@@ -333,7 +333,7 @@ class EpisodeRunner:
                     max_turns=cfg.max_turns,
                 )
 
-                inv_idx = log.log_tool_invocation(tool_id, 0)
+                inv_idx = log.log_tool_invocation(tool_id, 0, turn=turn)
                 try:
                     result = tool.execute(
                         conversation_history=temp_messages,

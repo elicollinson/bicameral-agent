@@ -39,7 +39,7 @@ class ConversationLogger:
         self._context_injections: list[ContextInjection] = []
         self._tool_invocations: list[tuple[int, ToolInvocation]] = []  # (index, invocation)
 
-        self._pending_tools: dict[int, tuple[str, int, int]] = {}
+        self._pending_tools: dict[int, tuple[str, int, int, int | None]] = {}
         self._next_tool_index = 0
         self._next_injection_index = 0
         self._wasted_tokens = 0
@@ -150,12 +150,17 @@ class ConversationLogger:
                 )
             )
 
-    def log_tool_invocation(self, tool_id: str, input_tokens: int) -> int:
+    def log_tool_invocation(
+        self, tool_id: str, input_tokens: int, turn: int | None = None
+    ) -> int:
         """Record the start of a tool invocation.
 
         Args:
             tool_id: Identifier of the tool being invoked.
             input_tokens: Number of tokens in the tool's input.
+            turn: 1-based conversational turn making the invocation, if known.
+                Recorded on the ToolInvocation so consumers can attribute the
+                invocation to its turn without timestamp heuristics.
 
         Returns:
             An opaque invocation index to pass to log_tool_completion().
@@ -165,7 +170,7 @@ class ConversationLogger:
             ts = self._now_ms()
             idx = self._next_tool_index
             self._next_tool_index += 1
-            self._pending_tools[idx] = (tool_id, input_tokens, ts)
+            self._pending_tools[idx] = (tool_id, input_tokens, ts, turn)
             return idx
 
     def log_tool_completion(
@@ -194,7 +199,7 @@ class ConversationLogger:
                 raise ValueError(
                     f"Unknown invocation index: {invocation_index}"
                 )
-            tool_id, input_tokens, invoked_at_ms = pending
+            tool_id, input_tokens, invoked_at_ms, turn = pending
             self._tool_invocations.append((
                 invocation_index,
                 ToolInvocation(
@@ -205,6 +210,7 @@ class ConversationLogger:
                     output_tokens=output_tokens,
                     result_deposited=result_deposited,
                     budget_exceeded=budget_exceeded,
+                    turn=turn,
                 ),
             ))
 

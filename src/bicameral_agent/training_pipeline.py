@@ -485,40 +485,52 @@ class TrainingDataPipeline:
 
         Returns a dict ``{turn_number: action_index}``. Missing turns
         default to DO_NOTHING.
+
+        Invocations carrying an explicit ``turn`` (logged by the live
+        runner since issue #80) are attributed directly. Legacy invocations
+        without one fall back to the timestamp window
+        ``[user_ts, next_user_ts)``, which is order-agnostic: it covers both
+        the pre-#50 logging order (tool events before the assistant message)
+        and the current order (assistant message logged at generation time,
+        before tool events). The final turn's window is open-ended.
+
+        This stays aligned with EpisodeReplayer's strict decision-point
+        cutoffs (#51): the invocation labeled as turn N's action is invoked
+        at/after that turn's assistant message, so it is excluded from turn
+        N's decision-point state and only appears in later states.
         """
         # Reverse mapping: tool_id -> Action
         tool_to_action: dict[str, Action] = {v: k for k, v in TOOL_IDS.items()}
 
-        # Pair each user message with the next assistant message; any tool
-        # invocation falling in that window is the action for that turn.
+        user_ts_list = [m.timestamp_ms for m in episode.messages if m.role == "user"]
+        n_turns = len(user_ts_list)
+
         actions: dict[int, int] = {}
-        turn_no = 0
-        i = 0
-        msgs = episode.messages
-        while i < len(msgs):
-            if msgs[i].role != "user":
-                i += 1
+
+        def record(turn_no: int, tool_id: str) -> None:
+            # First invocation per turn wins (invocations are sorted by
+            # invoked_at_ms), matching the previous semantics.
+            if turn_no in actions:
+                return
+            action = tool_to_action.get(tool_id, Action.DO_NOTHING)
+            actions[turn_no] = _ACTION_INDEX[action]
+
+        for inv in episode.tool_invocations:
+            if inv.turn is not None:
+                if 1 <= inv.turn <= n_turns:
+                    record(inv.turn, inv.tool_id)
                 continue
-            turn_no += 1
-            user_ts = msgs[i].timestamp_ms
-
-            # Find next assistant message
-            j = i + 1
-            while j < len(msgs) and msgs[j].role != "assistant":
-                j += 1
-            if j >= len(msgs):
-                break
-            assistant_ts = msgs[j].timestamp_ms
-
-            # Find a tool invocation in (user_ts, assistant_ts]
-            found_action = Action.DO_NOTHING
-            for inv in episode.tool_invocations:
-                if user_ts < inv.invoked_at_ms <= assistant_ts:
-                    action = tool_to_action.get(inv.tool_id, Action.DO_NOTHING)
-                    found_action = action
+            # Legacy fallback: attribute to the turn whose window
+            # [user_ts, next_user_ts) contains the invocation.
+            for turn_no in range(1, n_turns + 1):
+                lo = user_ts_list[turn_no - 1]
+                hi = user_ts_list[turn_no] if turn_no < n_turns else None
+                if lo <= inv.invoked_at_ms and (hi is None or inv.invoked_at_ms < hi):
+                    record(turn_no, inv.tool_id)
                     break
-            actions[turn_no] = _ACTION_INDEX[found_action]
-            i = j + 1
+
+        for turn_no in range(1, n_turns + 1):
+            actions.setdefault(turn_no, _ACTION_INDEX[Action.DO_NOTHING])
         return actions
 
     # ------------------------------------------------------------------

@@ -44,6 +44,7 @@ def _build_episode(
     assistant_msg_tokens: int = 20,
     user_events: list[tuple[UserEventType, int]] | None = None,
     tool_invocations_per_turn: dict[int, str] | None = None,
+    tool_invoked_offset_ms: int = 100,
     context_injections: list[ContextInjection] | None = None,
     user_messages: list[str] | None = None,
     metadata: dict | None = None,
@@ -56,8 +57,12 @@ def _build_episode(
         List of ``(event_type, turn_number)`` pairs. The event timestamp
         is placed just after the assistant message of the given turn.
     tool_invocations_per_turn:
-        Map from turn_number to tool_id. The tool is invoked between the
-        user and assistant messages of that turn.
+        Map from turn_number to tool_id. The tool is invoked at
+        ``user_ts + tool_invoked_offset_ms`` of that turn.
+    tool_invoked_offset_ms:
+        Offset of the invocation from the turn's user message. The default
+        (100) places it before the assistant message (pre-#50 logging
+        order); values above 500 place it after (current runner order).
     context_injections:
         Already-built ContextInjection records to attach.
     user_messages:
@@ -89,8 +94,8 @@ def _build_episode(
             tools.append(
                 ToolInvocation(
                     tool_id=tool_id,
-                    invoked_at_ms=user_ts + 100,
-                    completed_at_ms=user_ts + 300,
+                    invoked_at_ms=user_ts + tool_invoked_offset_ms,
+                    completed_at_ms=user_ts + tool_invoked_offset_ms + 200,
                     input_tokens=50,
                     output_tokens=80,
                     result_deposited=False,
@@ -604,6 +609,50 @@ def test_all_action_indices_in_valid_range(
     examples = pipeline.process_episode(episode)
     for ex in examples:
         assert 0 <= ex.action <= 3
+
+
+def test_action_inference_with_live_runner_ordering(
+    pipeline: TrainingDataPipeline,
+) -> None:
+    """Regression (#80): tools logged after the assistant message are attributed.
+
+    Since #50 the runner logs the assistant message at generation time,
+    before tool events, so invocations fall after assistant_ts. The old
+    (user_ts, assistant_ts] window mislabeled these turns DO_NOTHING.
+    """
+    episode = _build_episode(
+        num_turns=3,
+        tool_invocations_per_turn={
+            1: TOOL_IDS[Action.SCANNER],
+            3: TOOL_IDS[Action.REFRESHER],
+        },
+        tool_invoked_offset_ms=600,  # after the assistant message (+500)
+    )
+    examples = pipeline.process_episode(episode)
+    assert examples[0].action == _ACTION_INDEX[Action.SCANNER]
+    assert examples[1].action == _ACTION_INDEX[Action.DO_NOTHING]
+    assert examples[2].action == _ACTION_INDEX[Action.REFRESHER]
+
+
+def test_action_inference_prefers_turn_linkage_over_timestamps(
+    pipeline: TrainingDataPipeline,
+) -> None:
+    """An invocation carrying ``turn`` is attributed to it regardless of timestamps."""
+    episode = _build_episode(num_turns=3)
+    inv = ToolInvocation(
+        tool_id=TOOL_IDS[Action.AUDITOR],
+        # Timestamps fall inside turn 3's window; the turn field must win.
+        invoked_at_ms=episode.messages[-1].timestamp_ms + 100,
+        completed_at_ms=episode.messages[-1].timestamp_ms + 200,
+        input_tokens=50,
+        output_tokens=80,
+        turn=2,
+    )
+    episode = episode.model_copy(update={"tool_invocations": [inv]})
+    examples = pipeline.process_episode(episode)
+    assert examples[0].action == _ACTION_INDEX[Action.DO_NOTHING]
+    assert examples[1].action == _ACTION_INDEX[Action.AUDITOR]
+    assert examples[2].action == _ACTION_INDEX[Action.DO_NOTHING]
 
 
 # ---------------------------------------------------------------------------

@@ -152,6 +152,11 @@ class ToolInvocation(BaseModel):
     Budget-exceeded invocations have partial durations and must be excluded
     from latency-prediction accuracy metrics."""
 
+    turn: int | None = Field(default=None, ge=1)
+    """1-based conversational turn during which this tool was invoked.
+    None for episodes logged before this field existed; consumers must
+    fall back to timestamp-based attribution in that case."""
+
     @model_validator(mode="after")
     def check_temporal_order(self) -> ToolInvocation:
         """Ensure completed_at_ms >= invoked_at_ms."""
