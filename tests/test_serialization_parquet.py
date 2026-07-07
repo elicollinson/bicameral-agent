@@ -3,6 +3,7 @@
 import os
 
 import pyarrow.parquet as pq
+import pytest
 
 from bicameral_agent.schema import Episode, EpisodeOutcome
 from bicameral_agent.serialization import episodes_from_parquet, episodes_to_parquet
@@ -23,6 +24,12 @@ class TestParquetRoundTrip:
         assert len(restored) == 5
         for orig, rest in zip(five_episodes, restored):
             assert orig.model_dump() == rest.model_dump()
+
+    def test_single_read_of_multi_episode_file_raises(self, five_episodes, tmp_path):
+        path = str(tmp_path / "episodes.parquet")
+        episodes_to_parquet(five_episodes, path)
+        with pytest.raises(ValueError, match="episodes_from_parquet"):
+            Episode.from_parquet(path)
 
     def test_parquet_file_is_valid(self, make_episode, tmp_path):
         ep = make_episode()

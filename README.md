@@ -54,6 +54,8 @@ The hypothesis: a small neural network trained via Monte Carlo Tree Search can l
 
 ## Project Phases
 
+> **Status note:** the baseline control run (#23) produced no usable signal — see the RCA in epic [#41](https://github.com/elicollinson/bicameral-agent/issues/41). Remediation is in progress under that epic (harder benchmark, multi-provider backends, experiment-validity fixes); the original phase plan below is superseded until the #46 baseline re-run lands.
+
 The project is organized into 6 phases with 40 tracked issues:
 
 | Phase | Name | Issues | Description |
@@ -100,13 +102,28 @@ ruff check src/ tests/
 pytest --cov=bicameral_agent
 ```
 
+## Model Providers
+
+Two backends satisfy the same client contract (`src/bicameral_agent/model_client.py`), so episodes and benchmarks are provider-agnostic:
+
+- **Gemini** (default) — requires `GEMINI_API_KEY`
+- **Ollama Cloud** — open Gemma-class models; requires `OLLAMA_API_KEY` (see `docs/ollama_cloud.md`)
+
+Select a backend per run with the `--provider` flag on scripts that support it:
+
+```bash
+uv run python scripts/run_baseline_benchmark.py --provider ollama --model gemma4:31b-cloud
+```
+
+or via the `[model]` config section (`provider = "gemini"` or `"ollama"`), overridable with `BICAMERAL_` environment variables.
+
 ## State Encoder
 
-The `StateEncoder` compresses conversation state into a fixed 53-dimensional feature vector for the MCTS controller. The layout:
+The `StateEncoder` compresses conversation state into a fixed 64-dimensional feature vector (`FEATURE_DIM = 64` in `src/bicameral_agent/encoder.py`) for the MCTS controller. The layout:
 
 | Index | Feature | Dims |
 |-------|---------|------|
-| 0 | turn_number | 1 |
+| 0 | turn_number (user messages so far) | 1 |
 | 1 | total_tokens_so_far | 1 |
 | 2–33 | topic_embedding | 32 |
 | 34 | estimated_confidence | 1 |
@@ -117,6 +134,19 @@ The `StateEncoder` compresses conversation state into a fixed 53-dimensional fea
 | 46–48 | response_latency_bucket (one-hot) | 3 |
 | 49 | message_length_ratio | 1 |
 | 50–52 | sentiment_shift (one-hot) | 3 |
+| 53 | queue_depth | 1 |
+| 54 | queue_token_total | 1 |
+| 55 | queue_max_priority (ordinal, 0 = empty) | 1 |
+| 56 | queue_time_since_last_drain | 1 |
+| 57 | queue_pending_tool_count | 1 |
+| 58 | queue_arrival_interval_ema | 1 |
+| 59 | latency_research_gap_scanner | 1 |
+| 60 | latency_assumption_auditor | 1 |
+| 61 | latency_context_refresher | 1 |
+| 62 | episode_turn_progress | 1 |
+| 63 | episode_completion_fraction | 1 |
+
+Scalars use cap-and-divide normalization (`min(val, cap) / cap`), so every value is deterministically bounded to [0, 1]. The module docstring in `encoder.py` is the authoritative reference for the layout.
 
 By default, topic embeddings use a deterministic SHAKE-256 hash. For semantic embeddings, install the optional ML extra:
 
@@ -131,13 +161,20 @@ This adds `fastembed` with the `all-MiniLM-L6-v2` ONNX model (~150MB).
 ```
 src/bicameral_agent/     # Main package
 tests/                   # Test suite
-github_issues.md         # Full issue specifications
+scripts/                 # Runnable entry points (benchmarks, data collection)
+docs/                    # Design notes and dataset documentation
 pyproject.toml           # Project config (hatchling build, ruff, pytest)
 ```
 
+## Documentation
+
+- [`docs/hard_benchmark.md`](docs/hard_benchmark.md) — the harder external benchmark (FRAMES + CREPE): sources, licenses, attribution, and fetch instructions
+- [`docs/ollama_cloud.md`](docs/ollama_cloud.md) — the Ollama Cloud model backend, a drop-in alternative to Gemini
+- [`docs/benchmark_comparison_issue42.md`](docs/benchmark_comparison_issue42.md) — dataset comparison and recommendation behind the hard benchmark (#42)
+
 ## Tech Stack
 
-- **LLM**: Gemini 3 Flash Preview (conscious loop + tool internals)
+- **LLM**: Gemini 3 Flash Preview (conscious loop + tool internals), with Ollama Cloud (Gemma-class) as an alternate provider
 - **ML**: PyTorch (policy/value network, transition model, MCTS)
 - **Data**: Pydantic v2 (schemas), PyArrow (Parquet serialization)
 - **Dev**: pytest, ruff, uv
