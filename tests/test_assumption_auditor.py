@@ -476,3 +476,50 @@ class TestIntegration:
 
         rate = identified_count / len(assumption_tasks)
         assert rate >= 0.6, f"Assumption detection rate {rate:.0%} < 60%"
+
+
+# ---------------------------------------------------------------------------
+# Unit tests: Malformed LLM output hardening (issue #47)
+# ---------------------------------------------------------------------------
+
+
+class TestMalformedOutput:
+    def test_truncated_extraction_json_degrades_to_noop(self):
+        """Truncated call-1 output (MAX_TOKENS) yields a no-op result, not a crash."""
+        truncated = GeminiResponse(
+            content='{"assumptions": [{"description": "LK-99',
+            input_tokens=50,
+            output_tokens=100,
+            duration_ms=50.0,
+            finish_reason="MAX_TOKENS",
+        )
+        auditor = AssumptionAuditor()
+        client = _mock_client(truncated)
+        result = auditor.execute(_make_messages(), _make_state(), _DEFAULT_BUDGET, client)
+
+        assert result.queue_deposit is None
+        assert result.metadata.items_found == 0
+        assert client.generate.call_count == 1
+
+    def test_truncated_evidence_json_proceeds_without_evidence(self):
+        """Truncated call-2 output degrades to flagging without evidence."""
+        truncated = _fake_response('{"assessments": [{"assumption_desc')
+        auditor = AssumptionAuditor()
+        client = _mock_client([_assumption_response(), truncated])
+        result = auditor.execute(_make_messages(), _make_state(), _DEFAULT_BUDGET, client)
+
+        assert result.queue_deposit is not None
+        # No evidence assessed -> lower confidence branch
+        assert result.metadata.confidence == 0.5
+
+    def test_assumption_items_missing_keys_skipped(self):
+        assumptions = [
+            {"description": "valid", "risk_level": "moderate", "basis": "b"},
+            {"risk_level": "high"},  # no description
+            "not a dict",
+        ]
+        auditor = AssumptionAuditor()
+        client = _mock_client(_assumption_response(assumptions=assumptions))
+        result = auditor.execute(_make_messages(), _make_state(), _DEFAULT_BUDGET, client)
+
+        assert result.metadata.items_found == 1

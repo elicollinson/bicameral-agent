@@ -30,6 +30,7 @@ from bicameral_agent.episode_runner import EpisodeRunner
 from bicameral_agent.model_client import build_client
 from bicameral_agent.no_subconscious_controller import NoSubconsciousController
 from bicameral_agent.random_controller import RandomController
+from bicameral_agent.schema import Episode
 from bicameral_agent.serialization import episodes_to_parquet
 
 logger = logging.getLogger(__name__)
@@ -126,10 +127,19 @@ def main(argv: list[str] | None = None) -> int:
         "heuristic": lambda _idx: hyper.to_heuristic_controller(),
     }
 
-    result = run_benchmark(client, tasks, conditions, runner=runner)
+    # Persist episodes incrementally: rewrite the condition's parquet after
+    # every completed episode so a late crash keeps all prior results.
+    completed: dict[str, list[Episode]] = {}
 
-    for condition, episodes in result.episodes.items():
-        episodes_to_parquet(episodes, str(output_dir / f"{condition}.parquet"))
+    def persist_episode(condition: str, _idx: int, episode: Episode) -> None:
+        completed.setdefault(condition, []).append(episode)
+        episodes_to_parquet(
+            completed[condition], str(output_dir / f"{condition}.parquet")
+        )
+
+    result = run_benchmark(
+        client, tasks, conditions, runner=runner, on_episode=persist_episode
+    )
 
     report_text = format_report(result)
     (output_dir / "report.txt").write_text(report_text)

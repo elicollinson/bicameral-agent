@@ -198,5 +198,5 @@ def sample_queue_state():
         max_priority=Priority.MEDIUM,
         time_since_last_drain=2.5,
         pending_tool_count=2,
-        estimated_next_arrival=1.0,
+        arrival_interval_ema=1.0,
     )

@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import enum
 import hashlib
-import json
 import re
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
+from bicameral_agent.llm_output import clamp, safe_parse_json
 from bicameral_agent.queue import Priority, QueueItem
 from bicameral_agent.schema import Message, estimate_text_tokens
 from bicameral_agent.tool_primitive import ToolMetadata, ToolPrimitive, ToolResult
@@ -270,13 +270,18 @@ class ResearchGapScanner(ToolPrimitive):
                 ),
             )
 
-        # Call 2: Rank results
+        # Call 2: Rank results. Clamp LLM-supplied numerics before they reach
+        # Pydantic ToolMetadata fields (models occasionally emit 1-5 scales).
         ranked = _rank_results(gaps, all_search_results, client)
-        overall_confidence = ranked.get("overall_confidence", 0.5)
-        ranked_results = ranked.get("ranked_results", [])
+        overall_confidence = clamp(ranked.get("overall_confidence"), 0.0, 1.0, 0.5)
+        ranked_results = [
+            {**r, "relevance_score": clamp(r.get("relevance_score"), 0.0, 1.0, 0.0)}
+            for r in ranked.get("ranked_results", [])
+            if isinstance(r, dict)
+        ]
 
         # Filter to relevant results
-        relevant = [r for r in ranked_results if r.get("relevance_score", 0) >= 0.3]
+        relevant = [r for r in ranked_results if r["relevance_score"] >= 0.3]
 
         if not relevant:
             gaps_content = _format_gaps_only(gaps)
@@ -344,12 +349,18 @@ def _identify_gaps(conv_text: str, client) -> list[IdentifiedGap]:
         response_schema=_GAP_IDENTIFICATION_SCHEMA,
     )
 
-    parsed = json.loads(response.content)
+    parsed = safe_parse_json(
+        response,
+        context="gap_scanner._identify_gaps",
+        default={"has_gaps": False, "gaps": []},
+    )
     if not parsed.get("has_gaps", False):
         return []
 
     gaps = []
     for gap_data in parsed.get("gaps", []):
+        if not isinstance(gap_data, dict) or not gap_data.get("description"):
+            continue
         try:
             category = GapCategory(gap_data["category"])
         except (ValueError, KeyError):
@@ -358,7 +369,7 @@ def _identify_gaps(conv_text: str, client) -> list[IdentifiedGap]:
             IdentifiedGap(
                 description=gap_data["description"],
                 category=category,
-                search_query=gap_data["search_query"],
+                search_query=gap_data.get("search_query", ""),
             )
         )
     return gaps
@@ -392,10 +403,11 @@ def _rank_results(
         response_schema=_RANKING_SCHEMA,
     )
 
-    try:
-        return json.loads(response.content)
-    except json.JSONDecodeError:
-        return {"overall_confidence": 0.0, "ranked_results": []}
+    return safe_parse_json(
+        response,
+        context="gap_scanner._rank_results",
+        default={"overall_confidence": 0.0, "ranked_results": []},
+    )
 
 
 def _max_priority(gaps: list[IdentifiedGap]) -> Priority:
@@ -425,8 +437,8 @@ def _format_ranked_content(ranked: list[dict]) -> str:
     for r in ranked:
         lines.append(
             f"\n**{r.get('gap_description', 'Unknown gap')}**\n"
-            f"  {r['title']} (relevance: {r['relevance_score']:.1f})\n"
-            f"  {r['snippet']}\n"
-            f"  Source: {r['source']}"
+            f"  {r.get('title', '')} (relevance: {r['relevance_score']:.1f})\n"
+            f"  {r.get('snippet', '')}\n"
+            f"  Source: {r.get('source', '')}"
         )
     return "\n".join(lines)

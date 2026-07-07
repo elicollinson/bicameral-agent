@@ -175,16 +175,23 @@ class BenchmarkResult:
 
 ControllerFactory = Callable[[int], Controller]
 
+EpisodeCallback = Callable[[str, int, Episode], None]
+"""Called with (condition, episode_index, episode) as each episode completes."""
+
 
 def run_condition(
     runner: EpisodeRunner,
     tasks: list[ResearchQATask],
     controller_factory: ControllerFactory,
+    condition: str = "",
+    on_episode: EpisodeCallback | None = None,
 ) -> tuple[list[Episode], list[TaskMetrics]]:
     """Run one controller condition over the task pool.
 
     A fresh controller is constructed per episode (via ``controller_factory(idx)``)
-    so that decision logs are scoped to a single episode.
+    so that decision logs are scoped to a single episode. ``on_episode`` (if
+    given) fires after each completed episode, letting callers persist results
+    incrementally so a late crash keeps prior episodes.
     """
     episodes: list[Episode] = []
     metrics: list[TaskMetrics] = []
@@ -193,6 +200,8 @@ def run_condition(
         episode = runner.run_episode(task, controller)
         episodes.append(episode)
         metrics.append(extract_task_metrics(episode, list(controller.decisions)))
+        if on_episode is not None:
+            on_episode(condition, idx, episode)
     return episodes, metrics
 
 
@@ -208,13 +217,20 @@ def run_benchmark(
     tasks: list[ResearchQATask],
     conditions: dict[str, ControllerFactory],
     runner: EpisodeRunner | None = None,
+    on_episode: EpisodeCallback | None = None,
 ) -> BenchmarkResult:
-    """Run all conditions over the task pool and aggregate."""
+    """Run all conditions over the task pool and aggregate.
+
+    ``on_episode`` is forwarded to :func:`run_condition` for incremental
+    persistence of completed episodes.
+    """
     runner = runner or EpisodeRunner(client)
     result = BenchmarkResult()
     for condition, factory in conditions.items():
         logger.info("Running %d episodes for condition %r", len(tasks), condition)
-        episodes, metrics = run_condition(runner, tasks, factory)
+        episodes, metrics = run_condition(
+            runner, tasks, factory, condition=condition, on_episode=on_episode
+        )
         result.episodes[condition] = episodes
         result.metrics[condition] = metrics
         result.reports[condition] = aggregate(condition, metrics)
