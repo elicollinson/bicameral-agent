@@ -85,6 +85,7 @@ class EpisodeConfig:
     score_episode: bool = False
     use_lexical_scorer: bool = False
     injection_mode: InjectionMode = InjectionMode.BREAKPOINT
+    persistent_injection: bool = True
 
 
 class EpisodeRunner:
@@ -147,6 +148,7 @@ class EpisodeRunner:
             system_prompt=cfg.system_prompt,
             thinking_level=cfg.thinking_level,
             interrupt_config=cfg.interrupt_config,
+            persistent_injection=cfg.persistent_injection,
         )
         sim_user = SimulatedUser(
             client=active_client,

@@ -40,6 +40,7 @@ class TestDefaults:
         assert cfg.queue.token_threshold == 1000
         assert cfg.queue.expiry_turns == 10
         assert cfg.queue.max_depth == 3
+        assert cfg.queue.persistent_injection is True
 
     def test_tools_defaults(self):
         cfg = HyperConfig()
@@ -225,6 +226,7 @@ class TestAdapters:
         assert ec.thinking_level == "medium"
         assert ec.tool_token_budget.max_calls == 10
         assert ec.tool_token_budget.max_input_tokens == 50_000
+        assert ec.persistent_injection is True
 
     def test_to_episode_config_with_overrides(self):
         cfg = HyperConfig()
