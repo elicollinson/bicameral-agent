@@ -453,6 +453,67 @@ class TestReport:
         assert first.to_json() == second.to_json()
         assert first.to_markdown() == second.to_markdown()
 
+    def test_extends_eval_report(self):
+        from bicameral_agent.comparative_eval import ComparativeReport
+        from bicameral_agent.eval_report import EvalReport
+
+        assert issubclass(ComparativeReport, EvalReport)
+
+    def test_from_benchmark_is_unsupported(self):
+        from bicameral_agent.comparative_eval import ComparativeReport
+
+        with pytest.raises(NotImplementedError, match="build_report"):
+            ComparativeReport.from_benchmark(MagicMock())
+
+
+# ---------------------------------------------------------------------------
+# Evaluation integrity: judge blinding
+# ---------------------------------------------------------------------------
+
+
+class TestJudgeBlinding:
+    """Scoring is LLM-judged by design (no human-eval pathway; issue #53
+    pins the judge model), so "human eval blinded" reduces to: the judge
+    must not see which condition produced an answer.
+    """
+
+    def test_judge_prompt_contains_no_condition_identity(self):
+        from bicameral_agent.scorer import TaskScorer
+
+        client = MagicMock()
+        response = MagicMock()
+        response.content = json.dumps(
+            {"quality": 4, "completeness": 3, "accuracy": 5}
+        )
+        client.generate.return_value = response
+
+        task = _task("t1").model_copy(
+            update={"question": "What is the melting point of gallium?"}
+        )
+        TaskScorer(client=client).score(task, "the agent answer text")
+
+        call = client.generate.call_args
+        prompt_text = f"{call.args} {call.kwargs}".lower()
+        for condition in CONDITION_NAMES:
+            assert condition not in prompt_text
+        assert "controller" not in prompt_text
+        # The judge sees only task-derived fields and the answer.
+        assert task.question.lower() in prompt_text
+        assert "the agent answer text" in prompt_text
+
+    def test_runner_and_verifier_have_no_condition_channel(self):
+        import inspect
+
+        from bicameral_agent.verifiers import Verifier
+
+        # run_condition passes the condition name only to the persistence
+        # callback; run_episode has no parameter that could carry it.
+        run_params = inspect.signature(EpisodeRunner.run_episode).parameters
+        assert set(run_params) == {"self", "task", "controller"}
+        # Verifiers score (task, agent_answer) only.
+        score_params = inspect.signature(Verifier.score).parameters
+        assert set(score_params) == {"self", "task", "agent_answer"}
+
 
 # ---------------------------------------------------------------------------
 # Task mix / selection

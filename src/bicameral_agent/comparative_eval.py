@@ -52,6 +52,19 @@ What IS deterministic for a fixed seed and fixed inputs:
 - everything downstream of collected episodes: metric extraction,
   summaries, CIs, Welch t-tests / p-values, difficulty breakdown, and
   both report serializations are pure functions of the episodes.
+
+Evaluation integrity: judge blinding
+------------------------------------
+The issue's "human eval blinded" item is N/A here: this framework has no
+human-eval pathway — scoring is LLM-judged by design, with the judge
+model pinned independently of the answerer (issue #53). The concern
+behind blinding — the judge must not know which condition produced an
+answer — holds structurally: verifiers score ``(task, agent_answer)``
+only, so the judge prompt is built from the task's question / gold
+answer / rubric plus the answer text, and the condition name never
+reaches the runner (``run_condition`` passes it only to the persistence
+callback, not to ``run_episode``). Asserted in tests: the captured
+judge prompt contains no condition identity.
 """
 
 from __future__ import annotations
@@ -73,7 +86,7 @@ from bicameral_agent.baseline_benchmark import (
 )
 from bicameral_agent.dataset import ResearchQADataset, ResearchQATask, TaskDifficulty
 from bicameral_agent.episode_runner import EpisodeRunner
-from bicameral_agent.eval_report import TaskResult
+from bicameral_agent.eval_report import EvalReport, TaskResult
 from bicameral_agent.no_subconscious_controller import NoSubconsciousController
 from bicameral_agent.random_controller import RandomController
 from bicameral_agent.schema import Episode
@@ -569,32 +582,40 @@ class ComparativeTaskResult(TaskResult):
     difficulty: str = ""
 
 
-class ComparativeReport(BaseModel):
+class ComparativeReport(EvalReport):
     """Machine-readable report for one comparative evaluation run.
 
-    Extends the :class:`~bicameral_agent.eval_report.EvalReport` shape
-    (dataset/metric/provenance/conditions/results) with pairwise tests,
-    the difficulty breakdown, and the run's seed/task-mix identity.
+    Extends :class:`~bicameral_agent.eval_report.EvalReport` (inheriting
+    the dataset/metric/provenance/conditions/results shape and
+    ``to_json``) with pairwise tests, the difficulty breakdown, and the
+    run's seed/task-mix identity; ``results`` rows are narrowed to
+    :class:`ComparativeTaskResult` so each carries its difficulty tier.
+    Here ``conditions`` holds the ``{"n_episodes", "summaries"}`` dicts
+    built by :func:`build_report` (over the nine comparison metrics)
+    rather than baseline ``ConditionReport`` dicts.
     """
 
-    dataset: str
-    metric: str
-    answerer: dict[str, str]
-    measurement: dict[str, str]
-    tasks_per_condition: int
-    max_turns: int
     base_seed: int
     task_mix: dict[str, int]
     task_ids: list[str]
-    conditions: dict[str, dict]
-    """Per-condition ``{"n_episodes", "summaries": {metric: {...}}}``."""
     pairwise: list[PairwiseTestResult]
     by_difficulty: dict[str, dict[str, dict[str, dict]]]
     results: list[ComparativeTaskResult] = Field(default_factory=list)
 
-    def to_json(self) -> str:
-        """Serialize to the report.json payload."""
-        return self.model_dump_json(indent=2)
+    @classmethod
+    def from_benchmark(cls, *args: object, **kwargs: object) -> ComparativeReport:
+        """Unsupported: a comparative report needs the paired analysis.
+
+        The inherited constructor takes an unpaired ``BenchmarkResult``
+        and cannot supply the comparative-only fields (pairwise tests,
+        difficulty breakdown, seed/mix identity); use
+        :func:`build_report` on a :class:`ComparativeResult` instead.
+        """
+        msg = (
+            "ComparativeReport cannot be built from a BenchmarkResult; use "
+            "comparative_eval.build_report(ComparativeResult, ...) instead"
+        )
+        raise NotImplementedError(msg)
 
     def to_markdown(self) -> str:
         """Render the human-readable markdown report."""
