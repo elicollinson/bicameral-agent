@@ -174,10 +174,11 @@ class ConsciousLoop:
     def regenerate_with_context(self, context_str: str) -> AssistantResponse:
         """Re-generate the last assistant response with additional context.
 
-        Pops the last model message from history, finds the last user message,
-        and regenerates with the provided context. Does NOT increment turn count.
-        In persistent mode, the stored user message is replaced with the
-        context-augmented one so the context stays visible on later turns.
+        Pops the last model message from history, then regenerates the
+        preceding user message with the provided context. Does NOT increment
+        turn count. In persistent mode, the stored user message is replaced
+        with the context-augmented one so the context stays visible on later
+        turns.
         """
         if not self._history or self._history[-1].role != "model":
             raise ValueError("No model message to replace in history")
@@ -185,22 +186,20 @@ class ConsciousLoop:
         # Pop the last model message
         self._history.pop()
 
-        # Find the last user message
-        last_user_idx = None
-        for idx in range(len(self._history) - 1, -1, -1):
-            if self._history[idx].role == "user":
-                last_user_idx = idx
-                break
-        if last_user_idx is None:
+        # History must now end with the user message that prompted the
+        # replaced response — _generate builds its prompt as history[:-1]
+        # plus the (augmented) last message, so any other shape would
+        # silently duplicate messages.
+        if not self._history or self._history[-1].role != "user":
             raise ValueError("No user message found in history")
-        last_user_msg = self._history[last_user_idx].content
+        last_user_msg = self._history[-1].content
 
         start_ns = time.monotonic_ns()
         response = self._generate(last_user_msg, context_str)
         duration_ms = (time.monotonic_ns() - start_ns) / 1_000_000
 
         if self._persistent_injection:
-            self._history[last_user_idx] = ChatMessage(
+            self._history[-1] = ChatMessage(
                 role="user", content=_augment(last_user_msg, context_str)
             )
 

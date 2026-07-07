@@ -258,6 +258,62 @@ class TestInjectionPersistence:
 
         assert loop.history[0].content == "Hello"
 
+    def test_persistent_interrupt_combined_context_persists(self):
+        """Persistent: breakpoint + interrupt context both persist across turns."""
+        responses = [
+            _make_response("first"),
+            _make_response("second"),
+            _make_response("r2"),
+        ]
+        loop, client, queue = _make_loop(
+            interrupt_config=InterruptConfig(priority_threshold=Priority.CRITICAL),
+        )
+        # Breakpoint item drained before generation; a critical item arrives
+        # during the first generation and triggers the interrupt path.
+        self._enqueue(queue, content="BREAKPOINT FACT")
+        client.generate.side_effect = _enqueue_on_generate(
+            queue, responses, content="INTERRUPT FACT",
+        )
+
+        result = loop.run_turn("msg1")
+
+        assert result.interrupted
+        stored = loop.history[0].content
+        assert "BREAKPOINT FACT" in stored
+        assert "INTERRUPT FACT" in stored
+        assert "msg1" in stored
+
+        # The combined context is visible in the next turn's API call.
+        loop.run_turn("msg2")
+        third_call_msgs = client.generate.call_args_list[2][0][0]
+        prior = "\n".join(m.content for m in third_call_msgs[:-1])
+        assert "BREAKPOINT FACT" in prior
+        assert "INTERRUPT FACT" in prior
+
+    def test_transient_interrupt_context_not_persisted(self):
+        """Transient: interrupt context vanishes from history after the turn."""
+        responses = [
+            _make_response("first"),
+            _make_response("second"),
+            _make_response("r2"),
+        ]
+        loop, client, queue = _make_loop(
+            interrupt_config=InterruptConfig(priority_threshold=Priority.CRITICAL),
+            persistent_injection=False,
+        )
+        client.generate.side_effect = _enqueue_on_generate(
+            queue, responses, content="INTERRUPT FACT",
+        )
+
+        result = loop.run_turn("msg1")
+
+        assert result.interrupted
+        assert loop.history[0].content == "msg1"
+
+        loop.run_turn("msg2")
+        third_call_msgs = client.generate.call_args_list[2][0][0]
+        assert all("INTERRUPT FACT" not in m.content for m in third_call_msgs)
+
 
 class TestInterrupt:
     """Critical item triggers turn restart with injection."""
