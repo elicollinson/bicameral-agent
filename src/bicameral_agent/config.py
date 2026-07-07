@@ -15,6 +15,14 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from bicameral_agent.heuristic_controller import (
+    DEFAULT_AUDITOR_HIGH_STOP_THRESHOLD,
+    DEFAULT_AUDITOR_STOP_THRESHOLD,
+    DEFAULT_QUEUE_DEPTH_GUARD,
+    DEFAULT_REFRESHER_INTERVAL,
+    DEFAULT_SCANNER_INTERVAL,
+    DEFAULT_STAGGER_TOLERANCE_MS,
+)
 from bicameral_agent.queue import InterruptConfig, Priority
 
 
@@ -102,12 +110,12 @@ class HeuristicConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    scanner_interval: int = Field(default=5, ge=1)
-    refresher_interval: int = Field(default=8, ge=1)
-    auditor_stop_threshold: int = 1
-    auditor_high_stop_threshold: int = 2
-    queue_depth_guard: int = 3
-    stagger_tolerance_ms: float = 1000.0
+    scanner_interval: int = Field(default=DEFAULT_SCANNER_INTERVAL, ge=1)
+    refresher_interval: int = Field(default=DEFAULT_REFRESHER_INTERVAL, ge=1)
+    auditor_stop_threshold: int = DEFAULT_AUDITOR_STOP_THRESHOLD
+    auditor_high_stop_threshold: int = DEFAULT_AUDITOR_HIGH_STOP_THRESHOLD
+    queue_depth_guard: int = DEFAULT_QUEUE_DEPTH_GUARD
+    stagger_tolerance_ms: float = DEFAULT_STAGGER_TOLERANCE_MS
 
 
 class TrainingConfig(BaseModel):

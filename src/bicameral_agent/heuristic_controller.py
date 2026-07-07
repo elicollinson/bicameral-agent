@@ -21,6 +21,15 @@ from bicameral_agent.followup_classifier import FollowUpType
 
 logger = logging.getLogger(__name__)
 
+# Default rule thresholds. Single source of truth shared with
+# ``config.HeuristicConfig``; override per-run via constructor kwargs.
+DEFAULT_SCANNER_INTERVAL = 5
+DEFAULT_REFRESHER_INTERVAL = 8
+DEFAULT_AUDITOR_STOP_THRESHOLD = 1
+DEFAULT_AUDITOR_HIGH_STOP_THRESHOLD = 2
+DEFAULT_QUEUE_DEPTH_GUARD = 3
+DEFAULT_STAGGER_TOLERANCE_MS = 1000.0
+
 
 class Action(str, enum.Enum):
     """Tool invocation actions the controller can select."""
@@ -83,12 +92,12 @@ class HeuristicController:
     def __init__(
         self,
         *,
-        scanner_interval: int = 5,
-        refresher_interval: int = 8,
-        auditor_stop_threshold: int = 1,
-        auditor_high_stop_threshold: int = 2,
-        queue_depth_guard: int = 3,
-        stagger_tolerance_ms: float = 1000.0,
+        scanner_interval: int = DEFAULT_SCANNER_INTERVAL,
+        refresher_interval: int = DEFAULT_REFRESHER_INTERVAL,
+        auditor_stop_threshold: int = DEFAULT_AUDITOR_STOP_THRESHOLD,
+        auditor_high_stop_threshold: int = DEFAULT_AUDITOR_HIGH_STOP_THRESHOLD,
+        queue_depth_guard: int = DEFAULT_QUEUE_DEPTH_GUARD,
+        stagger_tolerance_ms: float = DEFAULT_STAGGER_TOLERANCE_MS,
     ) -> None:
         self._scanner_interval = scanner_interval
         self._refresher_interval = refresher_interval
