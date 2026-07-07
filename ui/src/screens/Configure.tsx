@@ -7,6 +7,7 @@ import {
   buildRunnerArgs,
   defaultOutputDir,
   formatCommand,
+  PROVIDERS,
   type ExperimentConfig,
   type Provider,
 } from '../core/command';
@@ -95,15 +96,15 @@ export default function Configure({ pricingKeys, onLaunch, onCancel }: Props) {
     configPath: null,
   };
 
-  const providers: Provider[] = ['gemini', 'ollama'];
   useInput(
     (_input, key) => {
       if (step !== 'provider') return;
       if (key.escape) onCancel();
       else if (key.upArrow) setProviderIndex((i) => Math.max(i - 1, 0));
-      else if (key.downArrow) setProviderIndex((i) => Math.min(i + 1, 1));
-      else if (key.return) {
-        setProvider(providers[providerIndex]);
+      else if (key.downArrow) {
+        setProviderIndex((i) => Math.min(i + 1, PROVIDERS.length - 1));
+      } else if (key.return) {
+        setProvider(PROVIDERS[providerIndex]);
         setManualModel(false);
         setModel('');
         next();
@@ -149,7 +150,7 @@ export default function Configure({ pricingKeys, onLaunch, onCancel }: Props) {
       body = (
         <Box flexDirection="column">
           <Text>Provider:</Text>
-          {providers.map((p, i) => (
+          {PROVIDERS.map((p, i) => (
             <Text key={p} color={i === providerIndex ? 'green' : undefined}>
               {i === providerIndex ? '❯ ' : '  '}
               {p}

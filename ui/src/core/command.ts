@@ -4,7 +4,10 @@
  * No experiment logic lives here — flags map 1:1 onto the Python CLI.
  */
 
-export type Provider = 'gemini' | 'ollama';
+/** Backends accepted by the runner's --provider flag. */
+export const PROVIDERS = ['gemini', 'ollama'] as const;
+
+export type Provider = (typeof PROVIDERS)[number];
 
 export interface ExperimentConfig {
   provider: Provider;

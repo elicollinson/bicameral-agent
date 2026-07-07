@@ -43,6 +43,8 @@ export const HEADLINE_METRICS = [
   'total_turns',
   'wall_clock_ms',
   'tool_cost_usd',
+  'avg_queue_depth',
+  'drain_count',
 ] as const;
 
 export function loadRun(dir: string, name?: string): RunInfo | null {
@@ -105,7 +107,9 @@ export function headlineMean(
 
 export function formatMetric(metric: string, value: number | null): string {
   if (value === null) return '-';
-  if (metric === 'quality_score') return value.toFixed(3);
+  if (metric === 'quality_score' || metric === 'avg_queue_depth') {
+    return value.toFixed(3);
+  }
   if (metric === 'tool_cost_usd') return `$${value.toFixed(4)}`;
   return value.toFixed(1);
 }

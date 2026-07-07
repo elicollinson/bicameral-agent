@@ -21,7 +21,9 @@
         "total_tokens": { "mean": 2400.0, "std": 400.0, "ci_lower": 2000.0, "ci_upper": 2800.0, "n": 2 },
         "total_turns": { "mean": 1.0, "std": 0.0, "ci_lower": 1.0, "ci_upper": 1.0, "n": 2 },
         "wall_clock_ms": { "mean": 9000.0, "std": 2000.0, "ci_lower": 7000.0, "ci_upper": 11000.0, "n": 2 },
-        "tool_cost_usd": { "mean": 0.006, "std": 0.001, "ci_lower": 0.005, "ci_upper": 0.007, "n": 2 }
+        "tool_cost_usd": { "mean": 0.006, "std": 0.001, "ci_lower": 0.005, "ci_upper": 0.007, "n": 2 },
+        "avg_queue_depth": { "mean": 0.25, "std": 0.1, "ci_lower": 0.15, "ci_upper": 0.35, "n": 2 },
+        "drain_count": { "mean": 0.5, "std": 0.5, "ci_lower": 0.0, "ci_upper": 1.0, "n": 2 }
       }
     }
   }

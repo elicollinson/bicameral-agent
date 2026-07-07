@@ -2,6 +2,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   formatMetric,
+  HEADLINE_METRICS,
   headlineMean,
   listRuns,
   loadRun,
@@ -35,6 +36,13 @@ describe('loadRun / headlineMean', () => {
     expect(headlineMean(run!, 'heuristic', 'missing_metric')).toBeNull();
     expect(headlineMean(run!, 'missing_condition', 'quality_score')).toBeNull();
   });
+
+  it('includes queue depth and drains in the headline metrics', () => {
+    expect(HEADLINE_METRICS).toContain('avg_queue_depth');
+    expect(HEADLINE_METRICS).toContain('drain_count');
+    expect(headlineMean(run!, 'heuristic', 'avg_queue_depth')).toBe(0.25);
+    expect(headlineMean(run!, 'heuristic', 'drain_count')).toBe(0.5);
+  });
 });
 
 describe('readReport', () => {
@@ -52,6 +60,8 @@ describe('readReport', () => {
 describe('formatMetric', () => {
   it('formats by metric kind', () => {
     expect(formatMetric('quality_score', 0.9)).toBe('0.900');
+    expect(formatMetric('avg_queue_depth', 0.25)).toBe('0.250');
+    expect(formatMetric('drain_count', 0.5)).toBe('0.5');
     expect(formatMetric('tool_cost_usd', 0.0042)).toBe('$0.0042');
     expect(formatMetric('total_tokens', 958.36)).toBe('958.4');
     expect(formatMetric('total_tokens', null)).toBe('-');
