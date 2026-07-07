@@ -2,8 +2,9 @@
 
 ``google/simpleqa-verified`` (MIT): 1,000 human-verified short-answer factual
 questions from OpenAI's SimpleQA. Gold answers are short strings, so the
-deterministic ``exact_match`` verifier is the default; the LLM judge remains
-available for graded credit.
+deterministic ``exact_match`` verifier is the default; the official SimpleQA
+3-way autorater (``llm_autorater``) and the LLM judge are the graded
+alternatives.
 """
 
 from __future__ import annotations
@@ -38,27 +39,22 @@ def simpleqa_row_to_task(row: dict, index: int) -> ResearchQATask:
     )
 
 
+def _simpleqa_row_valid(row: dict) -> bool:
+    return bool(
+        (row.get("problem") or "").strip() and (row.get("answer") or "").strip()
+    )
+
+
 def fetch_simpleqa_verified(limit: int = 100) -> list[ResearchQATask]:
     """Pull a subset of SimpleQA Verified rows and map them to tasks."""
-    tasks: list[ResearchQATask] = []
-    offset = 0
-    while len(tasks) < limit:
-        page = hf_fetch.fetch_page(
-            SIMPLEQA_DATASET,
-            SIMPLEQA_SPLIT,
-            offset,
-            min(100, limit - len(tasks)),
-            config=SIMPLEQA_CONFIG,
-        )
-        if not page:
-            break
-        for raw in page:
-            if (raw.get("problem") or "").strip() and (raw.get("answer") or "").strip():
-                tasks.append(simpleqa_row_to_task(raw, len(tasks) + 1))
-                if len(tasks) == limit:
-                    break
-        offset += len(page)
-    return tasks
+    return hf_fetch.fetch_mapped_tasks(
+        SIMPLEQA_DATASET,
+        SIMPLEQA_SPLIT,
+        limit,
+        simpleqa_row_to_task,
+        config=SIMPLEQA_CONFIG,
+        is_valid=_simpleqa_row_valid,
+    )
 
 
 class SimpleQAVerified(EvalDataset):
@@ -76,6 +72,7 @@ class SimpleQAVerified(EvalDataset):
     default_metric: ClassVar[str] = "exact_match"
     supported_metrics: ClassVar[tuple[str, ...]] = (
         "exact_match",
+        "llm_autorater",
         "llm_judge",
         "lexical",
     )

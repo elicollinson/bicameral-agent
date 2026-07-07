@@ -81,6 +81,7 @@ report goes to `TaskScore.detail` and lands in
 | `multiple_choice` | deterministic | letter extraction (stated answer, bare letter, unique choice-text match) vs gold letter |
 | `rubric_coverage` | LLM (judge client) | which `rubric_items` are satisfied; earned points over positive points, negative points penalize (HealthBench-style) |
 | `abstention` | LLM (judge client) | did the answer abstain, compared to `abstention_expected` |
+| `llm_autorater` | LLM (judge client) | official SimpleQA 3-way grading (verbatim openai/simple-evals template): correct→1.0, incorrect→0.0, not_attempted→0.0 with the verdict kept in `detail` |
 
 ## Task-schema extensions
 
@@ -108,9 +109,9 @@ no single gold answer); a validator enforces the pairing.
   redistribute. Cite: Yu et al., ACL 2023.
 - **SimpleQA Verified** (`google/simpleqa-verified`, MIT). 1,000 verified
   short-answer facts; `problem`/`answer` columns, config `simpleqa_verified`,
-  split `eval`. The official SimpleQA autorater prompt is not implemented;
-  `exact_match` is the deterministic default and `llm_judge` gives graded
-  credit.
+  split `eval`. `exact_match` is the deterministic default; `llm_autorater`
+  runs the official SimpleQA 3-way grading prompt and `llm_judge` gives
+  graded credit.
 - **SuperGPQA** (`m-a-p/SuperGPQA`, ODC-BY). `options`→`choices` (and embedded
   in the question), `answer_letter`→gold. Cite: arXiv:2502.14739.
 - **BBEH** (`google-deepmind/bbeh`, CC-BY-4.0). Raw `task.json` per subtask on

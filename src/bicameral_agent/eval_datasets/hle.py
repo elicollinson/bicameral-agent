@@ -39,25 +39,26 @@ def hle_row_to_task(row: dict, index: int) -> ResearchQATask:
     )
 
 
+def _hle_row_valid(row: dict) -> bool:
+    if row.get("image"):  # text-only harness: skip multi-modal rows
+        return False
+    return bool(
+        str(row.get("question") or "").strip() and str(row.get("answer") or "").strip()
+    )
+
+
 def fetch_hle(limit: int = 100) -> list[ResearchQATask]:
     """Pull text-only HLE rows (requires HF_TOKEN; the dataset is gated)."""
-    tasks: list[ResearchQATask] = []
-    offset = 0
-    while len(tasks) < limit:
-        page = hf_fetch.fetch_page(HLE_DATASET, HLE_SPLIT, offset, 100)
-        if not page:
-            break
-        for raw in page:
-            if raw.get("image"):  # text-only harness: skip multi-modal rows
-                continue
-            if str(raw.get("question") or "").strip() and str(
-                raw.get("answer") or ""
-            ).strip():
-                tasks.append(hle_row_to_task(raw, len(tasks) + 1))
-                if len(tasks) == limit:
-                    break
-        offset += len(page)
-    return tasks
+    # Fixed 100-row pages: multi-modal rows are filtered out, so asking for
+    # only the remaining count would multiply requests.
+    return hf_fetch.fetch_mapped_tasks(
+        HLE_DATASET,
+        HLE_SPLIT,
+        limit,
+        hle_row_to_task,
+        is_valid=_hle_row_valid,
+        page_length=100,
+    )
 
 
 class Hle(EvalDataset):

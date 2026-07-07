@@ -15,6 +15,7 @@ from bicameral_agent.scorer import LexicalScorer, TaskScorer
 from bicameral_agent.verifiers import (
     AbstentionVerifier,
     ExactMatchVerifier,
+    LlmAutoraterVerifier,
     MultipleChoiceVerifier,
     RubricCoverageVerifier,
     Verifier,
@@ -52,6 +53,7 @@ class TestBuildVerifier:
             "abstention",
             "exact_match",
             "lexical",
+            "llm_autorater",
             "llm_judge",
             "multiple_choice",
             "rubric_coverage",
@@ -77,6 +79,7 @@ class TestBuildVerifier:
         sentinel = object()
         assert build_verifier("rubric_coverage", client=sentinel)._client is sentinel
         assert build_verifier("abstention", client=sentinel)._client is sentinel
+        assert build_verifier("llm_autorater", client=sentinel)._client is sentinel
 
     def test_unknown_metric_lists_known(self):
         with pytest.raises(ValueError, match="lexical"):
@@ -251,3 +254,51 @@ class TestAbstentionVerifier:
             _task(abstention_expected=False), "The sky is blue."
         )
         assert score.overall == 1.0
+
+
+class TestLlmAutoraterVerifier:
+    """SimpleQA official 3-way grading, against a mocked judge client."""
+
+    def test_correct_scores_one(self):
+        client = _mock_client({"grade": "A"})
+        score = LlmAutoraterVerifier(client=client).score(_task(), "It is blue.")
+        assert score.overall == 1.0
+        assert score.detail == "llm_autorater: correct"
+
+    def test_incorrect_scores_zero(self):
+        client = _mock_client({"grade": "B"})
+        score = LlmAutoraterVerifier(client=client).score(_task(), "It is green.")
+        assert score.overall == 0.0
+        assert score.detail == "llm_autorater: incorrect"
+
+    def test_not_attempted_scores_zero_but_distinguishable(self):
+        client = _mock_client({"grade": "C"})
+        score = LlmAutoraterVerifier(client=client).score(_task(), "I don't know.")
+        assert score.overall == 0.0  # comparable with quality_score across metrics
+        assert score.detail == "llm_autorater: not_attempted"
+
+    def test_bare_letter_fallback(self):
+        response = MagicMock()
+        response.content = "B"  # the letter the official template asks for
+        client = MagicMock()
+        client.generate.return_value = response
+        score = LlmAutoraterVerifier(client=client).score(_task(), "It is green.")
+        assert score.overall == 0.0
+        assert score.detail == "llm_autorater: incorrect"
+
+    def test_malformed_output_defaults_to_not_attempted(self):
+        response = MagicMock()
+        response.content = "no verdict here"
+        client = MagicMock()
+        client.generate.return_value = response
+        score = LlmAutoraterVerifier(client=client).score(_task(), "x")
+        assert score.overall == 0.0
+        assert score.detail == "llm_autorater: not_attempted"
+
+    def test_official_template_receives_fields(self):
+        client = _mock_client({"grade": "A"})
+        LlmAutoraterVerifier(client=client).score(_task(), "It is blue.")
+        prompt = client.generate.call_args[0][0][0]["content"]
+        assert "Gold target: The sky is blue." in prompt
+        assert "Predicted answer: It is blue." in prompt
+        assert '["CORRECT", "INCORRECT", "NOT_ATTEMPTED"]' in prompt

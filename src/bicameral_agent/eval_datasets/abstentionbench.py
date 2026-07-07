@@ -61,26 +61,19 @@ def abstentionbench_row_to_task(row: dict, index: int) -> ResearchQATask:
     )
 
 
+def _abstentionbench_row_valid(row: dict) -> bool:
+    return bool(str(row.get("question") or "").strip() and "should_abstain" in row)
+
+
 def fetch_abstentionbench(limit: int = 100) -> list[ResearchQATask]:
     """Pull a subset of AbstentionBench rows and map them to tasks."""
-    tasks: list[ResearchQATask] = []
-    offset = 0
-    while len(tasks) < limit:
-        page = hf_fetch.fetch_page(
-            ABSTENTIONBENCH_DATASET,
-            ABSTENTIONBENCH_SPLIT,
-            offset,
-            min(100, limit - len(tasks)),
-        )
-        if not page:
-            break
-        for raw in page:
-            if str(raw.get("question") or "").strip() and "should_abstain" in raw:
-                tasks.append(abstentionbench_row_to_task(raw, len(tasks) + 1))
-                if len(tasks) == limit:
-                    break
-        offset += len(page)
-    return tasks
+    return hf_fetch.fetch_mapped_tasks(
+        ABSTENTIONBENCH_DATASET,
+        ABSTENTIONBENCH_SPLIT,
+        limit,
+        abstentionbench_row_to_task,
+        is_valid=_abstentionbench_row_valid,
+    )
 
 
 class AbstentionBench(EvalDataset):

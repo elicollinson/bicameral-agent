@@ -45,23 +45,24 @@ def crepe_row_to_task(row: dict, index: int) -> ResearchQATask:
     )
 
 
+def _crepe_row_valid(row: dict) -> bool:
+    presups = [p for p in (row.get("presuppositions") or []) if p and p.strip()]
+    corrections = [c for c in (row.get("corrections") or []) if c and c.strip()]
+    return bool(presups and corrections)
+
+
 def fetch_crepe(limit: int = 60, split: str = "test") -> list[ResearchQATask]:
     """Scan CREPE and map false-presupposition rows to ``tricky`` tasks."""
-    tasks: list[ResearchQATask] = []
-    offset = 0
-    while len(tasks) < limit:
-        page = hf_fetch.fetch_page(CREPE_DATASET, split, offset, 100)
-        if not page:
-            break
-        for raw in page:
-            presups = [p for p in (raw.get("presuppositions") or []) if p and p.strip()]
-            corrections = [c for c in (raw.get("corrections") or []) if c and c.strip()]
-            if presups and corrections:
-                tasks.append(crepe_row_to_task(raw, len(tasks) + 1))
-                if len(tasks) == limit:
-                    break
-        offset += len(page)
-    return tasks
+    # Fixed 100-row pages: most CREPE rows are filtered out, so asking for
+    # only the remaining count would multiply requests.
+    return hf_fetch.fetch_mapped_tasks(
+        CREPE_DATASET,
+        split,
+        limit,
+        crepe_row_to_task,
+        is_valid=_crepe_row_valid,
+        page_length=100,
+    )
 
 
 class Crepe(EvalDataset):

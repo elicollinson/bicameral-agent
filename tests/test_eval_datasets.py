@@ -114,7 +114,11 @@ class TestAdapterLifecycle:
 
     def test_build_then_load_round_trip(self, monkeypatch, tmp_path):
         monkeypatch.setattr(
-            hf_fetch, "fetch_page", lambda ds, split, offset, length: _frames_page(offset, length)
+            hf_fetch,
+            "fetch_page",
+            lambda ds, split, offset, length, config="default": _frames_page(
+                offset, length
+            ),
         )
         cache = tmp_path / "frames.json"
         built = Frames(cache_path=cache).build(limit=3)
@@ -125,7 +129,7 @@ class TestAdapterLifecycle:
 
     def test_short_fetch_refuses_to_write_cache(self, monkeypatch, tmp_path):
         pages = [_frames_page(0, 2), []]
-        monkeypatch.setattr(hf_fetch, "fetch_page", lambda *a: pages.pop(0))
+        monkeypatch.setattr(hf_fetch, "fetch_page", lambda *a, **kw: pages.pop(0))
         cache = tmp_path / "frames.json"
         with pytest.raises(RuntimeError, match="short benchmark"):
             Frames(cache_path=cache).build(limit=5)

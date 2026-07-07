@@ -49,27 +49,23 @@ def supergpqa_row_to_task(row: dict, index: int) -> ResearchQATask:
     )
 
 
+def _supergpqa_row_valid(row: dict) -> bool:
+    return bool(
+        (row.get("question") or "").strip()
+        and row.get("options")
+        and (row.get("answer_letter") or "").strip()
+    )
+
+
 def fetch_supergpqa(limit: int = 100) -> list[ResearchQATask]:
     """Pull a subset of SuperGPQA rows and map them to tasks."""
-    tasks: list[ResearchQATask] = []
-    offset = 0
-    while len(tasks) < limit:
-        page = hf_fetch.fetch_page(
-            SUPERGPQA_DATASET, SUPERGPQA_SPLIT, offset, min(100, limit - len(tasks))
-        )
-        if not page:
-            break
-        for raw in page:
-            if (
-                (raw.get("question") or "").strip()
-                and raw.get("options")
-                and (raw.get("answer_letter") or "").strip()
-            ):
-                tasks.append(supergpqa_row_to_task(raw, len(tasks) + 1))
-                if len(tasks) == limit:
-                    break
-        offset += len(page)
-    return tasks
+    return hf_fetch.fetch_mapped_tasks(
+        SUPERGPQA_DATASET,
+        SUPERGPQA_SPLIT,
+        limit,
+        supergpqa_row_to_task,
+        is_valid=_supergpqa_row_valid,
+    )
 
 
 class SuperGPQA(EvalDataset):

@@ -16,6 +16,9 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from typing import Callable, TypeVar
+
+T = TypeVar("T")
 
 HF_ROWS_ENDPOINT = "https://datasets-server.huggingface.co/rows"
 USER_AGENT = "bicameral-agent/0.1 (research eval; issue-42)"
@@ -80,3 +83,42 @@ def fetch_page(
             f"{payload.get('error', payload)!r}"
         )
     return [row["row"] for row in payload["rows"]]
+
+
+def fetch_mapped_tasks(
+    dataset: str,
+    split: str,
+    limit: int,
+    row_to_task: Callable[[dict, int], T],
+    *,
+    config: str = "default",
+    is_valid: Callable[[dict], bool] | None = None,
+    page_length: int | None = None,
+) -> list[T]:
+    """Page through the rows API, mapping valid rows until *limit* tasks.
+
+    The shared fetch loop behind every HF-backed adapter: pulls pages from
+    offset 0 onward, keeps rows passing *is_valid* (all rows when None), and
+    maps each with ``row_to_task(row, index)`` where *index* is 1-based over
+    the kept rows. Stops at *limit* tasks or an empty terminal page.
+
+    ``page_length`` fixes the requested page size (useful when most rows are
+    filtered out, e.g. CREPE); by default each request asks for exactly the
+    remaining number of tasks, capped at 100.
+    """
+    tasks: list[T] = []
+    offset = 0
+    while len(tasks) < limit:
+        length = (
+            page_length if page_length is not None else min(100, limit - len(tasks))
+        )
+        page = fetch_page(dataset, split, offset, length, config=config)
+        if not page:
+            break
+        for raw in page:
+            if is_valid is None or is_valid(raw):
+                tasks.append(row_to_task(raw, len(tasks) + 1))
+                if len(tasks) == limit:
+                    break
+        offset += len(page)
+    return tasks

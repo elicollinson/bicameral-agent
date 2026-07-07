@@ -45,27 +45,22 @@ def researchqa_row_to_task(row: dict, index: int) -> ResearchQATask:
     )
 
 
+def _researchqa_row_valid(row: dict) -> bool:
+    has_rubric = any(
+        str(r.get("rubric_item") or "").strip() for r in (row.get("rubric") or [])
+    )
+    return bool(str(row.get("query") or "").strip() and has_rubric)
+
+
 def fetch_researchqa(limit: int = 100) -> list[ResearchQATask]:
     """Pull a subset of ResearchQA rows and map them to rubric tasks."""
-    tasks: list[ResearchQATask] = []
-    offset = 0
-    while len(tasks) < limit:
-        page = hf_fetch.fetch_page(
-            RESEARCHQA_DATASET, RESEARCHQA_SPLIT, offset, min(100, limit - len(tasks))
-        )
-        if not page:
-            break
-        for raw in page:
-            has_rubric = any(
-                str(r.get("rubric_item") or "").strip()
-                for r in (raw.get("rubric") or [])
-            )
-            if str(raw.get("query") or "").strip() and has_rubric:
-                tasks.append(researchqa_row_to_task(raw, len(tasks) + 1))
-                if len(tasks) == limit:
-                    break
-        offset += len(page)
-    return tasks
+    return hf_fetch.fetch_mapped_tasks(
+        RESEARCHQA_DATASET,
+        RESEARCHQA_SPLIT,
+        limit,
+        researchqa_row_to_task,
+        is_valid=_researchqa_row_valid,
+    )
 
 
 class ResearchQA(EvalDataset):
