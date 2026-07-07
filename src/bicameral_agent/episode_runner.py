@@ -19,9 +19,9 @@ from bicameral_agent.context_refresher import ContextRefresher
 from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.encoder import StateEncoder
 from bicameral_agent.gap_scanner import ResearchGapScanner
-from bicameral_agent.gemini import GeminiClient
 from bicameral_agent.heuristic_controller import Action, DecisionLog, FullState, TOOL_IDS
 from bicameral_agent.logger import ConversationLogger
+from bicameral_agent.model_client import ModelClient
 from bicameral_agent.queue import ContextQueue, InterruptConfig
 from bicameral_agent.schema import (
     Episode,
@@ -105,7 +105,7 @@ class EpisodeRunner:
 
     def __init__(
         self,
-        client: GeminiClient,
+        client: ModelClient,
         config: EpisodeConfig | None = None,
         hyper_config: HyperConfig | None = None,
         cost_tracker: CostTracker | None = None,
@@ -142,7 +142,7 @@ class EpisodeRunner:
         cfg = self._config
 
         # Cost tracking: reset episode, wrap client
-        active_client: GeminiClient | CostTrackedClient = self._client
+        active_client: ModelClient = self._client
         if self._cost_tracker is not None:
             self._cost_tracker.reset_episode()
             active_client = CostTrackedClient(self._client, self._cost_tracker)
