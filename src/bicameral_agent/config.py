@@ -26,9 +26,19 @@ class ModelConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    provider: str = "gemini"
     name: str = "gemini-3.1-flash-lite-preview"
     thinking_level: str = "medium"
     temperature: float | None = None
+
+    @field_validator("provider")
+    @classmethod
+    def _validate_provider(cls, v: str) -> str:
+        allowed = {"gemini", "ollama"}
+        if v not in allowed:
+            msg = f"provider must be one of {allowed}, got {v!r}"
+            raise ValueError(msg)
+        return v
 
     @field_validator("thinking_level")
     @classmethod
@@ -256,6 +266,16 @@ class HyperConfig(BaseModel):
         tracker.set_budget(self.cost.session_budget)
         tracker.set_episode_budget(self.cost.episode_budget)
         return tracker
+
+    def to_model_client(self, *, on_completion=None):
+        """Produce a model client for the configured provider and model."""
+        from bicameral_agent.model_client import build_client
+
+        return build_client(
+            self.model.provider,
+            self.model.name,
+            on_completion=on_completion,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict for episode metadata storage."""
