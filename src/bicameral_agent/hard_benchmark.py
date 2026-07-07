@@ -20,6 +20,8 @@ attribution, and for the fallback datasets to watch for.
 from __future__ import annotations
 
 import json
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -32,8 +34,17 @@ FRAMES_DATASET = "google/frames-benchmark"
 CREPE_DATASET = "tasksource/CREPE"
 
 _HF_ROWS_ENDPOINT = "https://datasets-server.huggingface.co/rows"
-_DEFAULT_CACHE = Path("data/external/hard_benchmark.json")
+# Anchored to the repo root (this file lives at src/bicameral_agent/) so the
+# cache resolves to the same place regardless of the caller's CWD.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_CACHE = _REPO_ROOT / "data" / "external" / "hard_benchmark.json"
 _USER_AGENT = "bicameral-agent/0.1 (research eval; issue-42)"
+
+# The HF datasets-server rate-limits routinely; retry transient failures
+# with exponential backoff before giving up.
+_MAX_ATTEMPTS = 4
+_RETRY_BASE_DELAY_S = 2.0
+_RETRYABLE_HTTP_CODES = frozenset({429, 500, 502, 503, 504})
 
 
 # --- pure mappers (offline-testable) ----------------------------------------
@@ -93,9 +104,24 @@ def crepe_row_to_task(row: dict, index: int) -> ResearchQATask:
 # --- upstream fetch ---------------------------------------------------------
 
 def _http_get_json(url: str) -> dict:
-    req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
-    with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 (trusted hosts)
-        return json.loads(resp.read())
+    """GET *url* as JSON, retrying transient (rate-limit / 5xx / network) errors."""
+    last_err: Exception | None = None
+    for attempt in range(_MAX_ATTEMPTS):
+        if attempt > 0:
+            time.sleep(_RETRY_BASE_DELAY_S * 2 ** (attempt - 1))
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
+            with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 (trusted hosts)
+                return json.loads(resp.read())
+        except urllib.error.HTTPError as err:
+            if err.code not in _RETRYABLE_HTTP_CODES:
+                raise
+            last_err = err
+        except urllib.error.URLError as err:
+            last_err = err
+    raise RuntimeError(
+        f"Giving up on {url} after {_MAX_ATTEMPTS} attempts: {last_err}"
+    ) from last_err
 
 
 def _fetch_page(dataset: str, split: str, offset: int, length: int) -> list[dict]:
@@ -103,7 +129,15 @@ def _fetch_page(dataset: str, split: str, offset: int, length: int) -> list[dict
         f"{_HF_ROWS_ENDPOINT}?dataset={urllib.parse.quote(dataset)}"
         f"&config=default&split={split}&offset={offset}&length={length}"
     )
-    return [row["row"] for row in _http_get_json(url).get("rows", [])]
+    payload = _http_get_json(url)
+    if "rows" not in payload:
+        # An error payload (e.g. rate-limit body) must not read as an empty
+        # terminal page — that silently truncates the benchmark.
+        raise RuntimeError(
+            f"Unexpected datasets-server payload for {dataset} at offset {offset}: "
+            f"{payload.get('error', payload)!r}"
+        )
+    return [row["row"] for row in payload["rows"]]
 
 
 def fetch_frames(limit: int = 100, split: str = "test") -> list[ResearchQATask]:
@@ -151,8 +185,19 @@ def build_hard_benchmark(
 
     The cache file is git-ignored; it is the artifact :func:`load_hard_benchmark`
     reads. Returns the combined task list.
+
+    Raises:
+        RuntimeError: If either fetch yields fewer tasks than requested, so a
+            partial upstream response cannot produce a silent short benchmark.
     """
-    tasks = fetch_frames(frames_n) + fetch_crepe(crepe_n)
+    frames = fetch_frames(frames_n)
+    crepe = fetch_crepe(crepe_n)
+    if len(frames) != frames_n or len(crepe) != crepe_n:
+        raise RuntimeError(
+            f"Fetched {len(frames)}/{frames_n} FRAMES and {len(crepe)}/{crepe_n} "
+            "CREPE tasks; refusing to write a short benchmark cache."
+        )
+    tasks = frames + crepe
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(
         json.dumps([t.model_dump(mode="json") for t in tasks], indent=2),

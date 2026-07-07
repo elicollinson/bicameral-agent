@@ -594,3 +594,26 @@ class TestIntegration:
             if result.queue_deposit is not None:
                 word_count = len(result.queue_deposit.content.split())
                 assert word_count <= 100, f"Reminder too long: {word_count} words"
+
+
+# ---------------------------------------------------------------------------
+# TestNullReminderDrift (issue #47)
+# ---------------------------------------------------------------------------
+
+
+class TestNullReminderDrift:
+    def test_drift_with_null_reminder_deposits_nothing(self):
+        """Drift + null reminder must not enqueue an empty QueueItem."""
+        client = _mock_client(_drift_response(reminder=None))
+        refresher = ContextRefresher()
+        result = refresher.execute(_make_history(), _make_state(), _DEFAULT_BUDGET, client)
+
+        assert result.queue_deposit is None
+        assert result.metadata.items_found >= 1
+
+    def test_drift_with_empty_reminder_deposits_nothing(self):
+        client = _mock_client(_drift_response(reminder="   "))
+        refresher = ContextRefresher()
+        result = refresher.execute(_make_history(), _make_state(), _DEFAULT_BUDGET, client)
+
+        assert result.queue_deposit is None

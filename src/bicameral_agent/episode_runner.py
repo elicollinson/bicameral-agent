@@ -267,6 +267,10 @@ class EpisodeRunner:
             # (i) Controller decides
             action = controller.decide(state)
 
+            # Set when a cost-budget trip mid-turn must end the episode after
+            # the assistant message is recorded (mirrors the run_turn path).
+            end_episode = False
+
             # (j) Execute tool if action != DO_NOTHING
             if action != Action.DO_NOTHING:
                 tool_id = TOOL_IDS[action]
@@ -344,6 +348,16 @@ class EpisodeRunner:
                     log.log_tool_completion(
                         inv_idx, 0, result_deposited=False, budget_exceeded=True
                     )
+                except CostBudgetExceeded:
+                    logger.warning(
+                        "CostBudgetExceeded in tool %s on turn %d, ending episode",
+                        tool_id,
+                        turn,
+                    )
+                    log.log_tool_completion(
+                        inv_idx, 0, result_deposited=False, budget_exceeded=True
+                    )
+                    end_episode = True
 
             schema_messages.append(
                 Message(
@@ -354,11 +368,21 @@ class EpisodeRunner:
                 )
             )
 
+            if end_episode:
+                break
+
             # (k) Simulated user responds. schema_messages already contains
             # the current exchange, so the runner's turn is passed explicitly.
-            user_action = sim_user.respond(
-                task, response.content, schema_messages, turn_number=turn
-            )
+            try:
+                user_action = sim_user.respond(
+                    task, response.content, schema_messages, turn_number=turn
+                )
+            except CostBudgetExceeded:
+                logger.warning(
+                    "CostBudgetExceeded in simulated user on turn %d, ending episode",
+                    turn,
+                )
+                break
 
             # (l) STOP
             if user_action.action_type == ActionType.STOP:

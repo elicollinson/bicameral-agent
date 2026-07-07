@@ -5,13 +5,18 @@ rows, and the loader against a committed author-owned fixture. No network and
 no externally-licensed data are required.
 """
 
+import urllib.error
 from pathlib import Path
 
 import pytest
 
+from bicameral_agent import hard_benchmark
 from bicameral_agent.dataset import ResearchQADataset, TaskDifficulty, TaskSplit
 from bicameral_agent.hard_benchmark import (
+    build_hard_benchmark,
     crepe_row_to_task,
+    fetch_crepe,
+    fetch_frames,
     frames_row_to_task,
     load_hard_benchmark,
 )
@@ -55,6 +60,131 @@ class TestCrepeMapper:
         row = {"question": "x", "presuppositions": [], "corrections": ["y"]}
         with pytest.raises(ValueError, match="known_assumptions"):
             crepe_row_to_task(row, 1)
+
+
+def _frames_row(i: int) -> dict:
+    return {"Prompt": f"question {i}?", "Answer": f"answer {i}"}
+
+
+def _crepe_row(i: int, *, valid: bool = True) -> dict:
+    return {
+        "question": f"question {i}?",
+        "presuppositions": [f"presup {i}"] if valid else [],
+        "corrections": [f"correction {i}"] if valid else [],
+    }
+
+
+class TestPager:
+    """Offline coverage of the fetch/pagination logic via a mocked pager."""
+
+    def test_frames_paginates_until_limit(self, monkeypatch):
+        pages = [[_frames_row(i) for i in range(3)], [_frames_row(i) for i in range(3, 6)]]
+        calls: list[tuple[int, int]] = []
+
+        def fake_fetch_page(dataset, split, offset, length):
+            calls.append((offset, length))
+            return pages.pop(0)
+
+        monkeypatch.setattr(hard_benchmark, "_fetch_page", fake_fetch_page)
+        tasks = fetch_frames(limit=5)
+        assert len(tasks) == 5
+        assert [t.task_id for t in tasks] == [f"frames_hard_{i:03d}" for i in range(1, 6)]
+        # Second page requested at the offset the first page ended at.
+        assert calls[1][0] == 3
+
+    def test_crepe_filtered_page_then_empty_terminal_page(self, monkeypatch):
+        # First page: 2 usable rows among 4; second page empty -> pager stops
+        # short of the limit instead of looping forever.
+        pages = [
+            [_crepe_row(0), _crepe_row(1, valid=False), _crepe_row(2), _crepe_row(3, valid=False)],
+            [],
+        ]
+        monkeypatch.setattr(hard_benchmark, "_fetch_page", lambda *a: pages.pop(0))
+        tasks = fetch_crepe(limit=10)
+        assert len(tasks) == 2
+        assert all(t.difficulty == TaskDifficulty.TRICKY for t in tasks)
+        assert not pages  # both pages consumed
+
+    def test_error_payload_raises_instead_of_empty_page(self, monkeypatch):
+        monkeypatch.setattr(
+            hard_benchmark, "_http_get_json", lambda url: {"error": "rate limited"}
+        )
+        with pytest.raises(RuntimeError, match="rate limited"):
+            hard_benchmark._fetch_page("some/dataset", "test", 0, 100)
+
+    def test_http_get_json_retries_transient_errors(self, monkeypatch):
+        sleeps: list[float] = []
+        monkeypatch.setattr(hard_benchmark.time, "sleep", sleeps.append)
+        attempts = iter([
+            urllib.error.HTTPError("u", 429, "rate limited", None, None),
+            urllib.error.URLError("conn reset"),
+        ])
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+            def read(self):
+                return b'{"rows": []}'
+
+        def fake_urlopen(req, timeout):
+            try:
+                raise next(attempts)
+            except StopIteration:
+                return FakeResponse()
+
+        monkeypatch.setattr(hard_benchmark.urllib.request, "urlopen", fake_urlopen)
+        assert hard_benchmark._http_get_json("http://x") == {"rows": []}
+        assert len(sleeps) == 2  # backed off before each retry
+
+    def test_http_get_json_gives_up_after_max_attempts(self, monkeypatch):
+        monkeypatch.setattr(hard_benchmark.time, "sleep", lambda s: None)
+
+        def always_503(req, timeout):
+            raise urllib.error.HTTPError("u", 503, "unavailable", None, None)
+
+        monkeypatch.setattr(hard_benchmark.urllib.request, "urlopen", always_503)
+        with pytest.raises(RuntimeError, match="Giving up"):
+            hard_benchmark._http_get_json("http://x")
+
+    def test_non_retryable_http_error_raises_immediately(self, monkeypatch):
+        def not_found(req, timeout):
+            raise urllib.error.HTTPError("u", 404, "not found", None, None)
+
+        monkeypatch.setattr(hard_benchmark.urllib.request, "urlopen", not_found)
+        with pytest.raises(urllib.error.HTTPError):
+            hard_benchmark._http_get_json("http://x")
+
+
+class TestBuildHardBenchmark:
+    def test_short_fetch_refuses_to_write_cache(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(
+            hard_benchmark, "fetch_frames", lambda n: [frames_row_to_task(_frames_row(1), 1)]
+        )
+        monkeypatch.setattr(hard_benchmark, "fetch_crepe", lambda n: [])
+        cache = tmp_path / "cache.json"
+        with pytest.raises(RuntimeError, match="short benchmark"):
+            build_hard_benchmark(frames_n=5, crepe_n=5, cache_path=cache)
+        assert not cache.exists()
+
+    def test_full_fetch_writes_cache(self, monkeypatch, tmp_path):
+        frames = [frames_row_to_task(_frames_row(i), i) for i in range(1, 3)]
+        crepe = [crepe_row_to_task(_crepe_row(i), i) for i in range(1, 3)]
+        monkeypatch.setattr(hard_benchmark, "fetch_frames", lambda n: frames)
+        monkeypatch.setattr(hard_benchmark, "fetch_crepe", lambda n: crepe)
+        cache = tmp_path / "cache.json"
+        tasks = build_hard_benchmark(frames_n=2, crepe_n=2, cache_path=cache)
+        assert len(tasks) == 4
+        assert len(load_hard_benchmark(cache)) == 4
+
+    def test_default_cache_is_repo_root_anchored(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        assert hard_benchmark._DEFAULT_CACHE == (
+            repo_root / "data" / "external" / "hard_benchmark.json"
+        )
 
 
 class TestLoader:

@@ -361,3 +361,55 @@ class TestRunCondition:
         assert set(result.episodes) == {"heuristic", "random"}
         assert all(len(eps) == 2 for eps in result.episodes.values())
         assert result.reports["heuristic"].n_episodes == 2
+
+
+class TestIncrementalPersistence:
+    """on_episode fires per completed episode so a late crash keeps prior results."""
+
+    def test_on_episode_called_per_episode(self):
+        runner = MagicMock(spec=EpisodeRunner)
+        runner.run_episode.side_effect = lambda task, ctrl: _make_episode()
+
+        seen: list[tuple[str, int, str]] = []
+        run_condition(
+            runner,
+            [_task(), _task()],
+            lambda _idx: _StubController(),
+            condition="heuristic",
+            on_episode=lambda cond, idx, ep: seen.append((cond, idx, ep.episode_id)),
+        )
+        assert [(c, i) for c, i, _ in seen] == [("heuristic", 0), ("heuristic", 1)]
+
+    def test_completed_episodes_persisted_before_crash(self):
+        """Episodes completed before a mid-run crash have already been reported."""
+        runner = MagicMock(spec=EpisodeRunner)
+        episode = _make_episode()
+        runner.run_episode.side_effect = [episode, RuntimeError("API meltdown")]
+
+        seen: list[Episode] = []
+        with pytest.raises(RuntimeError, match="API meltdown"):
+            run_condition(
+                runner,
+                [_task(), _task()],
+                lambda _idx: _StubController(),
+                condition="random",
+                on_episode=lambda cond, idx, ep: seen.append(ep),
+            )
+        assert seen == [episode]
+
+    def test_run_benchmark_forwards_callback_with_condition(self):
+        runner = MagicMock(spec=EpisodeRunner)
+        runner.run_episode.side_effect = lambda task, ctrl: _make_episode()
+
+        seen: list[str] = []
+        run_benchmark(
+            client=MagicMock(),
+            tasks=[_task()],
+            conditions={
+                "heuristic": lambda _idx: _StubController(),
+                "random": lambda _idx: _StubController(),
+            },
+            runner=runner,
+            on_episode=lambda cond, idx, ep: seen.append(cond),
+        )
+        assert seen == ["heuristic", "random"]

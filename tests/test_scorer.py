@@ -567,3 +567,54 @@ class TestCorrelation:
 
         r = np.corrcoef(lex_scores, human_scores)[0, 1]
         assert r > 0.4, f"Lexical scorer correlation {r:.3f} below threshold 0.4"
+
+
+# ---------------------------------------------------------------------------
+# TestMalformedJudgeOutput (issue #47)
+# ---------------------------------------------------------------------------
+
+
+class TestMalformedJudgeOutput:
+    @staticmethod
+    def _raw_response(content, finish_reason="MAX_TOKENS"):
+        response = MagicMock()
+        response.content = content
+        response.finish_reason = finish_reason
+        return response
+
+    def test_truncated_json_degrades_to_neutral_score(self):
+        scorer, _ = _make_scorer_with_mock(
+            response=self._raw_response('{"quality": 4, "complet')
+        )
+        score = scorer.score(_make_task(), "answer")
+        assert score.overall == 0.5
+
+    def test_extra_keys_ignored(self):
+        """An extra key from the LLM must not TypeError from_raw(**parsed)."""
+        response = MagicMock()
+        response.content = json.dumps({
+            "quality": 5, "completeness": 5, "accuracy": 5, "justification": "good",
+        })
+        scorer, _ = _make_scorer_with_mock(response=response)
+        score = scorer.score(_make_task(), "answer")
+        assert score.overall == 1.0
+
+    def test_missing_dimension_defaults_neutral(self):
+        response = MagicMock()
+        response.content = json.dumps({"quality": 5})
+        scorer, _ = _make_scorer_with_mock(response=response)
+        score = scorer.score(_make_task(), "answer")
+        assert score.quality == 1.0
+        assert score.completeness == 0.5
+        assert score.accuracy == 0.5
+
+    def test_non_integer_scores_coerced(self):
+        response = MagicMock()
+        response.content = json.dumps({
+            "quality": "5", "completeness": 4.6, "accuracy": "bad",
+        })
+        scorer, _ = _make_scorer_with_mock(response=response)
+        score = scorer.score(_make_task(), "answer")
+        assert score.quality == 1.0
+        assert score.completeness == 0.75
+        assert score.accuracy == 0.5

@@ -444,3 +444,92 @@ class TestIntegration:
 
         assert elapsed < 5.0, f"Execution took {elapsed:.1f}s, expected <5s"
         assert result.metadata.tokens_consumed > 0
+
+
+# ---------------------------------------------------------------------------
+# Unit tests: Malformed LLM output hardening (issue #47)
+# ---------------------------------------------------------------------------
+
+
+class TestMalformedOutput:
+    def test_truncated_gap_json_degrades_to_noop(self):
+        """Truncated call-1 output (MAX_TOKENS) yields a no-op result, not a crash."""
+        truncated = GeminiResponse(
+            content='{"has_gaps": true, "gaps": [{"description": "LK-99',
+            input_tokens=50,
+            output_tokens=100,
+            duration_ms=50.0,
+            finish_reason="MAX_TOKENS",
+        )
+        scanner = ResearchGapScanner()
+        client = _mock_client(truncated)
+        result = scanner.execute(_make_messages(), _make_state(), _DEFAULT_BUDGET, client)
+
+        assert result.queue_deposit is None
+        assert result.metadata.items_found == 0
+        assert client.generate.call_count == 1
+
+    def test_truncated_ranking_json_degrades(self):
+        """Truncated call-2 output falls back to gaps-only deposit."""
+        truncated = _fake_response('{"overall_confidence": 0.9, "ranked_results": [{"ti')
+        scanner = ResearchGapScanner()
+        client = _mock_client([_gap_response(), truncated])
+        result = scanner.execute(_make_messages(), _make_state(), _DEFAULT_BUDGET, client)
+
+        assert result.queue_deposit is not None
+        assert "Research gaps identified" in result.queue_deposit.content
+
+    def test_gap_items_missing_keys_skipped(self):
+        gaps = [
+            {"description": "valid gap", "category": "core_claim", "search_query": "q"},
+            {"category": "core_claim"},  # no description
+            "not a dict",
+        ]
+        scanner = ResearchGapScanner()
+        client = _mock_client([_gap_response(gaps=gaps), _ranking_response()])
+        result = scanner.execute(_make_messages(), _make_state(), _DEFAULT_BUDGET, client)
+
+        assert result.metadata.items_found >= 1
+
+    def test_out_of_range_confidence_clamped(self):
+        """A 1-5-scale overall_confidence must not crash ToolMetadata validation."""
+        scanner = ResearchGapScanner()
+        client = _mock_client([_gap_response(), _ranking_response(overall_confidence=4.0)])
+        result = scanner.execute(_make_messages(), _make_state(), _DEFAULT_BUDGET, client)
+
+        assert result.metadata.confidence == 1.0
+
+    def test_out_of_range_relevance_clamped(self):
+        """A 1-5-scale relevance_score is clamped before ToolMetadata validation."""
+        ranked = [
+            {
+                "gap_description": "gap",
+                "title": "t",
+                "snippet": "s",
+                "relevance_score": 3.0,
+                "source": "src",
+            },
+        ]
+        scanner = ResearchGapScanner()
+        client = _mock_client([_gap_response(), _ranking_response(ranked_results=ranked)])
+        result = scanner.execute(_make_messages(), _make_state(), _DEFAULT_BUDGET, client)
+
+        assert 0.0 <= result.metadata.estimated_relevance <= 1.0
+
+    def test_non_numeric_relevance_treated_as_irrelevant(self):
+        ranked = [
+            {
+                "gap_description": "gap",
+                "title": "t",
+                "snippet": "s",
+                "relevance_score": "very relevant",
+                "source": "src",
+            },
+        ]
+        scanner = ResearchGapScanner()
+        client = _mock_client([_gap_response(), _ranking_response(ranked_results=ranked)])
+        result = scanner.execute(_make_messages(), _make_state(), _DEFAULT_BUDGET, client)
+
+        # Non-numeric score coerces to 0.0 -> filtered out -> gaps-only deposit
+        assert result.queue_deposit is not None
+        assert "Research gaps identified" in result.queue_deposit.content

@@ -25,7 +25,7 @@ Index  Feature                                 Dims
 55     queue_max_priority (ordinal, 0 = empty)    1
 56     queue_time_since_last_drain                1
 57     queue_pending_tool_count                   1
-58     queue_estimated_next_arrival               1
+58     queue_arrival_interval_ema                 1
 59     latency_research_gap_scanner               1
 60     latency_assumption_auditor                 1
 61     latency_context_refresher                  1
@@ -69,7 +69,7 @@ _QUEUE_TOKEN_TOTAL_CAP = 10_000
 _PRIORITY_MAX = 3.0
 _TIME_SINCE_DRAIN_CAP = 60.0
 _PENDING_TOOL_COUNT_CAP = 3
-_ESTIMATED_ARRIVAL_CAP = 30.0
+_ARRIVAL_INTERVAL_EMA_CAP = 30.0
 
 # Latency caps
 _LATENCY_MS_CAP = 30_000.0
@@ -94,7 +94,7 @@ def encode_queue_state(queue_state: QueueState | None) -> np.ndarray:
     halves of the training state vector use identical caps and encoding.
 
     Indices: depth, token_total, max_priority (ordinal), time_since_last_drain,
-    pending_tool_count, estimated_next_arrival.
+    pending_tool_count, arrival_interval_ema.
 
     The priority ordinal is ``(value + 1) / (max + 1)`` so ``Priority.LOW``
     (value 0) encodes to 0.25 and 0.0 is reserved for an empty queue.
@@ -112,7 +112,7 @@ def encode_queue_state(queue_state: QueueState | None) -> np.ndarray:
     )
     out[3] = _cap_norm(queue_state.time_since_last_drain, _TIME_SINCE_DRAIN_CAP)
     out[4] = _cap_norm(queue_state.pending_tool_count, _PENDING_TOOL_COUNT_CAP)
-    out[5] = _cap_norm(queue_state.estimated_next_arrival, _ESTIMATED_ARRIVAL_CAP)
+    out[5] = _cap_norm(queue_state.arrival_interval_ema, _ARRIVAL_INTERVAL_EMA_CAP)
     return out
 
 # ---------------------------------------------------------------------------

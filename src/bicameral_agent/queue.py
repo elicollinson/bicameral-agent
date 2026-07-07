@@ -91,8 +91,11 @@ class QueueState:
     pending_tool_count: int
     """Number of distinct source_tool_ids with items in the queue."""
 
-    estimated_next_arrival: float
-    """Estimated seconds until the next enqueue, based on arrival rate EMA."""
+    arrival_interval_ema: float
+    """EMA of the inter-arrival interval between enqueues, in seconds.
+
+    This is the smoothed gap between recent enqueues, not a countdown to
+    the next one — it does not decrease as time passes."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -253,7 +256,7 @@ class ContextQueue:
 
         Returns:
             A QueueState snapshot with depth, token total, max priority,
-            time since last drain, pending tool count, and estimated next arrival.
+            time since last drain, pending tool count, and arrival-interval EMA.
         """
         with self._lock:
             items = list(self._items.values())
@@ -263,7 +266,7 @@ class ContextQueue:
                 max_priority=max((item.priority for item in items), default=None),
                 time_since_last_drain=time.monotonic() - self._last_drain_time,
                 pending_tool_count=len({item.source_tool_id for item in items}),
-                estimated_next_arrival=self._arrival_interval_ema,
+                arrival_interval_ema=self._arrival_interval_ema,
             )
 
     def drain_at_breakpoint(self) -> str | None:

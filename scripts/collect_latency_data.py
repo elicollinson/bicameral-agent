@@ -126,6 +126,10 @@ def main(argv: list[str] | None = None) -> int:
         len(collector.api_observations), len(collector.tool_observations), elapsed,
     )
 
+    if not collector.api_observations and not collector.tool_observations:
+        logger.error("No observations collected (every cell failed); aborting.")
+        return 1
+
     # The AC evaluates predictions made by the *trained* model, so recompute
     # predictions on every observation using the now-fitted model state.
     final_api, final_tool = recompute_predictions(

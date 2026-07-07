@@ -160,3 +160,40 @@ class TestIntegration:
         assert 0.0 <= result.logical_flow <= 1.0
         assert 0.0 <= result.consistency <= 1.0
         assert 0.0 <= result.overall <= 1.0
+
+
+# ---------------------------------------------------------------------------
+# TestMalformedJudgeOutput (issue #47)
+# ---------------------------------------------------------------------------
+
+
+class TestMalformedJudgeOutput:
+    def _score_with_content(self, content, finish_reason="MAX_TOKENS"):
+        client = MagicMock(spec=GeminiClient)
+        client.generate.return_value = GeminiResponse(
+            content=content,
+            input_tokens=50,
+            output_tokens=20,
+            duration_ms=100.0,
+            finish_reason=finish_reason,
+        )
+        judge = CoherenceJudge(client=client)
+        return judge.score(_make_messages(("user", "q"), ("assistant", "a")))
+
+    def test_truncated_json_degrades_to_neutral_score(self):
+        score = self._score_with_content('{"logical_flow": 4, "consis')
+        assert score.overall == 0.5
+        assert score.logical_flow == 0.5
+        assert score.consistency == 0.5
+
+    def test_extra_keys_ignored(self):
+        score = self._score_with_content(json.dumps({
+            "logical_flow": 5, "consistency": 5, "overall": 5, "notes": "x",
+        }))
+        assert score.overall == 1.0
+
+    def test_missing_dimension_defaults_neutral(self):
+        score = self._score_with_content(json.dumps({"logical_flow": 5}))
+        assert score.logical_flow == 1.0
+        assert score.consistency == 0.5
+        assert score.overall == 0.5
