@@ -84,6 +84,11 @@ class TestDefaults:
         from_constructor = HyperConfig()
         assert from_defaults.model_dump() == from_constructor.model_dump()
 
+    def test_measurement_model_defaults_to_none(self):
+        """Unset [measurement_model] means measurement roles use [model]."""
+        assert HyperConfig().measurement_model is None
+        assert HyperConfig.from_defaults().measurement_model is None
+
 
 class TestToml:
     """TOML loading and round-trip."""
@@ -124,6 +129,33 @@ class TestToml:
             learning_rat = 0.01
         """))
         with pytest.raises(ValidationError, match="learning_rat"):
+            HyperConfig.from_toml(toml_file)
+
+    def test_from_toml_measurement_model(self, tmp_path):
+        """[measurement_model] parses, fills the provider's default name."""
+        toml_file = tmp_path / "measurement.toml"
+        toml_file.write_text(textwrap.dedent("""\
+            [model]
+            provider = "ollama"
+
+            [measurement_model]
+            provider = "gemini"
+        """))
+        cfg = HyperConfig.from_toml(toml_file)
+        assert cfg.model.provider == "ollama"
+        assert cfg.measurement_model is not None
+        assert cfg.measurement_model.provider == "gemini"
+        assert cfg.measurement_model.name == "gemini-3.1-flash-lite-preview"
+
+    def test_from_toml_measurement_model_mismatch_raises(self, tmp_path):
+        """A cross-provider model tag is rejected at config time."""
+        toml_file = tmp_path / "mismatch.toml"
+        toml_file.write_text(textwrap.dedent("""\
+            [measurement_model]
+            provider = "ollama"
+            name = "gemini-3.1-flash-lite-preview"
+        """))
+        with pytest.raises(ValidationError):
             HyperConfig.from_toml(toml_file)
 
     def test_from_toml_with_tool_budgets(self, tmp_path):
