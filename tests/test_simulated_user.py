@@ -16,6 +16,7 @@ from bicameral_agent.simulated_user import (
     Strictness,
     UserAction,
     _MAX_TURNS,
+    _MIN_TURNS_BEFORE_COMPLETE,
     _format_conversation,
 )
 
@@ -408,10 +409,87 @@ class TestStopAndComplete:
             response=_mock_gemini_response(action_type="task_complete")
         )
         task = _make_task()
-        action = user.respond(task, "response", [], turn_number=1)
+        # Turn 2 is at the medium-strictness completion floor, so the
+        # task_complete is accepted rather than converted to a probe.
+        action = user.respond(task, "response", _make_history(1), turn_number=2)
         assert action.action_type == ActionType.TASK_COMPLETE
         assert action.message is None
         assert action.followup_type is None
+
+
+# ---------------------------------------------------------------------------
+# TestCompletionFloor (issue #45: no trivial turn-1 task_complete)
+# ---------------------------------------------------------------------------
+
+
+class TestCompletionFloor:
+    def _complete_at_turn(self, turn_number, strictness):
+        user, _ = _make_simulated_user(
+            response=_mock_gemini_response(
+                action_type="task_complete", response_delay_ms=250, confidence=0.9
+            ),
+            strictness=strictness,
+        )
+        history = _make_history(turn_number - 1)
+        return user.respond(_make_task(), "response", history, turn_number=turn_number)
+
+    def test_medium_strictness_converts_turn1_complete_to_probe(self):
+        action = self._complete_at_turn(1, Strictness.MEDIUM)
+        assert action.action_type == ActionType.FOLLOW_UP
+        assert action.message
+        assert action.followup_type == FollowUpType.ELABORATION
+
+    def test_medium_strictness_accepts_complete_at_turn2(self):
+        action = self._complete_at_turn(2, Strictness.MEDIUM)
+        assert action.action_type == ActionType.TASK_COMPLETE
+
+    def test_high_strictness_converts_turns_below_three(self):
+        for turn in (1, 2):
+            action = self._complete_at_turn(turn, Strictness.HIGH)
+            assert action.action_type == ActionType.FOLLOW_UP, f"turn {turn}"
+
+    def test_high_strictness_accepts_complete_at_turn3(self):
+        action = self._complete_at_turn(3, Strictness.HIGH)
+        assert action.action_type == ActionType.TASK_COMPLETE
+
+    def test_low_strictness_accepts_turn1_complete(self):
+        action = self._complete_at_turn(1, Strictness.LOW)
+        assert action.action_type == ActionType.TASK_COMPLETE
+
+    def test_stop_is_not_converted(self):
+        user, _ = _make_simulated_user(
+            response=_mock_gemini_response(action_type="stop"),
+            strictness=Strictness.HIGH,
+        )
+        action = user.respond(_make_task(), "response", [], turn_number=1)
+        assert action.action_type == ActionType.STOP
+
+    def test_probe_preserves_delay_and_confidence(self):
+        action = self._complete_at_turn(1, Strictness.MEDIUM)
+        assert action.response_delay_ms == 250
+        assert action.confidence == pytest.approx(0.9)
+
+    def test_floor_values(self):
+        assert _MIN_TURNS_BEFORE_COMPLETE[Strictness.LOW] == 1
+        assert _MIN_TURNS_BEFORE_COMPLETE[Strictness.MEDIUM] == 2
+        assert _MIN_TURNS_BEFORE_COMPLETE[Strictness.HIGH] == 3
+
+    def test_floor_below_all_patience_limits(self):
+        """The completion floor must be reachable before any forced STOP."""
+        assert max(_MIN_TURNS_BEFORE_COMPLETE.values()) < min(_MAX_TURNS.values())
+
+    def test_system_prompt_requires_probing(self):
+        user, mock_client = _make_simulated_user()
+        user.respond(_make_task(), "response", [], turn_number=1)
+        system = mock_client.generate.call_args.kwargs["system_prompt"]
+        assert "draft" in system.lower()
+        assert "probe" in system.lower()
+
+    def test_user_prompt_marks_reference_private(self):
+        user, mock_client = _make_simulated_user()
+        user.respond(_make_task(), "response", [], turn_number=1)
+        user_msg = mock_client.generate.call_args[0][0][0]["content"]
+        assert "Private Reference Answer" in user_msg
 
 
 # ---------------------------------------------------------------------------
