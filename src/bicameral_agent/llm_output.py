@@ -77,6 +77,12 @@ class DegradationCounter(logging.Handler):
     episode -- a module-level counter would bleed across episodes.
     ``logging`` serializes ``emit`` per handler, so counting is safe under
     the scorers' worker threads.
+
+    Assumes NON-OVERLAPPING EPISODES: the handler attaches to this module's
+    global logger, so concurrently running episodes (e.g. ``run_episode`` on
+    a ThreadPool) would count each other's degradations. A ContextVar-based
+    counter would lift that restriction if episode-level parallelism is ever
+    introduced.
     """
 
     def __init__(self) -> None:
