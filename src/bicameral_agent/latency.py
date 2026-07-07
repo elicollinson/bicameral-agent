@@ -2,8 +2,9 @@
 
 Models total API call latency as a linear function of input and output
 token counts, using incremental OLS with Welford's variance tracking
-for percentile estimation. Uses conservative priors during cold start
-(< 20 observations) and smoothly transitions to learned parameters.
+for percentile estimation. Uses priors calibrated against measured
+baseline durations during cold start (< 20 observations) and smoothly
+transitions to learned parameters.
 """
 
 from __future__ import annotations
@@ -17,11 +18,17 @@ import numpy as np
 # Cold-start threshold: below this, blend priors with learned parameters
 _COLD_START_THRESHOLD = 20
 
-# Conservative priors (deliberately ~2x overestimate)
-_PRIOR_ALPHA = 1000.0  # TTFT intercept (ms)
+# Priors calibrated against the measured tool durations from the #23
+# baseline run (data/baseline/*.parquet): single API calls complete in
+# roughly 0.9-1.5s with recorded output token counts of ~1000-1500.
+# The old priors (alpha=1000, 25 tok/s) over-predicted 9-23x (#44).
+# Note: recorded output token counts are approximate (len/4 estimates),
+# so _PRIOR_OUTPUT_RATE is an *effective* rate on that scale, not a true
+# model decode speed.
+_PRIOR_ALPHA = 700.0  # TTFT intercept (ms)
 _PRIOR_BETA = 0.02  # ms per input token
-_PRIOR_OUTPUT_RATE = 25.0  # tokens per second (conservative; reasonable ~50)
-_PRIOR_OVERHEAD = 200.0  # fixed overhead (ms)
+_PRIOR_OUTPUT_RATE = 2500.0  # effective output tokens per second
+_PRIOR_OVERHEAD = 175.0  # fixed overhead (ms)
 _PRIOR_VARIANCE_FRAC = 0.5  # residual std as fraction of predicted mean
 
 # Normal distribution z-score for 25th percentile
@@ -52,7 +59,7 @@ class APILatencyModel:
     and Welford's algorithm for residual variance tracking.
 
     With fewer than 20 observations, predictions are blended with
-    conservative priors that overestimate by ~2x.
+    priors calibrated against the #23 baseline measurements (#44).
     """
 
     def __init__(self) -> None:

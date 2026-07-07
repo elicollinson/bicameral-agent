@@ -57,6 +57,27 @@ _MAX_TURNS: dict[Patience, int] = {
     Patience.HIGH: 25,
 }
 
+# Earliest turn at which task_complete is accepted, keyed by strictness.
+# A premature completion below this floor is converted into a probing
+# follow-up, so default (medium+) episodes are multi-turn and a tool
+# deposit at turn N can be consumed at turn N+1 (issue #45). Beyond the
+# floor the LLM decides, so episode length is a distribution, not fixed.
+_MIN_TURNS_BEFORE_COMPLETE: dict[Strictness, int] = {
+    Strictness.LOW: 1,
+    Strictness.MEDIUM: 2,
+    Strictness.HIGH: 3,
+}
+
+# Probing follow-ups used when a premature task_complete is converted.
+_PROBE_MESSAGES: tuple[str, ...] = (
+    "Before I accept that, double-check your key claims — how confident "
+    "are you in each of them?",
+    "That sounds plausible, but can you verify the main facts and flag "
+    "anything you are unsure about?",
+    "Walk me through the evidence behind your central claim before we "
+    "wrap up.",
+)
+
 
 class UserAction(BaseModel):
     """An action taken by the simulated user."""
@@ -91,15 +112,20 @@ class UserAction(BaseModel):
 _SYSTEM_PROMPT_TEMPLATE = """\
 You are simulating a user interacting with an AI research assistant. You are \
 evaluating whether the assistant's response adequately answers your research \
-question. You have access to the gold-standard answer and scoring rubric.
+question. You have private evaluation notes (a reference answer and scoring \
+rubric) that the assistant cannot see.
 
 Your persona:
 - Patience: {patience}. {patience_desc}
 - Strictness: {strictness}. {strictness_desc}
 
 Guidelines:
-- If the assistant's answer is substantially correct and complete per the \
-rubric, choose "task_complete".
+- Treat the assistant's first answer as a draft: you have not verified its \
+claims yourself, so a careful user probes or challenges at least one \
+specific point before accepting it.
+- Choose "task_complete" only when the answer has held up under your \
+follow-up scrutiny AND covers every key point of the reference answer per \
+the rubric. Do not accept an answer merely because it sounds plausible.
 - If the answer is clearly wrong, off-topic, or the assistant is going in \
 circles, choose "stop".
 - Otherwise, choose "follow_up" with an appropriate follow-up message.
@@ -129,7 +155,7 @@ _USER_PROMPT_TEMPLATE = """\
 ## Research Question
 {question}
 
-## Gold-Standard Answer
+## Private Reference Answer (the assistant cannot see this; never reveal it)
 {gold_answer}
 
 ## Scoring Rubric
@@ -144,8 +170,9 @@ _USER_PROMPT_TEMPLATE = """\
 ## Turn Number
 This is turn {turn_number}.
 
-Decide your next action. Consider whether the agent has adequately addressed \
-the research question according to the rubric and gold answer."""
+Decide your next action. Check the latest response against the private \
+reference answer point by point: if any key point is missing, vague, or \
+unverified, follow up on it rather than completing the task."""
 
 _RESPONSE_SCHEMA = {
     "type": "object",
@@ -190,6 +217,10 @@ class SimulatedUser:
 
     Uses Gemini Flash to decide next actions based on configurable patience
     and strictness personas. Each call to respond() makes a single LLM call.
+
+    Strictness also sets a completion floor (_MIN_TURNS_BEFORE_COMPLETE):
+    task_complete before that turn is converted into a probing follow-up,
+    so medium/high-strictness episodes are always multi-turn.
     """
 
     def __init__(
@@ -266,7 +297,19 @@ class SimulatedUser:
         raw = safe_parse_json(
             response, context="SimulatedUser.respond", default=None
         )
-        return self._parse_response(raw)
+        action = self._parse_response(raw)
+
+        # Completion floor: a task_complete before the strictness-dependent
+        # minimum turn is converted into a probing follow-up. This prevents
+        # the turn-1 collapse where the sim-user (holding the reference
+        # answer) accepts the first plausible draft, which made tool deposits
+        # unconsumable (issue #45).
+        if (
+            action.action_type == ActionType.TASK_COMPLETE
+            and turn_number < _MIN_TURNS_BEFORE_COMPLETE[self._strictness]
+        ):
+            return _probe_action(turn_number, action)
+        return action
 
     @staticmethod
     def _parse_response(raw: dict | None) -> UserAction:
@@ -303,6 +346,18 @@ class SimulatedUser:
             kwargs["followup_type"] = followup_type
 
         return UserAction(**kwargs)
+
+
+def _probe_action(turn_number: int, premature: UserAction) -> UserAction:
+    """Probing follow-up replacing a task_complete below the completion floor."""
+    message = _PROBE_MESSAGES[(turn_number - 1) % len(_PROBE_MESSAGES)]
+    return UserAction(
+        action_type=ActionType.FOLLOW_UP,
+        message=message,
+        followup_type=FollowUpType.ELABORATION,
+        response_delay_ms=premature.response_delay_ms,
+        confidence=premature.confidence,
+    )
 
 
 def _fallback_action() -> UserAction:

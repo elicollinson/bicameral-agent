@@ -192,6 +192,22 @@ class TestExtractTaskMetrics:
         m = extract_task_metrics(episode, decisions)
         assert m.latency_pairs == ()
 
+    def test_latency_pairs_drop_tool_id_mismatch(self):
+        """A decision/invocation tool_id mismatch means misalignment; drop it."""
+        scanner_id = TOOL_IDS[Action.SCANNER]
+        auditor_id = TOOL_IDS[Action.AUDITOR]
+        episode = _make_episode(
+            tool_invocations=[
+                ToolInvocation(
+                    tool_id=auditor_id, invoked_at_ms=100, completed_at_ms=600,
+                    input_tokens=0, output_tokens=10,
+                ),
+            ],
+        )
+        decisions = [_decision(Action.SCANNER, predicted={scanner_id: 400.0})]
+        m = extract_task_metrics(episode, decisions)
+        assert m.latency_pairs == ()
+
     def test_task_completed_extracted(self):
         episode = _make_episode(
             user_events=[
