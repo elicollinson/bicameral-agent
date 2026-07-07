@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from collections import Counter
 from pathlib import Path
@@ -41,6 +42,12 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  license: {meta.license}")
     if meta.citation:
         print(f"  cite: {meta.citation}")
+    if meta.requires_hf_token and not os.environ.get("HF_TOKEN"):
+        print(
+            f"  note: {meta.name} is gated on Hugging Face; accept its terms "
+            "and set HF_TOKEN before fetching.",
+            file=sys.stderr,
+        )
 
     tasks = dataset.build(args.limit)
     dist = Counter(t.difficulty.value for t in tasks)

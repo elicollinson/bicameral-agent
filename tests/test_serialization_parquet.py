@@ -57,6 +57,18 @@ class TestParquetRoundTrip:
         assert restored.outcome.model_dump() == ep.outcome.model_dump()
         assert restored.metadata == {"nested": {"key": [1, 2, 3]}}
 
+    def test_verification_metadata_round_trips(self, make_episode, tmp_path):
+        """Issue #56: verifier detail in metadata survives the parquet trip."""
+        verification = {
+            "metric": "multiple_choice",
+            "detail": "multiple_choice: extracted 'B', expected 'B'",
+        }
+        ep = make_episode(metadata={"verification": verification})
+        path = str(tmp_path / "episode.parquet")
+        ep.to_parquet(path)
+        restored = Episode.from_parquet(path)
+        assert restored.metadata["verification"] == verification
+
     def test_empty_episode(self, tmp_path):
         ep = Episode(
             outcome=EpisodeOutcome(total_tokens=0, total_turns=0, wall_clock_ms=0)

@@ -371,7 +371,7 @@ class ABTestRunner:
                 config = dataclasses.replace(
                     condition.episode_config,
                     score_episode=self._score_episodes,
-                    use_lexical_scorer=self._use_lexical_scorer,
+                    metric="lexical" if self._use_lexical_scorer else "llm_judge",
                 )
                 runner = EpisodeRunner(self._client, config)
                 episode = runner.run_episode(task, controller)

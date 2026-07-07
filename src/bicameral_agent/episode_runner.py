@@ -30,13 +30,13 @@ from bicameral_agent.schema import (
     UserEventType,
     estimate_text_tokens,
 )
-from bicameral_agent.scorer import LexicalScorer, TaskScorer
 from bicameral_agent.signal_classifier import SignalClassifier
 from bicameral_agent.simulated_user import ActionType, Patience, SimulatedUser, Strictness
 from bicameral_agent.token_estimator import ContextFeatures
 from bicameral_agent.tool_latency import ToolLatencyModel
 from bicameral_agent.cost_tracker import CostBudgetExceeded, CostTrackedClient, CostTracker
 from bicameral_agent.tool_primitive import BudgetExceededError, TokenBudget
+from bicameral_agent.verifiers import build_verifier
 
 
 class InjectionMode(enum.Enum):
@@ -91,7 +91,12 @@ class EpisodeConfig:
     patience: Patience = Patience.MEDIUM
     strictness: Strictness = Strictness.MEDIUM
     score_episode: bool = False
-    use_lexical_scorer: bool = False
+    metric: str = "llm_judge"
+    """Verifier-registry key used when score_episode is set (Issue #56).
+
+    Replaces the former ``use_lexical_scorer`` boolean: ``metric="lexical"``
+    is the old True, ``"llm_judge"`` (default) the old False.
+    """
     injection_mode: InjectionMode = InjectionMode.BREAKPOINT
     persistent_injection: bool = True
 
@@ -433,8 +438,8 @@ class EpisodeRunner:
         if self._hyper_config is not None:
             log.set_metadata("hyperparameters", self._hyper_config.to_dict())
 
-        # Score if requested. The LLM judge uses the (cost-tracked) judge
-        # client, so its calls count toward budgets and episode cost.
+        # Score if requested. LLM-backed verifiers use the (cost-tracked)
+        # judge client, so their calls count toward budgets and episode cost.
         quality_score: float | None = None
         if cfg.score_episode:
             last_assistant = next(
@@ -442,9 +447,14 @@ class EpisodeRunner:
                 None,
             )
             if last_assistant is not None:
-                scorer = LexicalScorer() if cfg.use_lexical_scorer else TaskScorer(client=judge_client)
+                verifier = build_verifier(cfg.metric, client=judge_client)
                 try:
-                    quality_score = scorer.score(task, last_assistant).overall
+                    task_score = verifier.score(task, last_assistant)
+                    quality_score = task_score.overall
+                    log.set_metadata(
+                        "verification",
+                        {"metric": cfg.metric, "detail": task_score.detail},
+                    )
                 except CostBudgetExceeded:
                     logger.warning(
                         "CostBudgetExceeded while scoring, leaving quality_score unset"

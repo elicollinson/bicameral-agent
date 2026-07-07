@@ -146,7 +146,7 @@ class TestEpisodeConfig:
         assert cfg.max_turns == 25
         assert cfg.thinking_level == "medium"
         assert cfg.score_episode is False
-        assert cfg.use_lexical_scorer is False
+        assert cfg.metric == "llm_judge"
 
     def test_custom_values(self):
         cfg = EpisodeConfig(max_turns=10, thinking_level="low", score_episode=True)
@@ -1151,7 +1151,7 @@ class TestPerRoleClients:
         with patch(
             "bicameral_agent.episode_runner.SimulatedUser"
         ) as MockSimUser, patch(
-            "bicameral_agent.episode_runner.TaskScorer"
+            "bicameral_agent.verifiers.TaskScorer"
         ) as MockScorer:
             mock_sim = MagicMock()
             mock_sim.respond.return_value = UserAction(
@@ -1161,7 +1161,7 @@ class TestPerRoleClients:
             )
             MockSimUser.return_value = mock_sim
             mock_scorer = MagicMock()
-            mock_scorer.score.return_value = MagicMock(overall=0.5)
+            mock_scorer.score.return_value = MagicMock(overall=0.5, detail=None)
             MockScorer.return_value = mock_scorer
 
             runner.run_episode(_make_task(), ctrl)
@@ -1229,6 +1229,46 @@ class TestPerRoleClients:
         judge_arg = MockScorer.call_args.kwargs["client"]
         assert isinstance(judge_arg, CostTrackedClient)
         assert judge_arg._inner is client
+
+
+class TestScoringWiring:
+    """Issue #56: EpisodeConfig.metric selects the verifier via build_verifier."""
+
+    def _run_scored(self, metric: str, answer: str):
+        client = _make_mock_client()
+        client.generate.return_value = _mock_gemini_response(content=answer)
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.DO_NOTHING
+        runner = EpisodeRunner(
+            client, EpisodeConfig(max_turns=1, score_episode=True, metric=metric)
+        )
+        with patch("bicameral_agent.episode_runner.SimulatedUser") as MockSimUser:
+            mock_sim = MagicMock()
+            mock_sim.respond.return_value = UserAction(
+                action_type=ActionType.TASK_COMPLETE,
+                response_delay_ms=100,
+                confidence=0.9,
+            )
+            MockSimUser.return_value = mock_sim
+            return runner.run_episode(_make_task(), ctrl)
+
+    def test_lexical_metric_scores_without_llm_judge(self):
+        gold = _make_task().gold_answer
+        episode = self._run_scored("lexical", gold)
+        assert episode.outcome.quality_score == 1.0
+        verification = episode.metadata["verification"]
+        assert verification["metric"] == "lexical"
+        assert verification["detail"] is None
+
+    def test_deterministic_metric_detail_lands_in_metadata(self):
+        episode = self._run_scored("exact_match", "Something unrelated")
+        assert episode.outcome.quality_score == 0.0
+        assert "exact_match" in episode.metadata["verification"]["detail"]
+
+    def test_unknown_metric_fails_loudly(self):
+        with pytest.raises(ValueError, match="Unknown metric"):
+            self._run_scored("not_a_metric", "x")
 
 
 class TestCostBudgetHandling:

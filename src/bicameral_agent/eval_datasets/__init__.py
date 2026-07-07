@@ -8,19 +8,33 @@ line. The package is named ``eval_datasets`` to avoid colliding with HF's
 
 from __future__ import annotations
 
+from bicameral_agent.eval_datasets.abstentionbench import AbstentionBench
 from bicameral_agent.eval_datasets.base import DatasetMeta, EvalDataset
+from bicameral_agent.eval_datasets.bbeh import Bbeh
 from bicameral_agent.eval_datasets.builtin import BuiltinPool
 from bicameral_agent.eval_datasets.crepe import Crepe
 from bicameral_agent.eval_datasets.frames import Frames
 from bicameral_agent.eval_datasets.hard import HardBenchmark
+from bicameral_agent.eval_datasets.healthbench_hard import HealthBenchHard
+from bicameral_agent.eval_datasets.hle import Hle
+from bicameral_agent.eval_datasets.researchqa import ResearchQA
+from bicameral_agent.eval_datasets.simpleqa_verified import SimpleQAVerified
+from bicameral_agent.eval_datasets.supergpqa import SuperGPQA
 
 __all__ = [
+    "AbstentionBench",
+    "Bbeh",
     "BuiltinPool",
     "Crepe",
     "DatasetMeta",
     "EvalDataset",
     "Frames",
     "HardBenchmark",
+    "HealthBenchHard",
+    "Hle",
+    "ResearchQA",
+    "SimpleQAVerified",
+    "SuperGPQA",
     "build_dataset",
     "dataset_names",
     "resolve_metric",
@@ -31,6 +45,13 @@ _REGISTRY: dict[str, type[EvalDataset]] = {
     "frames": Frames,
     "crepe": Crepe,
     "hard_benchmark": HardBenchmark,
+    "simpleqa_verified": SimpleQAVerified,
+    "supergpqa": SuperGPQA,
+    "bbeh": Bbeh,
+    "healthbench_hard": HealthBenchHard,
+    "researchqa": ResearchQA,
+    "abstentionbench": AbstentionBench,
+    "hle": Hle,
 }
 
 

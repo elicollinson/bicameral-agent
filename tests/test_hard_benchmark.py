@@ -89,7 +89,7 @@ class TestPager:
         pages = [[_frames_row(i) for i in range(3)], [_frames_row(i) for i in range(3, 6)]]
         calls: list[tuple[int, int]] = []
 
-        def fake_fetch_page(dataset, split, offset, length):
+        def fake_fetch_page(dataset, split, offset, length, config="default"):
             calls.append((offset, length))
             return pages.pop(0)
 
@@ -107,7 +107,7 @@ class TestPager:
             [_crepe_row(0), _crepe_row(1, valid=False), _crepe_row(2), _crepe_row(3, valid=False)],
             [],
         ]
-        monkeypatch.setattr(hf_fetch, "fetch_page", lambda *a: pages.pop(0))
+        monkeypatch.setattr(hf_fetch, "fetch_page", lambda *a, **kw: pages.pop(0))
         tasks = fetch_crepe(limit=10)
         assert len(tasks) == 2
         assert all(t.difficulty == TaskDifficulty.TRICKY for t in tasks)
@@ -115,7 +115,7 @@ class TestPager:
 
     def test_error_payload_raises_instead_of_empty_page(self, monkeypatch):
         monkeypatch.setattr(
-            hf_fetch, "http_get_json", lambda url: {"error": "rate limited"}
+            hf_fetch, "http_get_json", lambda url, headers=None: {"error": "rate limited"}
         )
         with pytest.raises(RuntimeError, match="rate limited"):
             hf_fetch.fetch_page("some/dataset", "test", 0, 100)

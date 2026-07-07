@@ -40,23 +40,17 @@ def frames_row_to_task(row: dict, index: int) -> ResearchQATask:
     )
 
 
+def _frames_row_valid(row: dict) -> bool:
+    return bool(
+        (row.get("Prompt") or "").strip() and (row.get("Answer") or "").strip()
+    )
+
+
 def fetch_frames(limit: int = 100, split: str = "test") -> list[ResearchQATask]:
     """Pull a subset of FRAMES rows and map them to ``hard`` tasks."""
-    tasks: list[ResearchQATask] = []
-    offset = 0
-    while len(tasks) < limit:
-        page = hf_fetch.fetch_page(
-            FRAMES_DATASET, split, offset, min(100, limit - len(tasks))
-        )
-        if not page:
-            break
-        for raw in page:
-            if (raw.get("Prompt") or "").strip() and (raw.get("Answer") or "").strip():
-                tasks.append(frames_row_to_task(raw, len(tasks) + 1))
-                if len(tasks) == limit:
-                    break
-        offset += len(page)
-    return tasks
+    return hf_fetch.fetch_mapped_tasks(
+        FRAMES_DATASET, split, limit, frames_row_to_task, is_valid=_frames_row_valid
+    )
 
 
 class Frames(EvalDataset):
