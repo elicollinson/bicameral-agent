@@ -183,23 +183,24 @@ class TrainingDataStore:
             msg = "cannot save an empty list of examples"
             raise ValueError(msg)
 
-        states = np.stack([e.state for e in examples]).astype(np.float32, copy=False)
-        next_states = np.stack([e.next_state for e in examples]).astype(np.float32, copy=False)
+        raw: dict[str, Any] = {
+            "states": np.stack([e.state for e in examples]),
+            "actions": [e.action for e in examples],
+            "rewards": [e.reward for e in examples],
+            "next_states": np.stack([e.next_state for e in examples]),
+            "dones": [e.done for e in examples],
+            "returns": [e.discounted_return for e in examples],
+        }
+        columns: dict[str, np.ndarray] = {
+            name: np.asarray(raw[name], dtype=dtype) for name, dtype in _COLUMN_DTYPES.items()
+        }
+        states, next_states = columns["states"], columns["next_states"]
         if states.shape[1] != STATE_DIM or next_states.shape[1] != STATE_DIM:
             msg = (
                 f"state vectors must have {STATE_DIM} dims, got "
                 f"{states.shape[1]} / {next_states.shape[1]}"
             )
             raise ValueError(msg)
-
-        columns: dict[str, np.ndarray] = {
-            "states": states,
-            "actions": np.array([e.action for e in examples], dtype=np.int64),
-            "rewards": np.array([e.reward for e in examples], dtype=np.float64),
-            "next_states": next_states,
-            "dones": np.array([e.done for e in examples], dtype=np.bool_),
-            "returns": np.array([e.discounted_return for e in examples], dtype=np.float64),
-        }
 
         chunk_dir = self._root / f"{_CHUNK_PREFIX}{self._next_chunk_id():06d}"
         chunk_dir.mkdir()
