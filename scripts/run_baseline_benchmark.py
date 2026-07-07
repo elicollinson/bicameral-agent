@@ -21,7 +21,12 @@ import logging
 import sys
 from pathlib import Path
 
-from bicameral_agent.baseline_benchmark import format_report, run_benchmark
+from bicameral_agent.baseline_benchmark import (
+    CONDITION_NAMES,
+    format_report,
+    parse_conditions,
+    run_benchmark,
+)
 from bicameral_agent.config import HyperConfig
 from bicameral_agent.dataset import ResearchQADataset, ResearchQATask, TaskDifficulty
 from bicameral_agent.episode_runner import EpisodeRunner
@@ -77,12 +82,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--metric", default=None,
                         help="Verification metric (defaults to the dataset's "
                              "default_metric; must be in its supported_metrics).")
+    parser.add_argument("--conditions", default=",".join(CONDITION_NAMES),
+                        help="Comma-separated subset of conditions to run "
+                             f"(of: {', '.join(CONDITION_NAMES)}; default all). "
+                             "Lets an aborted run be resumed per-condition.")
     parser.add_argument("--tasks-per-condition", type=int, default=50)
     parser.add_argument("--max-turns", type=int, default=10)
     parser.add_argument("--random-seed", type=int, default=42)
     parser.add_argument("--random-probability", type=float, default=0.2)
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args(argv)
+
+    try:
+        selected_conditions = parse_conditions(args.conditions)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     logging.basicConfig(
         level=logging.WARNING if args.quiet else logging.INFO,
@@ -123,7 +137,7 @@ def main(argv: list[str] | None = None) -> int:
         sim_user_client=judge_client,
     )
 
-    conditions = {
+    factories = {
         "no_subconscious": lambda _idx: NoSubconsciousController(),
         "random": lambda idx: RandomController(
             action_probability=args.random_probability,
@@ -131,6 +145,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
         "heuristic": lambda _idx: hyper.to_heuristic_controller(),
     }
+    conditions = {name: factories[name] for name in selected_conditions}
 
     # Persist episodes incrementally: rewrite the condition's parquet after
     # every completed episode so a late crash keeps all prior results.

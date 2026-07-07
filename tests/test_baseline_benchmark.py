@@ -8,10 +8,15 @@ import pytest
 
 from bicameral_agent.baseline_benchmark import (
     aggregate,
+    BenchmarkResult,
+    ConditionAbortedError,
+    CONDITION_NAMES,
+    EpisodeFailure,
     extract_task_metrics,
     format_report,
     heuristic_outperforms,
     latency_mape,
+    parse_conditions,
     run_benchmark,
     run_condition,
     TaskMetrics,
@@ -25,6 +30,7 @@ from bicameral_agent.heuristic_controller import (
     FullState,
     TOOL_IDS,
 )
+from bicameral_agent.model_client import TransportExhausted
 from bicameral_agent.schema import (
     ContextInjection,
     Episode,
@@ -81,9 +87,9 @@ def _make_episode(
     )
 
 
-def _task() -> ResearchQATask:
+def _task(task_id: str = "t1") -> ResearchQATask:
     return ResearchQATask(
-        task_id="t1",
+        task_id=task_id,
         difficulty=TaskDifficulty.TYPICAL,
         split=TaskSplit.EVAL,
         question="q",
@@ -310,8 +316,6 @@ class TestComparisons:
 
 class TestFormatReport:
     def test_includes_all_conditions(self):
-        from bicameral_agent.baseline_benchmark import BenchmarkResult
-
         def _report(name: str, qualities: list[float]):
             return aggregate(name, [_metrics(quality_score=q) for q in qualities])
 
@@ -329,6 +333,66 @@ class TestFormatReport:
         assert "quality_score" in text
         assert "heuristic > random on quality_score (Welch 95%): YES" in text
         assert "heuristic > no_subconscious on quality_score (Welch 95%): YES" in text
+
+    def test_subset_compares_only_present_conditions(self):
+        """A --conditions subset run reports comparisons among present conditions only."""
+        result = BenchmarkResult()
+        result.reports = {
+            "heuristic": aggregate(
+                "heuristic", [_metrics(quality_score=q) for q in (0.6, 0.62, 0.58)]
+            ),
+            "random": aggregate(
+                "random", [_metrics(quality_score=q) for q in (0.4, 0.42, 0.38)]
+            ),
+        }
+        text = format_report(result)
+        assert "heuristic > random on quality_score" in text
+        assert "no_subconscious" not in text
+
+    def test_single_condition_report_has_no_comparisons(self):
+        result = BenchmarkResult()
+        result.reports = {
+            "no_subconscious": aggregate("no_subconscious", [_metrics(), _metrics()])
+        }
+        text = format_report(result)
+        assert "no_subconscious" in text
+        assert "heuristic >" not in text
+
+    def test_lists_transport_failures(self):
+        result = BenchmarkResult()
+        result.reports = {"random": aggregate("random", [_metrics()])}
+        result.failures = {
+            "random": [
+                EpisodeFailure(
+                    condition="random", episode_index=1, task_id="t7",
+                    error="transport error persisted after 4 attempts",
+                )
+            ]
+        }
+        text = format_report(result)
+        assert "transport_failures       n=1 (tasks: t7)" in text
+
+
+class TestParseConditions:
+    def test_default_spec_returns_all(self):
+        assert parse_conditions(",".join(CONDITION_NAMES)) == CONDITION_NAMES
+
+    def test_single_condition(self):
+        assert parse_conditions("heuristic") == ("heuristic",)
+
+    def test_canonical_order_and_dedup(self):
+        assert parse_conditions("heuristic, random,heuristic") == (
+            "random",
+            "heuristic",
+        )
+
+    def test_unknown_condition_raises(self):
+        with pytest.raises(ValueError, match="Unknown condition"):
+            parse_conditions("heuristic,bogus")
+
+    def test_empty_spec_raises(self):
+        with pytest.raises(ValueError, match="No conditions"):
+            parse_conditions(" , ")
 
 
 class _StubController:
@@ -355,11 +419,12 @@ class TestRunCondition:
             return _StubController()
 
         tasks = [_task(), _task(), _task()]
-        episodes, metrics = run_condition(runner, tasks, factory)
+        episodes, metrics, failures = run_condition(runner, tasks, factory)
 
         assert factory_calls == [0, 1, 2]
         assert len(episodes) == 3
         assert len(metrics) == 3
+        assert failures == []
         assert runner.run_episode.call_count == 3
 
     def test_run_benchmark_aggregates_each_condition(self):
@@ -432,3 +497,122 @@ class TestIncrementalPersistence:
             on_episode=lambda cond, idx, ep: seen.append(cond),
         )
         assert seen == ["heuristic", "random"]
+
+
+def _transport_exhausted() -> TransportExhausted:
+    return TransportExhausted(4, TimeoutError("read timed out"))
+
+
+class TestTransportFailureContainment:
+    """Issue #81: a transport failure that outlives client retries fails only
+    its episode; the condition continues unless failures exceed the threshold."""
+
+    def test_failed_episode_recorded_and_run_continues(self):
+        runner = MagicMock(spec=EpisodeRunner)
+        episode = _make_episode()
+        runner.run_episode.side_effect = [
+            episode, _transport_exhausted(), episode, episode
+        ]
+        tasks = [_task(f"t{i}") for i in range(4)]
+
+        episodes, metrics, failures = run_condition(
+            runner, tasks, lambda _idx: _StubController(), condition="random"
+        )
+
+        assert runner.run_episode.call_count == 4
+        assert len(episodes) == 3
+        assert len(metrics) == 3
+        (failure,) = failures
+        assert failure.condition == "random"
+        assert failure.episode_index == 1
+        assert failure.task_id == "t1"
+        assert "read timed out" in failure.error
+
+    def test_on_episode_skips_failed_episode(self):
+        runner = MagicMock(spec=EpisodeRunner)
+        episode = _make_episode()
+        runner.run_episode.side_effect = [
+            episode, _transport_exhausted(), episode, episode
+        ]
+
+        seen: list[int] = []
+        run_condition(
+            runner,
+            [_task(f"t{i}") for i in range(4)],
+            lambda _idx: _StubController(),
+            condition="random",
+            on_episode=lambda cond, idx, ep: seen.append(idx),
+        )
+        assert seen == [0, 2, 3]
+
+    def test_threshold_abort_names_failure_rate(self):
+        runner = MagicMock(spec=EpisodeRunner)
+        runner.run_episode.side_effect = _transport_exhausted()
+        tasks = [_task(f"t{i}") for i in range(3)]
+
+        # 1 failure out of 3 tasks (33%) already exceeds the 30% default.
+        with pytest.raises(ConditionAbortedError, match=r"1/3 episodes \(33%\)"):
+            run_condition(
+                runner, tasks, lambda _idx: _StubController(), condition="random"
+            )
+        assert runner.run_episode.call_count == 1
+
+    def test_failures_below_threshold_do_not_abort(self):
+        runner = MagicMock(spec=EpisodeRunner)
+        episode = _make_episode()
+        # 3 failures out of 10 tasks = 30%, not strictly above the threshold.
+        effects: list = [_transport_exhausted()] * 3 + [episode] * 7
+        runner.run_episode.side_effect = effects
+
+        episodes, _, failures = run_condition(
+            runner,
+            [_task(f"t{i}") for i in range(10)],
+            lambda _idx: _StubController(),
+            condition="heuristic",
+        )
+        assert len(episodes) == 7
+        assert len(failures) == 3
+
+    def test_abort_preserves_transport_error_as_cause(self):
+        runner = MagicMock(spec=EpisodeRunner)
+        runner.run_episode.side_effect = _transport_exhausted()
+
+        with pytest.raises(ConditionAbortedError) as exc_info:
+            run_condition(
+                runner,
+                [_task()],
+                lambda _idx: _StubController(),
+                condition="random",
+            )
+        assert isinstance(exc_info.value.__cause__, TransportExhausted)
+
+    def test_non_transport_error_still_propagates(self):
+        runner = MagicMock(spec=EpisodeRunner)
+        runner.run_episode.side_effect = ValueError("programming bug")
+
+        with pytest.raises(ValueError, match="programming bug"):
+            run_condition(
+                runner, [_task()], lambda _idx: _StubController(), condition="random"
+            )
+
+    def test_run_benchmark_records_failures_per_condition(self):
+        runner = MagicMock(spec=EpisodeRunner)
+        episode = _make_episode()
+        runner.run_episode.side_effect = [
+            episode, _transport_exhausted(), episode, episode,  # heuristic
+            episode, episode, episode, episode,  # random
+        ]
+
+        result = run_benchmark(
+            client=MagicMock(),
+            tasks=[_task(f"t{i}") for i in range(4)],
+            conditions={
+                "heuristic": lambda _idx: _StubController(),
+                "random": lambda _idx: _StubController(),
+            },
+            runner=runner,
+        )
+        assert [f.task_id for f in result.failures["heuristic"]] == ["t1"]
+        assert result.failures["random"] == []
+        assert result.reports["heuristic"].n_episodes == 3
+        assert result.reports["random"].n_episodes == 4
