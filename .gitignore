@@ -212,3 +212,7 @@ data/latency/
 # Externally-sourced benchmark data, not redistributed (issue #42).
 # Fetch with: python scripts/fetch_hard_benchmark.py  (see docs/hard_benchmark.md)
 data/external/
+
+# Node terminal UI (issue #58)
+ui/node_modules/
+ui/dist/

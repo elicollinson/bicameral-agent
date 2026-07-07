@@ -1,0 +1,28 @@
+{
+  "tasks_per_condition": 2,
+  "max_turns": 10,
+  "conditions": {
+    "no_subconscious": {
+      "condition": "no_subconscious",
+      "n_episodes": 2,
+      "summaries": {
+        "quality_score": { "mean": 0.9, "std": 0.1, "ci_lower": 0.8, "ci_upper": 1.0, "n": 2 },
+        "total_tokens": { "mean": 900.0, "std": 100.0, "ci_lower": 800.0, "ci_upper": 1000.0, "n": 2 },
+        "total_turns": { "mean": 1.0, "std": 0.0, "ci_lower": 1.0, "ci_upper": 1.0, "n": 2 },
+        "wall_clock_ms": { "mean": 6000.0, "std": 500.0, "ci_lower": 5500.0, "ci_upper": 6500.0, "n": 2 },
+        "tool_cost_usd": { "mean": 0.004, "std": 0.001, "ci_lower": 0.003, "ci_upper": 0.005, "n": 2 }
+      }
+    },
+    "heuristic": {
+      "condition": "heuristic",
+      "n_episodes": 2,
+      "summaries": {
+        "quality_score": { "mean": 0.95, "std": 0.05, "ci_lower": 0.9, "ci_upper": 1.0, "n": 2 },
+        "total_tokens": { "mean": 2400.0, "std": 400.0, "ci_lower": 2000.0, "ci_upper": 2800.0, "n": 2 },
+        "total_turns": { "mean": 1.0, "std": 0.0, "ci_lower": 1.0, "ci_upper": 1.0, "n": 2 },
+        "wall_clock_ms": { "mean": 9000.0, "std": 2000.0, "ci_lower": 7000.0, "ci_upper": 11000.0, "n": 2 },
+        "tool_cost_usd": { "mean": 0.006, "std": 0.001, "ci_lower": 0.005, "ci_upper": 0.007, "n": 2 }
+      }
+    }
+  }
+}
