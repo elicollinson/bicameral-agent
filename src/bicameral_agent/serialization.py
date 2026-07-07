@@ -38,11 +38,17 @@ def episode_from_parquet(path: str) -> Episode:
         The deserialized Episode.
 
     Raises:
-        ValueError: If the file contains no rows.
+        ValueError: If the file contains no rows, or more than one row
+            (use :func:`episodes_from_parquet` for multi-episode files).
     """
     table = pq.read_table(path)
     if table.num_rows == 0:
         raise ValueError(f"Parquet file at {path} contains no episodes")
+    if table.num_rows > 1:
+        raise ValueError(
+            f"Parquet file at {path} contains {table.num_rows} episodes; "
+            "use episodes_from_parquet() for multi-episode files"
+        )
     payload = table.column("payload")[0].as_py()
     return Episode.model_validate_json(payload)
 

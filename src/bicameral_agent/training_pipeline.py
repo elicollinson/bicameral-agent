@@ -454,7 +454,7 @@ class TrainingDataPipeline:
                 max_priority=None,
                 time_since_last_drain=0.0,
                 pending_tool_count=0,
-                estimated_next_arrival=0.0,
+                arrival_interval_ema=0.0,
             )
         max_p_int = max(inj.priority for inj in pending)
         # Time since most-recent enqueue (bounded by what we know — the
@@ -467,7 +467,7 @@ class TrainingDataPipeline:
             max_priority=Priority(max_p_int) if max_p_int <= 3 else Priority.CRITICAL,
             time_since_last_drain=time_since_last_ms / 1000.0,
             pending_tool_count=len({inj.source_tool_id for inj in pending}),
-            estimated_next_arrival=0.0,
+            arrival_interval_ema=0.0,
         )
 
     # ------------------------------------------------------------------

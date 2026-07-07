@@ -357,16 +357,16 @@ class TestPeek:
         assert peeked[1].content == "low"
 
 
-class TestEstimatedNextArrival:
+class TestArrivalIntervalEma:
     def test_zero_before_any_enqueue(self, empty_queue):
         state = empty_queue.get_state()
-        assert state.estimated_next_arrival == 0.0
+        assert state.arrival_interval_ema == 0.0
 
     def test_nonzero_after_multiple_enqueues(self, empty_queue, make_queue_item):
         for _ in range(5):
             empty_queue.enqueue(make_queue_item())
         state = empty_queue.get_state()
-        assert state.estimated_next_arrival >= 0.0
+        assert state.arrival_interval_ema >= 0.0
 
 
 class TestDrainAtBreakpoint:

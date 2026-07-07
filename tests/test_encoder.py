@@ -498,7 +498,7 @@ class TestQueueStateEncoding:
         assert vec[55] == pytest.approx(2 / 4)  # MEDIUM=1, (1+1)/(3+1)
         assert vec[56] == pytest.approx(2.5 / 60)  # time_since_last_drain
         assert vec[57] == pytest.approx(2 / 3)  # pending_tool_count
-        assert vec[58] == pytest.approx(1.0 / 30)  # estimated_next_arrival
+        assert vec[58] == pytest.approx(1.0 / 30)  # arrival_interval_ema
 
     def test_low_priority_distinct_from_empty_queue(self):
         """Priority.LOW must not encode identically to an empty queue."""
@@ -508,7 +508,7 @@ class TestQueueStateEncoding:
             max_priority=Priority.LOW,
             time_since_last_drain=0.0,
             pending_tool_count=1,
-            estimated_next_arrival=0.0,
+            arrival_interval_ema=0.0,
         )
         out = encode_queue_state(qs_low)
         assert out[2] == pytest.approx(1 / 4)  # LOW=0 -> (0+1)/(3+1)
@@ -522,7 +522,7 @@ class TestQueueStateEncoding:
             max_priority=Priority.CRITICAL,
             time_since_last_drain=120.0,
             pending_tool_count=10,
-            estimated_next_arrival=60.0,
+            arrival_interval_ema=60.0,
         )
         vec = encoder.encode([], queue_state=qs)
         for i in range(53, 59):
@@ -535,7 +535,7 @@ class TestQueueStateEncoding:
             max_priority=None,
             time_since_last_drain=0.0,
             pending_tool_count=0,
-            estimated_next_arrival=0.0,
+            arrival_interval_ema=0.0,
         )
         vec = encoder.encode([], queue_state=qs)
         np.testing.assert_array_equal(vec[53:59], np.zeros(6, dtype=np.float32))
@@ -629,7 +629,7 @@ class TestBackwardCompatibility:
         qs = QueueState(
             depth=3, token_total=200, max_priority=Priority.HIGH,
             time_since_last_drain=1.0, pending_tool_count=1,
-            estimated_next_arrival=0.5,
+            arrival_interval_ema=0.5,
         )
         vec_with_ext = encoder.encode(
             msgs, events, tools,
