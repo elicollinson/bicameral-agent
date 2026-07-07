@@ -13,7 +13,7 @@ Index      Component                                  Dims
 0–63       Reasoning state (StateEncoder.encode)        64
 64–81      User signal vector (SignalClassifier)        18
 82–93      One-hot of last 3 tool invocations           12
-94–96      Time since each of last 3 tool invocations    3
+94–96      Seconds since last 3 tool invocations         3
 97–102     Queue state                                   6
 103–105    Predicted latency per tool                    3
 106–107    Turn number + episode completion fraction     2
@@ -50,7 +50,13 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from bicameral_agent.encoder import FEATURE_DIM, StateEncoder, _cap_norm
+from bicameral_agent.encoder import (
+    FEATURE_DIM,
+    QUEUE_STATE_DIM,
+    StateEncoder,
+    _cap_norm,
+    encode_queue_state,
+)
 from bicameral_agent.followup_classifier import FollowUpClassifier, FollowUpType
 from bicameral_agent.heuristic_controller import TOOL_IDS, Action
 from bicameral_agent.queue import Priority, QueueState
@@ -73,10 +79,13 @@ if TYPE_CHECKING:  # pragma: no cover
 # Dimensions
 # ---------------------------------------------------------------------------
 
+# Tool vocabulary (order matters for one-hot indexing)
+_TOOL_VOCAB: tuple[str, ...] = tuple(TOOL_IDS.values())  # 3 tools
+
 _TOOL_HISTORY_ONEHOT = 12  # 3 slots × 4 tools (scanner/auditor/refresher/none)
 _TOOL_HISTORY_TIME = 3
-_QUEUE_DIMS = 6
-_LATENCY_DIMS = 3
+_QUEUE_DIMS = QUEUE_STATE_DIM
+_LATENCY_DIMS = len(_TOOL_VOCAB)  # one slot per tool in the vocabulary
 _PROGRESS_DIMS = 2
 
 STATE_DIM: int = (
@@ -99,11 +108,9 @@ _OFF_QUEUE = _OFF_TOOL_TIMES + _TOOL_HISTORY_TIME
 _OFF_LATENCY = _OFF_QUEUE + _QUEUE_DIMS
 _OFF_PROGRESS = _OFF_LATENCY + _LATENCY_DIMS
 
-# Tool vocabulary (order matters for one-hot indexing)
-_TOOL_VOCAB: tuple[str, ...] = tuple(TOOL_IDS.values())  # 3 tools
-
 # Action -> categorical index. Mirrors policy_value_net.ACTION_ORDER but
-# defined here to avoid a hard dependency on torch.
+# defined here to avoid a hard dependency on torch. A cross-check test
+# asserts the two stay identical (tests/test_training_pipeline.py).
 _ACTION_ORDER: tuple[Action, ...] = (
     Action.SCANNER,
     Action.AUDITOR,
@@ -113,17 +120,16 @@ _ACTION_ORDER: tuple[Action, ...] = (
 _ACTION_INDEX: dict[Action, int] = {a: i for i, a in enumerate(_ACTION_ORDER)}
 
 # ---------------------------------------------------------------------------
-# Normalization caps
+# Normalization caps (queue caps live in encoder.encode_queue_state, which is
+# shared with the StateEncoder slice of the vector)
 # ---------------------------------------------------------------------------
-_TURNS_SINCE_TOOL_CAP = 20.0
-_QUEUE_DEPTH_CAP = 20
-_QUEUE_TOKEN_TOTAL_CAP = 10_000
-_PRIORITY_MAX = 3.0
-_TIME_SINCE_DRAIN_CAP = 60.0
-_PENDING_TOOL_COUNT_CAP = 3
-_ESTIMATED_ARRIVAL_CAP = 30.0
+_TOOL_RECENCY_SECONDS_CAP = 300.0  # elapsed seconds since a tool invocation
 _LATENCY_MS_CAP = 30_000.0
 _TURN_CAP = 200
+
+# Default configured episode turn limit; must match the EpisodeConfig used
+# to generate the episodes (episode_runner.EpisodeConfig.max_turns).
+DEFAULT_MAX_TURNS = 25
 
 # Reward weights (per issue spec)
 R_STOP: float = -0.3
@@ -180,16 +186,34 @@ class TrainingDataPipeline:
         StateEncoder instance. If *None*, a default encoder is created.
     latency_model:
         ToolLatencyModel for the predicted-latency feature slice. If
-        *None*, a fresh model is created (predictions use built-in defaults).
+        *None*, a fresh model is created (predictions use built-in
+        defaults). This intentionally matches serving time, where
+        ``episode_runner`` also constructs a fresh ``ToolLatencyModel``
+        per episode: the default predictions are a deterministic function
+        of context features, so training and serving stay consistent.
+        Once a trained latency model exists (#44), pass the same trained
+        model here and at serving time.
+    max_turns:
+        The configured episode turn limit used when the episodes were
+        generated (``EpisodeConfig.max_turns``). Used for the
+        completion-fraction features (dims 63/107). The episode's actual
+        final turn count must NOT be used here: it is unavailable at
+        inference time and leaks the episode's outcome (e.g. early STOPs)
+        into every decision-point state.
     """
 
     def __init__(
         self,
         encoder: StateEncoder | None = None,
         latency_model: ToolLatencyModel | None = None,
+        max_turns: int = DEFAULT_MAX_TURNS,
     ) -> None:
+        if max_turns < 1:
+            msg = f"max_turns must be >= 1, got {max_turns}"
+            raise ValueError(msg)
         self._encoder = encoder or StateEncoder()
         self._latency_model = latency_model or ToolLatencyModel()
+        self._max_turns = max_turns
 
     # ------------------------------------------------------------------
     # Public API
@@ -216,7 +240,7 @@ class TrainingDataPipeline:
         # Build state vectors and per-step rewards
         n = len(decision_points)
         states = [
-            self._build_state_vector(dp.state, dp.action, episode)
+            self._build_state_vector(dp.state, dp.action)
             for dp in decision_points
         ]
         next_states = [
@@ -294,7 +318,6 @@ class TrainingDataPipeline:
         self,
         state: ReplayState,
         action_msg: Message,
-        episode: Episode,
     ) -> np.ndarray:
         """Build the 108-dim state vector at a decision point.
 
@@ -324,9 +347,10 @@ class TrainingDataPipeline:
             for tool_id in _TOOL_VOCAB
         }
 
-        # Estimate max turns from the episode (best-effort; falls back to
-        # episode total turns).
-        max_turns = max(episode.outcome.total_turns, state.turn_number, 1)
+        # Use the configured turn limit — never the episode's actual final
+        # turn count, which would leak future information (the label) into
+        # the completion-fraction features.
+        max_turns = self._max_turns
 
         # 0–63: encoder output
         encoded = self._encoder.encode(
@@ -354,8 +378,8 @@ class TrainingDataPipeline:
             self._encode_tool_history_times(tool_history, action_msg.timestamp_ms)
         )
 
-        # 97–102: queue state
-        vec[_OFF_QUEUE : _OFF_QUEUE + _QUEUE_DIMS] = self._encode_queue(queue_snapshot)
+        # 97–102: queue state (shared encoding with the StateEncoder slice)
+        vec[_OFF_QUEUE : _OFF_QUEUE + _QUEUE_DIMS] = encode_queue_state(queue_snapshot)
 
         # 103–105: latency predictions
         for i, tool_id in enumerate(_TOOL_VOCAB):
@@ -400,29 +424,14 @@ class TrainingDataPipeline:
         """Time since each of the last 3 invocations (normalized seconds).
 
         Slot order matches the one-hot encoding (most recent first).
+        Elapsed seconds are capped at ``_TOOL_RECENCY_SECONDS_CAP``.
         Missing slots are 1.0 (treated as "long ago / never").
         """
         out = np.ones(_TOOL_HISTORY_TIME, dtype=np.float32)
         recent = list(tool_history)[-3:][::-1]
         for slot, inv in enumerate(recent):
             elapsed_s = max(0.0, (cutoff_ms - inv.completed_at_ms) / 1000.0)
-            out[slot] = _cap_norm(elapsed_s, _TURNS_SINCE_TOOL_CAP)
-        return out
-
-    @staticmethod
-    def _encode_queue(qs: QueueState) -> np.ndarray:
-        """Encode a QueueState into 6 normalized features."""
-        out = np.zeros(_QUEUE_DIMS, dtype=np.float32)
-        out[0] = _cap_norm(qs.depth, _QUEUE_DEPTH_CAP)
-        out[1] = _cap_norm(qs.token_total, _QUEUE_TOKEN_TOTAL_CAP)
-        out[2] = (
-            (qs.max_priority.value / _PRIORITY_MAX)
-            if qs.max_priority is not None
-            else 0.0
-        )
-        out[3] = _cap_norm(qs.time_since_last_drain, _TIME_SINCE_DRAIN_CAP)
-        out[4] = _cap_norm(qs.pending_tool_count, _PENDING_TOOL_COUNT_CAP)
-        out[5] = _cap_norm(qs.estimated_next_arrival, _ESTIMATED_ARRIVAL_CAP)
+            out[slot] = _cap_norm(elapsed_s, _TOOL_RECENCY_SECONDS_CAP)
         return out
 
     @staticmethod

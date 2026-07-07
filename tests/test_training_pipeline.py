@@ -18,10 +18,12 @@ from bicameral_agent.schema import (
     UserEventType,
 )
 from bicameral_agent.training_pipeline import (
+    DEFAULT_MAX_TURNS,
     DISCOUNT_GAMMA,
     STATE_DIM,
     TrainingDataPipeline,
     _ACTION_INDEX,
+    _ACTION_ORDER,
     R_DRAIN_CONSUMED,
     R_REDIRECT_CORRECTION,
     R_STOP,
@@ -409,6 +411,103 @@ def test_state_vector_reflects_only_past_messages(
     # Second decision point: state has user msgs 0,1 and assistant msg 1.
     # Identical despite differing later messages.
     np.testing.assert_array_equal(ex_a[1].state, ex_b[1].state)
+
+
+def test_completion_fraction_uses_configured_max_turns(
+    pipeline: TrainingDataPipeline,
+) -> None:
+    """Dims 63/107 are turn / configured max_turns, not turn / actual length."""
+    episode = _build_episode(num_turns=4)
+    examples = pipeline.process_episode(episode)
+    for i, ex in enumerate(examples):
+        turn = i + 1
+        expected = turn / DEFAULT_MAX_TURNS
+        assert ex.state[63] == pytest.approx(expected)
+        assert ex.state[107] == pytest.approx(expected)
+
+    # A custom configured limit changes the fraction accordingly.
+    custom = TrainingDataPipeline(max_turns=10)
+    examples = custom.process_episode(episode)
+    assert examples[1].state[63] == pytest.approx(2 / 10)
+    assert examples[1].state[107] == pytest.approx(2 / 10)
+
+
+def test_no_leakage_from_episode_length(pipeline: TrainingDataPipeline) -> None:
+    """Turn-k states of a short and a long episode with identical prefixes
+    must be identical: the episode's final turn count is future information
+    and must not appear in any feature (e.g. completion fraction).
+    """
+    short = _build_episode(num_turns=4)
+    long = _build_episode(num_turns=8)
+    ex_short = pipeline.process_episode(short)
+    ex_long = pipeline.process_episode(long)
+
+    for k in range(len(ex_short)):
+        np.testing.assert_array_equal(ex_short[k].state, ex_long[k].state)
+
+
+def test_pipeline_rejects_invalid_max_turns() -> None:
+    with pytest.raises(ValueError):
+        TrainingDataPipeline(max_turns=0)
+
+
+# ---------------------------------------------------------------------------
+# Cross-module consistency
+# ---------------------------------------------------------------------------
+
+
+def test_action_order_matches_policy_value_net() -> None:
+    """_ACTION_ORDER must stay identical to policy_value_net.ACTION_ORDER,
+    otherwise action indices in training data silently mismatch the policy
+    head."""
+    pytest.importorskip("torch")
+    from bicameral_agent.policy_value_net import ACTION_ORDER
+
+    assert _ACTION_ORDER == ACTION_ORDER
+
+
+def test_queue_slices_identical_between_encoder_and_pipeline(
+    pipeline: TrainingDataPipeline,
+) -> None:
+    """Both queue slices of the state vector use the shared encoding."""
+    base_ts = 1_000_000
+    inj = ContextInjection(
+        content="ctx",
+        source_tool_id="research_gap_scanner",
+        priority=0,  # Priority.LOW — must be distinguishable from empty
+        timestamp_ms=base_ts + 100,
+        token_count=50,
+        consumed=False,
+    )
+    episode = _build_episode(num_turns=2, context_injections=[inj])
+    examples = pipeline.process_episode(episode)
+    for ex in examples:
+        np.testing.assert_array_equal(ex.state[53:59], ex.state[97:103])
+    # The pending LOW-priority injection is visible from turn 1 onward.
+    assert examples[0].state[55] == pytest.approx(1 / 4)
+
+
+# ---------------------------------------------------------------------------
+# Tool-recency features (seconds cap)
+# ---------------------------------------------------------------------------
+
+
+def test_tool_recency_uses_seconds_cap() -> None:
+    """Elapsed time since a tool invocation must not saturate at 20s."""
+    inv = ToolInvocation(
+        tool_id=TOOL_IDS[Action.SCANNER],
+        invoked_at_ms=0,
+        completed_at_ms=0,
+        input_tokens=1,
+        output_tokens=1,
+    )
+    # 30s ago: with the old turns-based cap (20) this saturated to 1.0.
+    out = TrainingDataPipeline._encode_tool_history_times([inv], cutoff_ms=30_000)
+    assert out[0] == pytest.approx(30.0 / 300.0)
+    assert out[0] < 1.0
+    # Empty slots stay at 1.0 ("long ago / never").
+    assert out[1] == 1.0
+    assert out[2] == 1.0
 
 
 # ---------------------------------------------------------------------------

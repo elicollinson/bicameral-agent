@@ -133,6 +133,9 @@ class EpisodeReplayer:
 
         A decision point is each assistant message, with the state being
         everything up to (but not including) that assistant message.
+        Events, injections, and tool completions at exactly the action's
+        timestamp are excluded: they may have been logged after the action
+        within the same millisecond and must not leak into its state.
 
         Yields:
             DecisionPoint with full state and the action taken.
@@ -142,10 +145,12 @@ class EpisodeReplayer:
             if msg.role == "user":
                 turn_number += 1
             elif msg.role == "assistant":
-                # State is everything before this assistant message
+                # State is everything strictly before this assistant message
                 prior_messages = self._episode.messages[:i]
                 cutoff_ms = msg.timestamp_ms
-                state = self._build_state(turn_number, prior_messages, cutoff_ms)
+                state = self._build_state(
+                    turn_number, prior_messages, cutoff_ms, inclusive=False
+                )
                 yield DecisionPoint(state=state, action=msg)
 
     def _build_state(
@@ -153,6 +158,8 @@ class EpisodeReplayer:
         turn_number: int,
         messages: list[Message],
         cutoff_ms: int,
+        *,
+        inclusive: bool = True,
     ) -> ReplayState:
         """Build a ReplayState from the given parameters.
 
@@ -160,17 +167,24 @@ class EpisodeReplayer:
             turn_number: Number of user turns seen.
             messages: Messages included in the state.
             cutoff_ms: Timestamp cutoff for injections, tools, and events.
+            inclusive: When True, items with timestamp == cutoff_ms are
+                included. Decision points use False (strict cutoff) so
+                same-millisecond items logged after an action do not leak
+                into that action's state.
 
         Returns:
             A fully populated ReplayState.
         """
         episode = self._episode
 
+        def before_cutoff(ts: int) -> bool:
+            return ts <= cutoff_ms if inclusive else ts < cutoff_ms
+
         # Partition context injections by time and consumption status
         pending: list[ContextInjection] = []
         consumed: list[ContextInjection] = []
         for inj in episode.context_injections:
-            if inj.timestamp_ms > cutoff_ms:
+            if not before_cutoff(inj.timestamp_ms):
                 continue
             if inj.consumed and inj.consumed_at_turn is not None and inj.consumed_at_turn < turn_number:
                 consumed.append(inj)
@@ -181,15 +195,15 @@ class EpisodeReplayer:
         active: list[ToolInvocation] = []
         completed: list[ToolInvocation] = []
         for tool in episode.tool_invocations:
-            if tool.invoked_at_ms > cutoff_ms:
+            if not before_cutoff(tool.invoked_at_ms):
                 continue
-            if tool.completed_at_ms <= cutoff_ms:
+            if before_cutoff(tool.completed_at_ms):
                 completed.append(tool)
             else:
                 active.append(tool)
 
         # Filter user events
-        events = [e for e in episode.user_events if e.timestamp_ms <= cutoff_ms]
+        events = [e for e in episode.user_events if before_cutoff(e.timestamp_ms)]
 
         return ReplayState(
             turn_number=turn_number,

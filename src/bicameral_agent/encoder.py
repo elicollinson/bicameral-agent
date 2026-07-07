@@ -9,7 +9,7 @@ Feature vector layout (64 dimensions)
 =====  ======================================  ====
 Index  Feature                                 Dims
 =====  ======================================  ====
-0      turn_number                                1
+0      turn_number (user messages so far)         1
 1      total_tokens_so_far                        1
 2–33   topic_embedding                           32
 34     estimated_confidence                       1
@@ -22,7 +22,7 @@ Index  Feature                                 Dims
 50–52  sentiment_shift (one-hot)                  3
 53     queue_depth                                1
 54     queue_token_total                          1
-55     queue_max_priority (ordinal)               1
+55     queue_max_priority (ordinal, 0 = empty)    1
 56     queue_time_since_last_drain                1
 57     queue_pending_tool_count                   1
 58     queue_estimated_next_arrival               1
@@ -46,9 +46,13 @@ from bicameral_agent.followup_classifier import FollowUpClassifier
 from bicameral_agent.heuristic_controller import TOOL_IDS
 from bicameral_agent.queue import QueueState
 from bicameral_agent.schema import Message, ToolInvocation, UserEvent, UserEventType
+from bicameral_agent.signal_classifier import _sentiment_score
 
 FEATURE_DIM: int = 64
 """Dimensionality of the encoded state vector."""
+
+QUEUE_STATE_DIM: int = 6
+"""Number of queue-state features produced by :func:`encode_queue_state`."""
 
 # ---------------------------------------------------------------------------
 # Normalization caps
@@ -82,6 +86,35 @@ def _cap_norm(val: float, cap: float) -> float:
     """Cap-and-divide normalization: ``min(val, cap) / cap`` -> [0, 1]."""
     return min(val, cap) / cap
 
+
+def encode_queue_state(queue_state: QueueState | None) -> np.ndarray:
+    """Encode a queue snapshot into ``QUEUE_STATE_DIM`` normalized features.
+
+    Shared by :class:`StateEncoder` and the training pipeline so both
+    halves of the training state vector use identical caps and encoding.
+
+    Indices: depth, token_total, max_priority (ordinal), time_since_last_drain,
+    pending_tool_count, estimated_next_arrival.
+
+    The priority ordinal is ``(value + 1) / (max + 1)`` so ``Priority.LOW``
+    (value 0) encodes to 0.25 and 0.0 is reserved for an empty queue.
+    """
+    out = np.zeros(QUEUE_STATE_DIM, dtype=np.float32)
+    if queue_state is None:
+        return out
+
+    out[0] = _cap_norm(queue_state.depth, _QUEUE_DEPTH_CAP)
+    out[1] = _cap_norm(queue_state.token_total, _QUEUE_TOKEN_TOTAL_CAP)
+    out[2] = (
+        (queue_state.max_priority.value + 1.0) / (_PRIORITY_MAX + 1.0)
+        if queue_state.max_priority is not None
+        else 0.0
+    )
+    out[3] = _cap_norm(queue_state.time_since_last_drain, _TIME_SINCE_DRAIN_CAP)
+    out[4] = _cap_norm(queue_state.pending_tool_count, _PENDING_TOOL_COUNT_CAP)
+    out[5] = _cap_norm(queue_state.estimated_next_arrival, _ESTIMATED_ARRIVAL_CAP)
+    return out
+
 # ---------------------------------------------------------------------------
 # Hedging keywords (for confidence estimation)
 # ---------------------------------------------------------------------------
@@ -99,48 +132,6 @@ _HEDGE_KEYWORDS: frozenset[str] = frozenset(
         "probably",
         "likely",
         "unclear",
-    }
-)
-
-# ---------------------------------------------------------------------------
-# Sentiment keyword sets
-# ---------------------------------------------------------------------------
-_POSITIVE_KEYWORDS: frozenset[str] = frozenset(
-    {
-        "good",
-        "great",
-        "thanks",
-        "perfect",
-        "nice",
-        "excellent",
-        "awesome",
-        "helpful",
-        "love",
-        "wonderful",
-        "amazing",
-        "appreciate",
-        "yes",
-        "correct",
-        "right",
-    }
-)
-_NEGATIVE_KEYWORDS: frozenset[str] = frozenset(
-    {
-        "bad",
-        "wrong",
-        "terrible",
-        "awful",
-        "hate",
-        "useless",
-        "horrible",
-        "worst",
-        "no",
-        "incorrect",
-        "broken",
-        "fail",
-        "error",
-        "annoying",
-        "frustrating",
     }
 )
 
@@ -205,9 +196,10 @@ class StateEncoder:
 
         vec = np.zeros(FEATURE_DIM, dtype=np.float32)
 
-        # 0: turn_number (normalized)
-        msg_count = len(conversation_history)
-        vec[0] = _cap_norm(msg_count, _TURN_CAP)
+        # 0: turn_number — count of user messages so far (normalized).
+        # Consistent with the turn_number used for feature 62.
+        user_msg_count = sum(1 for m in conversation_history if m.role == "user")
+        vec[0] = _cap_norm(user_msg_count, _TURN_CAP)
 
         # 1: total_tokens_so_far (normalized)
         total_tokens = sum(m.token_count for m in conversation_history)
@@ -244,7 +236,7 @@ class StateEncoder:
         vec[50:53] = self._compute_sentiment_shift(conversation_history)
 
         # 53–58: queue state (6 dims)
-        vec[53:59] = self._encode_queue_state(queue_state)
+        vec[53:59] = encode_queue_state(queue_state)
 
         # 59–61: latency context (3 dims)
         vec[59:62] = self._encode_latency_context(latency_predictions)
@@ -449,34 +441,15 @@ class StateEncoder:
         return out
 
     @staticmethod
-    def _encode_queue_state(queue_state: QueueState | None) -> np.ndarray:
-        """Encode queue state into 6 normalized features.
-
-        Indices: depth, token_total, max_priority (ordinal),
-        time_since_last_drain, pending_tool_count, estimated_next_arrival.
-        """
-        out = np.zeros(6, dtype=np.float32)
-        if queue_state is None:
-            return out
-
-        out[0] = _cap_norm(queue_state.depth, _QUEUE_DEPTH_CAP)
-        out[1] = _cap_norm(queue_state.token_total, _QUEUE_TOKEN_TOTAL_CAP)
-        out[2] = (queue_state.max_priority.value / _PRIORITY_MAX) if queue_state.max_priority is not None else 0.0
-        out[3] = _cap_norm(queue_state.time_since_last_drain, _TIME_SINCE_DRAIN_CAP)
-        out[4] = _cap_norm(queue_state.pending_tool_count, _PENDING_TOOL_COUNT_CAP)
-        out[5] = _cap_norm(queue_state.estimated_next_arrival, _ESTIMATED_ARRIVAL_CAP)
-        return out
-
-    @staticmethod
     def _encode_latency_context(
         latency_predictions: dict[str, float] | None,
     ) -> np.ndarray:
-        """Encode predicted latency for each tool into 3 normalized features.
+        """Encode predicted latency for each tool into normalized features.
 
         One slot per tool in ``_TOOL_VOCAB`` order, using pre-computed
         ``mean_ms`` values capped at ``_LATENCY_MS_CAP``.
         """
-        out = np.zeros(3, dtype=np.float32)
+        out = np.zeros(len(_TOOL_VOCAB), dtype=np.float32)
         if latency_predictions is None:
             return out
 
@@ -500,14 +473,9 @@ class StateEncoder:
             return out
 
         out[0] = _cap_norm(turn_number, _MAX_TURNS_CAP)
-        max_turns_eff = max_turns if max_turns is not None else _MAX_TURNS_CAP
+        # Guard against a caller-supplied max_turns of 0 (or negative).
+        max_turns_eff = (
+            max_turns if max_turns is not None and max_turns > 0 else _MAX_TURNS_CAP
+        )
         out[1] = min(turn_number / max_turns_eff, 1.0)
         return out
-
-
-def _sentiment_score(text: str) -> int:
-    """Simple keyword-counting sentiment score."""
-    text_lower = text.lower()
-    pos = sum(1 for kw in _POSITIVE_KEYWORDS if kw in text_lower)
-    neg = sum(1 for kw in _NEGATIVE_KEYWORDS if kw in text_lower)
-    return pos - neg
