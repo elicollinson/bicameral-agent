@@ -570,6 +570,79 @@ class TestCorrelation:
 
 
 # ---------------------------------------------------------------------------
+# TestJudgeDiscrimination (issue #45: break the 5/5/5 ceiling)
+# ---------------------------------------------------------------------------
+
+
+class TestJudgeDiscrimination:
+    def test_schema_requires_justification_first(self):
+        """Rationale-first scoring: justification precedes the score fields."""
+        scorer, mock_client = _make_scorer_with_mock()
+        scorer.score(_make_task(), "answer")
+        schema = mock_client.generate.call_args.kwargs["response_schema"]
+        assert "justification" in schema["required"]
+        assert list(schema["properties"])[0] == "justification"
+
+    def test_output_token_cap_allows_justification(self):
+        """The old 100-token cap left no room for reasoning before scores."""
+        scorer, mock_client = _make_scorer_with_mock()
+        scorer.score(_make_task(), "answer")
+        assert mock_client.generate.call_args.kwargs["max_output_tokens"] == 400
+
+    def test_prompt_contains_anchored_scale(self):
+        scorer, mock_client = _make_scorer_with_mock()
+        scorer.score(_make_task(), "answer")
+        user_msg = mock_client.generate.call_args[0][0][0]["content"]
+        for anchor in ("5 = flawless", "4 = strong", "3 = adequate",
+                       "2 = weak", "1 = failing"):
+            assert anchor in user_msg, f"missing anchor: {anchor}"
+        assert "This should be rare" in user_msg
+        assert "Hard caps" in user_msg
+
+    def test_system_prompt_forces_full_range(self):
+        scorer, mock_client = _make_scorer_with_mock()
+        scorer.score(_make_task(), "answer")
+        system = mock_client.generate.call_args.kwargs["system_prompt"]
+        assert "full 1-5 range" in system
+        assert "choose the lower" in system
+
+    def test_justification_in_response_is_handled(self):
+        """The judge now returns a justification; scoring must ignore it."""
+        response = MagicMock()
+        response.content = json.dumps({
+            "justification": "Covers points A and B; misses C.",
+            "quality": 4,
+            "completeness": 3,
+            "accuracy": 5,
+        })
+        scorer, _ = _make_scorer_with_mock(response=response)
+        score = scorer.score(_make_task(), "answer")
+        assert score.quality == pytest.approx(0.75)
+        assert score.completeness == pytest.approx(0.5)
+        assert score.accuracy == pytest.approx(1.0)
+
+    def test_mixed_quality_answers_produce_spread(self):
+        """Judge outputs at each rubric level map to distinct scores, not 1.0."""
+        levels = [5, 4, 3, 2, 1]
+        responses = [
+            _mock_gemini_response(quality=v, completeness=v, accuracy=v)
+            for v in levels
+        ]
+        mock_client = MagicMock()
+        mock_client.generate.side_effect = responses
+        scorer = TaskScorer(client=mock_client, max_workers=1)
+
+        tasks = [_make_task(task_id=f"spread_{i}") for i in range(len(levels))]
+        answers = [f"answer of quality level {v}" for v in levels]
+        scores = [s.overall for s in scorer.score_batch(tasks, answers)]
+
+        assert len(set(scores)) == len(levels)  # all distinct
+        assert not all(s == 1.0 for s in scores)  # no ceiling pin
+        assert max(scores) - min(scores) == pytest.approx(1.0)
+        assert float(np.std(scores)) > 0.3  # meaningful variance
+
+
+# ---------------------------------------------------------------------------
 # TestMalformedJudgeOutput (issue #47)
 # ---------------------------------------------------------------------------
 

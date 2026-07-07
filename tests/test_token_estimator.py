@@ -7,6 +7,8 @@ import time
 import pytest
 
 from bicameral_agent.token_estimator import (
+    AUDITOR_ASSESSMENT_INPUT_TOKENS,
+    SCANNER_RANKING_INPUT_TOKENS,
     ContextFeatures,
     TokenEstimate,
     TokenEstimator,
@@ -26,16 +28,11 @@ _TOOL_IDS = ["research_gap_scanner", "assumption_auditor", "context_refresher"]
 
 
 def _expected_scanner_input(conv: int) -> int:
-    gaps = min(max(1, conv // 2000), 5)
-    return (500 + conv) + (gaps * 2000) + (500 + conv + gaps * 2000)
-
-
-def _expected_scanner_calls(conv: int) -> int:
-    return 2 + min(max(1, conv // 2000), 5)
+    return (500 + conv) + SCANNER_RANKING_INPUT_TOKENS
 
 
 def _expected_auditor_input(conv: int) -> int:
-    return 400 + conv
+    return (400 + conv) + AUDITOR_ASSESSMENT_INPUT_TOKENS
 
 
 def _expected_refresher_input(conv: int, turns: int) -> int:
@@ -110,11 +107,7 @@ class TestOutputTokenConvergence:
         true_output_per_call = 300
         ctx = ContextFeatures(conversation_length_tokens=3000, conversation_turn_count=10)
 
-        # Compute num_calls for this tool/context
-        profile = _TOOL_PROFILES[tool_id]
-        num_calls = estimator._compute_num_calls(
-            profile, ctx.conversation_length_tokens
-        )
+        num_calls = _TOOL_PROFILES[tool_id].num_calls
 
         # Train with 15 noisy observations
         for _ in range(15):
@@ -138,14 +131,15 @@ class TestOutputTokenConvergence:
 
 
 class TestNumCalls:
-    """AC3: num_calls is 1 for auditor/refresher, variable for scanner."""
+    """num_calls mirrors the actual tool implementations (see #44):
+    scanner and auditor make 2 LLM calls each, the refresher makes 1."""
 
     @pytest.mark.parametrize(
         "ctx", _CONV_SIZES, ids=lambda c: f"conv={c.conversation_length_tokens}"
     )
-    def test_auditor_always_one(self, token_estimator, ctx):
+    def test_auditor_always_two(self, token_estimator, ctx):
         est = token_estimator.estimate("assumption_auditor", ctx)
-        assert est.num_calls == 1
+        assert est.num_calls == 2
 
     @pytest.mark.parametrize(
         "ctx", _CONV_SIZES, ids=lambda c: f"conv={c.conversation_length_tokens}"
@@ -157,19 +151,9 @@ class TestNumCalls:
     @pytest.mark.parametrize(
         "ctx", _CONV_SIZES, ids=lambda c: f"conv={c.conversation_length_tokens}"
     )
-    def test_scanner_variable(self, token_estimator, ctx):
+    def test_scanner_always_two(self, token_estimator, ctx):
         est = token_estimator.estimate("research_gap_scanner", ctx)
-        expected = _expected_scanner_calls(ctx.conversation_length_tokens)
-        assert est.num_calls == expected
-
-    def test_scanner_increases_with_conversation(self, token_estimator):
-        small = ContextFeatures(conversation_length_tokens=500, conversation_turn_count=3)
-        large = ContextFeatures(
-            conversation_length_tokens=12000, conversation_turn_count=40
-        )
-        est_small = token_estimator.estimate("research_gap_scanner", small)
-        est_large = token_estimator.estimate("research_gap_scanner", large)
-        assert est_large.num_calls >= est_small.num_calls
+        assert est.num_calls == 2
 
 
 class TestObserveUpdates:
@@ -203,7 +187,7 @@ class TestObserveUpdates:
         estimator = TokenEstimator()
         ctx = ContextFeatures(conversation_length_tokens=3000, conversation_turn_count=10)
 
-        # Default for auditor is 450
+        # Default for auditor is 750 per call
         estimator.observe_tool("assumption_auditor", ctx, 1000)
         est = estimator.estimate("assumption_auditor", ctx)
 

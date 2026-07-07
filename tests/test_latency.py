@@ -50,13 +50,18 @@ class TestLatencyEstimate:
 
 
 class TestColdStart:
-    """AC1: With 0 observations, predict() returns conservative estimates (>= 2x baseline)."""
+    """AC1: With 0 observations, predict() returns calibrated prior estimates.
 
-    def test_zero_observations_returns_conservative(self):
+    Priors are calibrated against the measured single-call latencies from
+    the #23 baseline run (~0.9-1.5s per call), see #44.
+    """
+
+    def test_zero_observations_in_calibrated_range(self):
         model = APILatencyModel()
         est = model.predict(1000, 500)
-        reasonable_baseline = _TRUE_ALPHA + _TRUE_BETA * 1000 + _TRUE_GAMMA * 500
-        assert est.mean_ms >= 2 * reasonable_baseline
+        # A ~1k-input / 500-output call was measured at roughly a second;
+        # the cold-start prior must land in the same order of magnitude.
+        assert 500.0 <= est.mean_ms <= 2500.0
 
     def test_zero_observations_has_wide_spread(self):
         model = APILatencyModel()
@@ -66,14 +71,19 @@ class TestColdStart:
 
     def test_few_observations_still_biased_toward_priors(self):
         model = APILatencyModel()
+        prior_mean = model.predict(1000, 500).mean_ms
+
+        # Observe a synthetic backend that is much slower than the prior.
         rng = np.random.default_rng(42)
         for _ in range(5):
             inp, out = 1000, 500
             model.observe(inp, out, _true_duration(rng, inp, out))
 
+        learned_mean = _TRUE_ALPHA + _TRUE_BETA * 1000 + _TRUE_GAMMA * 500
         est = model.predict(1000, 500)
-        reasonable_baseline = _TRUE_ALPHA + _TRUE_BETA * 1000 + _TRUE_GAMMA * 500
-        assert est.mean_ms > 1.5 * reasonable_baseline
+        # With only 5 of 20 cold-start observations the blend should still
+        # sit closer to the prior than to the learned value.
+        assert prior_mean < est.mean_ms < (prior_mean + learned_mean) / 2
 
 
 class TestConvergence:
