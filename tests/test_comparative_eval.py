@@ -440,6 +440,7 @@ class TestReport:
         assert "## Summary" in md
         assert "## Pairwise Welch t-tests: task_quality" in md
         assert "## Breakdown by difficulty" in md
+        assert "## Transport failures\n\n- none" in md
         assert "### typical" in md and "### hard" in md and "### tricky" in md
         for name in METRIC_NAMES:
             assert name in md
@@ -464,6 +465,94 @@ class TestReport:
 
         with pytest.raises(NotImplementedError, match="build_report"):
             ComparativeReport.from_benchmark(MagicMock())
+
+
+# ---------------------------------------------------------------------------
+# Transport failures and pairing (issue #81 containment)
+# ---------------------------------------------------------------------------
+
+
+class TestTransportFailures:
+    """run_condition contains TransportExhausted per episode; a failed task
+    is dropped from paired analyses for all conditions and recorded.
+    """
+
+    def _failing_runner(self, fail_on: tuple[str, str]) -> MagicMock:
+        """Runner that fails one (controller class name, task_id) episode."""
+        from bicameral_agent.model_client import TransportExhausted
+
+        runner = MagicMock(spec=EpisodeRunner)
+
+        def run_episode(task, controller):
+            if (type(controller).__name__, task.task_id) == fail_on:
+                raise TransportExhausted(4, RuntimeError("boom"))
+            return _episode(task_id=task.task_id)
+
+        runner.run_episode.side_effect = run_episode
+        return runner
+
+    def _run(self):
+        # 4 tasks: one failure is 25%, under the default 30% abort threshold.
+        runner = self._failing_runner(("RandomController", "t1"))
+        tasks = [_task(f"t{i}") for i in range(4)]
+        conditions = {
+            "no_subconscious": lambda _idx: NoSubconsciousController(),
+            "random": lambda idx: RandomController(seed=idx),
+        }
+        return ComparativeEvaluator(runner).run(tasks, conditions)
+
+    def test_failure_recorded_and_run_continues(self):
+        result = self._run()
+        assert [f.task_id for f in result.failures["random"]] == ["t1"]
+        assert result.failures["random"][0].episode_index == 1
+        assert "boom" in result.failures["random"][0].error
+        assert result.failures["no_subconscious"] == []
+        assert len(result.episodes["random"]) == 3
+        assert len(result.episodes["no_subconscious"]) == 4
+
+    def test_failed_task_dropped_from_paired_analyses_for_all_conditions(self):
+        result = self._run()
+        assert result.paired_indices == [0, 2, 3]
+        assert result.excluded_task_ids == ["t1"]
+        paired = result.paired_metrics()
+        assert len(paired["no_subconscious"]) == 3
+        assert len(paired["random"]) == 3
+        assert result.completed_indices("random") == [0, 2, 3]
+        assert result.completed_indices("no_subconscious") == [0, 1, 2, 3]
+
+    def test_report_records_failures_and_exclusions(self):
+        report = _report(self._run())
+        assert [f.task_id for f in report.failures] == ["t1"]
+        assert report.failures[0].condition == "random"
+        assert report.excluded_task_ids == ["t1"]
+        # Statistics are computed over the paired subset only...
+        for condition in ("no_subconscious", "random"):
+            summaries = report.conditions[condition]["summaries"]
+            assert summaries["task_quality"]["n"] == 3
+        # ...while n_episodes and per-task rows keep every completed episode,
+        # mapped back to the right task despite the skipped index.
+        assert report.conditions["no_subconscious"]["n_episodes"] == 4
+        assert report.conditions["random"]["n_episodes"] == 3
+        random_rows = [r for r in report.results if r.condition == "random"]
+        assert [r.task_id for r in random_rows] == ["t0", "t2", "t3"]
+
+    def test_markdown_lists_failures_and_paired_coverage(self):
+        md = _report(self._run()).to_markdown()
+        assert "## Transport failures" in md
+        assert "random / t1: " in md
+        assert "Paired analyses cover 3/4 tasks" in md
+        assert "excluded (failed in >= 1 condition): t1" in md
+
+    def test_failure_threshold_forwarded_to_run_condition(self):
+        from bicameral_agent.baseline_benchmark import ConditionAbortedError
+
+        runner = self._failing_runner(("NoSubconsciousController", "t0"))
+        evaluator = ComparativeEvaluator(runner, failure_threshold=0.0)
+        with pytest.raises(ConditionAbortedError):
+            evaluator.run(
+                [_task("t0"), _task("t1")],
+                {"no_subconscious": lambda _idx: NoSubconsciousController()},
+            )
 
 
 # ---------------------------------------------------------------------------
