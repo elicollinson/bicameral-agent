@@ -17,11 +17,13 @@ class UserEventType(str, enum.Enum):
     - STOP: User explicitly stopped the agent.
     - EDIT: User edited the agent's output before it was finalized.
     - FOLLOW_UP: User sent a follow-up message continuing the conversation.
+    - TASK_COMPLETE: User accepted the answer as complete.
     """
 
     STOP = "stop"
     EDIT = "edit"
     FOLLOW_UP = "follow_up"
+    TASK_COMPLETE = "task_complete"
 
 
 class Message(BaseModel):
@@ -114,6 +116,11 @@ class ToolInvocation(BaseModel):
 
     result_deposited: bool = False
     """Whether the tool's result was deposited back into the conversation."""
+
+    budget_exceeded: bool = False
+    """Whether the invocation aborted because the token budget was exceeded.
+    Budget-exceeded invocations have partial durations and must be excluded
+    from latency-prediction accuracy metrics."""
 
     @model_validator(mode="after")
     def check_temporal_order(self) -> ToolInvocation:

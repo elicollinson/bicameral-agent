@@ -14,6 +14,16 @@ from dataclasses import dataclass
 from bicameral_agent.heuristic_controller import TOOL_IDS, Action
 
 
+def estimate_text_tokens(text: str) -> int:
+    """Rough token estimate for text not measured by the API (~4 chars/token).
+
+    Single estimator shared by user-message logging and tool queue deposits so
+    that episode token totals use one unit throughout. Assistant messages keep
+    exact API-reported token counts.
+    """
+    return (len(text) + 3) // 4
+
+
 @dataclass(frozen=True, slots=True)
 class ContextFeatures:
     """Features extracted from the current conversation state."""

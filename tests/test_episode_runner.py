@@ -168,7 +168,7 @@ class TestEpisodeRunner:
         # SimulatedUser mock
         action_iter = iter(user_actions)
 
-        def sim_respond(task, response, history):
+        def sim_respond(task, response, history, *, turn_number):
             return next(action_iter)
 
         # Controller mock
@@ -396,9 +396,10 @@ class TestEpisodeRunner:
 
         # Episode completes despite budget error
         assert isinstance(episode, Episode)
-        # Tool invocation logged with 0 output
+        # Tool invocation logged with 0 output and flagged as budget-exceeded
         assert len(episode.tool_invocations) == 1
         assert episode.tool_invocations[0].output_tokens == 0
+        assert episode.tool_invocations[0].budget_exceeded is True
 
     def test_controller_state_correctness(self):
         """Controller receives correct turn number and queue depth."""
@@ -477,6 +478,124 @@ class TestEpisodeRunner:
         event_types = [e.event_type for e in episode.user_events]
         assert UserEventType.FOLLOW_UP in event_types
         assert UserEventType.STOP in event_types
+
+    def test_task_complete_event_recorded(self):
+        """TASK_COMPLETE termination is recorded as a user event."""
+        episode = self._run_with_user_actions([
+            UserAction(action_type=ActionType.TASK_COMPLETE, response_delay_ms=100, confidence=0.9),
+        ])
+        event_types = [e.event_type for e in episode.user_events]
+        assert UserEventType.TASK_COMPLETE in event_types
+
+    def test_follow_up_event_records_followup_type(self):
+        """FOLLOW_UP events carry the sim-user's own followup_type in metadata."""
+        episode = self._run_with_user_actions([
+            UserAction(
+                action_type=ActionType.FOLLOW_UP,
+                message="Actually, back to my question.",
+                followup_type=FollowUpType.REDIRECT,
+                response_delay_ms=100,
+                confidence=0.8,
+            ),
+            UserAction(action_type=ActionType.TASK_COMPLETE, response_delay_ms=100, confidence=0.9),
+        ])
+        followup_events = [
+            e for e in episode.user_events if e.event_type == UserEventType.FOLLOW_UP
+        ]
+        assert len(followup_events) == 1
+        assert followup_events[0].metadata["followup_type"] == "redirect"
+
+    def test_assistant_message_logged_before_tool_events(self):
+        """Assistant messages are logged at generation time, before tool events."""
+        client = _make_mock_client()
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.SCANNER
+
+        runner = EpisodeRunner(client, EpisodeConfig(max_turns=1))
+
+        with patch("bicameral_agent.episode_runner.SimulatedUser") as MockSimUser:
+            mock_sim = MagicMock()
+            mock_sim.respond.return_value = UserAction(
+                action_type=ActionType.TASK_COMPLETE,
+                response_delay_ms=100,
+                confidence=0.9,
+            )
+            MockSimUser.return_value = mock_sim
+
+            with patch("bicameral_agent.episode_runner.ResearchGapScanner") as MockScanner:
+                from bicameral_agent.tool_primitive import ToolMetadata, ToolResult
+
+                mock_tool = MagicMock()
+                mock_tool.execute.return_value = ToolResult(
+                    queue_deposit=None,
+                    metadata=ToolMetadata(
+                        tool_id="research_gap_scanner",
+                        action_taken="scanned",
+                        confidence=0.8,
+                        items_found=0,
+                        estimated_relevance=0.0,
+                        tokens_consumed=50,
+                    ),
+                )
+                MockScanner.return_value = mock_tool
+
+                episode = runner.run_episode(_make_task(), ctrl)
+
+        assistant_msg = next(m for m in episode.messages if m.role == "assistant")
+        assert assistant_msg.timestamp_ms <= episode.tool_invocations[0].invoked_at_ms
+
+    def test_sim_user_receives_runner_turn(self):
+        """The runner passes its own turn to the sim-user (no off-by-one).
+
+        The runner appends the current exchange to the history before calling
+        respond(); the sim-user must not re-derive the turn from that history.
+        """
+        import json
+
+        sim_prompts: list[str] = []
+
+        def generate(messages, **kwargs):
+            if kwargs.get("response_schema") is not None:
+                # SimulatedUser call: follow up twice, then complete
+                sim_prompts.append(messages[0]["content"])
+                if len(sim_prompts) < 3:
+                    data = {
+                        "action_type": "follow_up",
+                        "message": "Tell me more.",
+                        "followup_type": "elaboration",
+                        "response_delay_ms": 100,
+                        "confidence": 0.8,
+                    }
+                else:
+                    data = {
+                        "action_type": "task_complete",
+                        "response_delay_ms": 100,
+                        "confidence": 0.9,
+                    }
+                return GeminiResponse(
+                    content=json.dumps(data),
+                    input_tokens=5,
+                    output_tokens=5,
+                    duration_ms=10.0,
+                    finish_reason="STOP",
+                )
+            return _mock_gemini_response()
+
+        client = MagicMock(spec=GeminiClient)
+        client.generate.side_effect = generate
+
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.DO_NOTHING
+
+        runner = EpisodeRunner(client, EpisodeConfig(max_turns=5))
+        episode = runner.run_episode(_make_task(), ctrl)
+
+        assert episode.outcome.total_turns == 3
+        assert len(sim_prompts) == 3
+        for turn, prompt in enumerate(sim_prompts, start=1):
+            assert f"This is turn {turn}." in prompt
 
 
 # ---------------------------------------------------------------------------
@@ -645,6 +764,66 @@ class TestInjectionModes:
         episode = self._run_with_mode(InjectionMode.INTERRUPT)
         assert "interrupt_count" in episode.metadata
         assert isinstance(episode.metadata["interrupt_count"], int)
+
+    def _run_mode_with_deposit(self, mode: InjectionMode) -> Episode:
+        """Run a single-turn episode where the tool deposits a zero-token item."""
+        client = _make_mock_client()
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.SCANNER
+
+        config = EpisodeConfig(max_turns=1, injection_mode=mode)
+        runner = EpisodeRunner(client, config)
+
+        with patch("bicameral_agent.episode_runner.SimulatedUser") as MockSimUser:
+            mock_sim = MagicMock()
+            mock_sim.respond.return_value = UserAction(
+                action_type=ActionType.TASK_COMPLETE,
+                response_delay_ms=100,
+                confidence=0.9,
+            )
+            MockSimUser.return_value = mock_sim
+
+            with patch("bicameral_agent.episode_runner.ResearchGapScanner") as MockScanner:
+                from bicameral_agent.queue import Priority, QueueItem
+                from bicameral_agent.tool_primitive import ToolMetadata, ToolResult
+
+                mock_tool = MagicMock()
+                mock_tool.execute.return_value = ToolResult(
+                    # token_count=0 so any total_tokens difference between
+                    # modes is attributable purely to regeneration waste.
+                    queue_deposit=QueueItem(
+                        content="New context",
+                        priority=Priority.HIGH,
+                        source_tool_id="research_gap_scanner",
+                        token_count=0,
+                    ),
+                    metadata=ToolMetadata(
+                        tool_id="research_gap_scanner",
+                        action_taken="scanned",
+                        confidence=0.8,
+                        items_found=1,
+                        estimated_relevance=0.9,
+                        tokens_consumed=30,
+                    ),
+                )
+                MockScanner.return_value = mock_tool
+
+                return runner.run_episode(_make_task(), ctrl)
+
+    def test_regen_episode_costs_more_than_non_regen(self):
+        """A regenerating episode charges the discarded generation's tokens."""
+        regen_episode = self._run_mode_with_deposit(InjectionMode.SYNCHRONOUS)
+        no_regen_episode = self._run_mode_with_deposit(InjectionMode.BREAKPOINT)
+
+        # Mock generations cost input=10 + output=20 tokens; the synchronous
+        # regen discards one full generation.
+        assert regen_episode.metadata["wasted_tokens"] == 30
+        assert no_regen_episode.metadata["wasted_tokens"] == 0
+        assert (
+            regen_episode.outcome.total_tokens
+            > no_regen_episode.outcome.total_tokens
+        )
 
     def test_injection_mode_in_episode_config(self):
         """EpisodeConfig defaults to BREAKPOINT."""

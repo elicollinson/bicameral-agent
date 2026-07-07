@@ -12,6 +12,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from bicameral_agent.ab_test import (
+    AB_INTERRUPT_CONFIG,
     ABTestResult,
     ABTestRunner,
     Condition,
@@ -31,10 +32,13 @@ from bicameral_agent.episode_runner import (
 )
 from bicameral_agent.gemini import GeminiClient, GeminiResponse
 from bicameral_agent.heuristic_controller import HeuristicController
+from bicameral_agent.queue import Priority
 from bicameral_agent.schema import (
     Episode,
     EpisodeOutcome,
     Message,
+    UserEvent,
+    UserEventType,
 )
 
 
@@ -57,6 +61,7 @@ def _make_episode(
     total_turns=5,
     wall_clock_ms=5000.0,
     messages=None,
+    user_events=None,
     metadata=None,
 ) -> Episode:
     if messages is None:
@@ -67,7 +72,7 @@ def _make_episode(
     return Episode(
         episode_id="test-ep-001",
         messages=messages,
-        user_events=[],
+        user_events=user_events or [],
         context_injections=[],
         tool_invocations=[],
         outcome=EpisodeOutcome(
@@ -109,6 +114,14 @@ class TestCondition:
         assert len(conditions) == 3
         names = {c.name for c in conditions}
         assert names == {"synchronous", "breakpoint", "interrupt"}
+
+    def test_interrupt_condition_uses_reachable_thresholds(self):
+        """The interrupt arm must use thresholds the tools can actually hit."""
+        conditions = default_conditions(HeuristicController)
+        interrupt = next(c for c in conditions if c.name == "interrupt")
+        assert interrupt.episode_config.interrupt_config == AB_INTERRUPT_CONFIG
+        # Tools deposit HIGH-priority items routinely; CRITICAL almost never.
+        assert AB_INTERRUPT_CONFIG.priority_threshold <= Priority.HIGH
 
 
 # ---------------------------------------------------------------------------
@@ -224,29 +237,43 @@ class TestWelchTTest:
 
 
 class TestDerailmentCounting:
+    """Derailments come from the sim-user's own followup_type labels."""
+
+    @staticmethod
+    def _follow_up_event(followup_type: str, ts: int = 100) -> UserEvent:
+        return UserEvent(
+            event_type=UserEventType.FOLLOW_UP,
+            timestamp_ms=ts,
+            metadata={"followup_type": followup_type},
+        )
+
     def test_no_derailments(self):
-        messages = [
-            Message(role="user", content="What is photosynthesis?", timestamp_ms=0, token_count=4),
-            Message(role="assistant", content="It converts light.", timestamp_ms=100, token_count=3),
-            Message(role="user", content="Can you elaborate more?", timestamp_ms=200, token_count=4),
-        ]
-        assert count_derailments(messages) == 0
+        events = [self._follow_up_event("elaboration")]
+        assert count_derailments(events) == 0
 
     def test_redirect_counted(self):
-        messages = [
-            Message(role="user", content="What is photosynthesis?", timestamp_ms=0, token_count=4),
-            Message(role="assistant", content="It converts light.", timestamp_ms=100, token_count=3),
-            Message(role="user", content="Actually, let's talk about something else instead.", timestamp_ms=200, token_count=8),
-        ]
-        assert count_derailments(messages) >= 1
+        events = [self._follow_up_event("redirect")]
+        assert count_derailments(events) == 1
 
     def test_correction_counted(self):
-        messages = [
-            Message(role="user", content="What is photosynthesis?", timestamp_ms=0, token_count=4),
-            Message(role="assistant", content="It converts light.", timestamp_ms=100, token_count=3),
-            Message(role="user", content="No, that's wrong. It also involves carbon dioxide.", timestamp_ms=200, token_count=9),
+        events = [self._follow_up_event("correction")]
+        assert count_derailments(events) == 1
+
+    def test_mixed_events(self):
+        events = [
+            self._follow_up_event("elaboration", ts=100),
+            self._follow_up_event("redirect", ts=200),
+            self._follow_up_event("correction", ts=300),
+            UserEvent(event_type=UserEventType.STOP, timestamp_ms=400),
         ]
-        assert count_derailments(messages) >= 1
+        assert count_derailments(events) == 2
+
+    def test_non_follow_up_events_ignored(self):
+        events = [
+            UserEvent(event_type=UserEventType.STOP, timestamp_ms=100),
+            UserEvent(event_type=UserEventType.TASK_COMPLETE, timestamp_ms=200),
+        ]
+        assert count_derailments(events) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -267,12 +294,23 @@ class TestMetricExtraction:
         assert metrics.coherence_score == 0.85
         assert metrics.total_turns == 5
         assert metrics.interrupt_count == 0
+        assert metrics.task_completed is False
 
     def test_extract_with_interrupt_count(self):
         episode = _make_episode(metadata={"interrupt_count": 3, "injection_mode": "interrupt"})
         coherence = CoherenceScore(logical_flow=0.5, consistency=0.5, overall=0.5)
         metrics = extract_metrics(episode, "interrupt", "test-001", coherence)
         assert metrics.interrupt_count == 3
+
+    def test_extract_task_completed(self):
+        episode = _make_episode(
+            user_events=[
+                UserEvent(event_type=UserEventType.TASK_COMPLETE, timestamp_ms=500),
+            ],
+        )
+        coherence = CoherenceScore(logical_flow=0.5, consistency=0.5, overall=0.5)
+        metrics = extract_metrics(episode, "breakpoint", "test-001", coherence)
+        assert metrics.task_completed is True
 
 
 # ---------------------------------------------------------------------------
@@ -428,6 +466,8 @@ class TestABTestRunner:
             assert "conditions" in data
             assert "episode_metrics" in data
             assert "best_condition" in data
+            assert "completion_rate" in data["conditions"][0]
+            assert "interrupts" in data["conditions"][0]
         finally:
             os.unlink(path)
 

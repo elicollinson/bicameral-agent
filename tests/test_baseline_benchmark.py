@@ -116,6 +116,7 @@ class TestExtractTaskMetrics:
         assert m.total_tokens == 200
         assert m.total_turns == 4
         assert m.user_stops == 1
+        assert m.task_completed == 0
         assert m.wall_clock_ms == 2000
         assert m.tool_invocation_count == 0
         assert m.tool_cost_usd == pytest.approx(0.0123)
@@ -176,6 +177,30 @@ class TestExtractTaskMetrics:
         m = extract_task_metrics(episode, decisions)
         assert m.latency_pairs == ()
 
+    def test_latency_pairs_drop_budget_exceeded(self):
+        """Budget-exceeded invocations are excluded even with positive durations."""
+        scanner_id = TOOL_IDS[Action.SCANNER]
+        episode = _make_episode(
+            tool_invocations=[
+                ToolInvocation(
+                    tool_id=scanner_id, invoked_at_ms=100, completed_at_ms=600,
+                    input_tokens=0, output_tokens=0, budget_exceeded=True,
+                ),
+            ],
+        )
+        decisions = [_decision(Action.SCANNER, predicted={scanner_id: 400.0})]
+        m = extract_task_metrics(episode, decisions)
+        assert m.latency_pairs == ()
+
+    def test_task_completed_extracted(self):
+        episode = _make_episode(
+            user_events=[
+                UserEvent(event_type=UserEventType.TASK_COMPLETE, timestamp_ms=10),
+            ],
+        )
+        m = extract_task_metrics(episode, [])
+        assert m.task_completed == 1
+
 
 def _metrics(latency_pairs=(), **fields) -> TaskMetrics:
     defaults = dict(
@@ -183,6 +208,7 @@ def _metrics(latency_pairs=(), **fields) -> TaskMetrics:
         total_tokens=100,
         total_turns=3,
         user_stops=0,
+        task_completed=0,
         wall_clock_ms=1000,
         tool_invocation_count=0,
         tool_cost_usd=0.0,
@@ -226,7 +252,7 @@ class TestAggregate:
         assert report.n_episodes == 3
         for name in ("quality_score", "total_tokens", "tool_cost_usd",
                      "avg_queue_depth", "interrupt_count", "drain_count",
-                     "expired_count"):
+                     "expired_count", "task_completed"):
             assert name in report.summaries
 
 

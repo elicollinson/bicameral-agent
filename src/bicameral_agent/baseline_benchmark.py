@@ -31,6 +31,8 @@ class TaskMetrics:
     total_tokens: int
     total_turns: int
     user_stops: int
+    task_completed: int
+    """1 if the simulated user marked the task complete, else 0."""
     wall_clock_ms: int
     tool_invocation_count: int
     tool_cost_usd: float
@@ -54,13 +56,15 @@ def _latency_pairs(
     """Pair each tool invocation with the predicted latency for its action.
 
     Decisions and tool invocations are paired in order: the nth non-DO_NOTHING
-    decision corresponds to the nth ToolInvocation in the episode. Invocations
-    with non-positive measured duration (e.g. budget-exceeded paths) are
-    dropped because the actual latency is not meaningful.
+    decision corresponds to the nth ToolInvocation in the episode.
+    Budget-exceeded invocations are excluded explicitly (their partial
+    durations are not meaningful), as are any zero-duration invocations.
     """
     tool_decisions = [d for d in decisions if d.action != Action.DO_NOTHING]
     pairs: list[tuple[float, float]] = []
     for decision, inv in zip(tool_decisions, episode.tool_invocations):
+        if inv.budget_exceeded:
+            continue
         actual = float(inv.completed_at_ms - inv.invoked_at_ms)
         if actual <= 0:
             continue
@@ -81,12 +85,16 @@ def extract_task_metrics(
     user_stops = sum(
         1 for e in episode.user_events if e.event_type == UserEventType.STOP
     )
+    task_completed = int(any(
+        e.event_type == UserEventType.TASK_COMPLETE for e in episode.user_events
+    ))
     drain_count = sum(1 for inj in episode.context_injections if inj.consumed)
     return TaskMetrics(
         quality_score=episode.outcome.quality_score,
         total_tokens=episode.outcome.total_tokens,
         total_turns=episode.outcome.total_turns,
         user_stops=user_stops,
+        task_completed=task_completed,
         wall_clock_ms=episode.outcome.wall_clock_ms,
         tool_invocation_count=len(episode.tool_invocations),
         tool_cost_usd=tool_cost,
@@ -103,6 +111,7 @@ _METRIC_NAMES: tuple[str, ...] = (
     "total_tokens",
     "total_turns",
     "user_stops",
+    "task_completed",
     "wall_clock_ms",
     "tool_invocation_count",
     "tool_cost_usd",
@@ -235,7 +244,11 @@ def format_report(result: BenchmarkResult) -> str:
         lines.append(f"## Condition: {condition}  (n={report.n_episodes})")
         for name in _METRIC_NAMES:
             summary = report.summaries[name]
-            fmt = ".3f" if name in {"quality_score", "tool_cost_usd", "avg_queue_depth"} else ".1f"
+            fmt = (
+                ".3f"
+                if name in {"quality_score", "tool_cost_usd", "avg_queue_depth", "task_completed"}
+                else ".1f"
+            )
             lines.append(f"  {name:<24s} {_format_summary(summary, fmt)}")
         lines.append(
             f"  latency_prediction       MAPE={report.latency_mape_percent:.2f}% "

@@ -337,3 +337,39 @@ class TestOutcomeComputation:
         logger.log_message("assistant", "end", token_count=1)
         episode = logger.finalize()
         assert episode.outcome.wall_clock_ms >= 10
+
+    def test_total_tokens_includes_wasted_tokens(self):
+        logger = ConversationLogger()
+        logger.log_message("user", "hi", token_count=10)
+        logger.log_message("assistant", "hello", token_count=20)
+        logger.log_wasted_tokens(30)
+        logger.log_wasted_tokens(5)
+        episode = logger.finalize()
+        # messages: 10+20=30, wasted: 35
+        assert episode.outcome.total_tokens == 65
+
+
+class TestReplaceLastMessage:
+    def test_replaces_content_and_tokens(self):
+        logger = ConversationLogger()
+        logger.log_message("user", "question", token_count=5)
+        logger.log_message("assistant", "draft answer", token_count=10)
+        logger.replace_last_message("final answer", token_count=12)
+        episode = logger.finalize()
+        assert len(episode.messages) == 2
+        assert episode.messages[1].role == "assistant"
+        assert episode.messages[1].content == "final answer"
+        assert episode.messages[1].token_count == 12
+
+    def test_replacement_keeps_timestamps_monotonic(self):
+        logger = ConversationLogger()
+        logger.log_message("user", "question", token_count=5)
+        logger.log_message("assistant", "draft", token_count=10)
+        logger.replace_last_message("final", token_count=10)
+        episode = logger.finalize()
+        assert episode.messages[0].timestamp_ms <= episode.messages[1].timestamp_ms
+
+    def test_replace_without_messages_raises(self):
+        logger = ConversationLogger()
+        with pytest.raises(ValueError, match="No message to replace"):
+            logger.replace_last_message("content", token_count=1)

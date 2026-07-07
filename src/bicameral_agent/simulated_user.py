@@ -213,6 +213,8 @@ class SimulatedUser:
         task: ResearchQATask,
         agent_response: str,
         conversation_history: list[Message],
+        *,
+        turn_number: int,
     ) -> UserAction:
         """Decide the next user action given the agent's latest response.
 
@@ -224,14 +226,17 @@ class SimulatedUser:
             The agent's latest response text.
         conversation_history:
             Full conversation history (truncated internally for prompt).
+            May or may not include the current exchange, which is why the
+            turn number must be passed explicitly rather than derived here.
+        turn_number:
+            The 1-based turn the caller is currently on (the turn that
+            produced ``agent_response``).
 
         Returns
         -------
         UserAction
             The simulated user's next action.
         """
-        turn_number = len([m for m in conversation_history if m.role == "user"]) + 1
-
         # Guardrail: force stop after max turns for this patience level
         if turn_number > _MAX_TURNS[self._patience]:
             return UserAction(

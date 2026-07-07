@@ -227,13 +227,13 @@ class TestSimulatedUserUnit:
     def test_generate_called_once(self):
         user, mock_client = _make_simulated_user()
         task = _make_task()
-        user.respond(task, "Some agent response", [])
+        user.respond(task, "Some agent response", [], turn_number=1)
         mock_client.generate.assert_called_once()
 
     def test_response_schema_passed(self):
         user, mock_client = _make_simulated_user()
         task = _make_task()
-        user.respond(task, "Some response", [])
+        user.respond(task, "Some response", [], turn_number=1)
         call_kwargs = mock_client.generate.call_args
         schema = call_kwargs.kwargs["response_schema"]
         assert "action_type" in schema["properties"]
@@ -247,7 +247,7 @@ class TestSimulatedUserUnit:
             gold_answer="Quantum computing uses qubits.",
             scoring_rubric="5: Perfect. 1: Wrong.",
         )
-        user.respond(task, "It uses bits", [])
+        user.respond(task, "It uses bits", [], turn_number=1)
         messages = mock_client.generate.call_args[0][0]
         user_msg = messages[0]["content"]
         assert "What is quantum computing?" in user_msg
@@ -258,7 +258,7 @@ class TestSimulatedUserUnit:
     def test_patience_in_system_prompt(self):
         user, mock_client = _make_simulated_user(patience=Patience.HIGH)
         task = _make_task()
-        user.respond(task, "response", [])
+        user.respond(task, "response", [], turn_number=1)
         call_kwargs = mock_client.generate.call_args
         system = call_kwargs.kwargs["system_prompt"]
         assert "high" in system.lower()
@@ -267,7 +267,7 @@ class TestSimulatedUserUnit:
     def test_strictness_in_system_prompt(self):
         user, mock_client = _make_simulated_user(strictness=Strictness.HIGH)
         task = _make_task()
-        user.respond(task, "response", [])
+        user.respond(task, "response", [], turn_number=1)
         call_kwargs = mock_client.generate.call_args
         system = call_kwargs.kwargs["system_prompt"]
         assert "high" in system.lower()
@@ -282,7 +282,7 @@ class TestSimulatedUserUnit:
             )
         )
         task = _make_task()
-        action = user.respond(task, "Some response", [])
+        action = user.respond(task, "Some response", [], turn_number=1)
         assert isinstance(action, UserAction)
         assert action.action_type == ActionType.FOLLOW_UP
         assert action.message == "Tell me more about that."
@@ -291,22 +291,22 @@ class TestSimulatedUserUnit:
     def test_temperature_is_0_7(self):
         user, mock_client = _make_simulated_user()
         task = _make_task()
-        user.respond(task, "response", [])
+        user.respond(task, "response", [], turn_number=1)
         call_kwargs = mock_client.generate.call_args
         assert call_kwargs.kwargs["temperature"] == 0.7
 
     def test_thinking_level_minimal(self):
         user, mock_client = _make_simulated_user()
         task = _make_task()
-        user.respond(task, "response", [])
+        user.respond(task, "response", [], turn_number=1)
         call_kwargs = mock_client.generate.call_args
         assert call_kwargs.kwargs["thinking_level"] == "minimal"
 
     def test_turn_number_in_prompt(self):
         user, mock_client = _make_simulated_user()
         task = _make_task()
-        history = _make_history(3)  # 3 user messages
-        user.respond(task, "response", history)
+        history = _make_history(3)  # 3 completed turns; caller is on turn 4
+        user.respond(task, "response", history, turn_number=4)
         messages = mock_client.generate.call_args[0][0]
         user_msg = messages[0]["content"]
         assert "turn 4" in user_msg.lower()
@@ -321,9 +321,11 @@ class TestGuardrails:
     def test_low_patience_forces_stop_after_max_turns(self):
         user, mock_client = _make_simulated_user(patience=Patience.LOW)
         task = _make_task()
-        # Create history with max_turns user messages
+        # One past the max turn for this patience level
         history = _make_history(_MAX_TURNS[Patience.LOW])
-        action = user.respond(task, "response", history)
+        action = user.respond(
+            task, "response", history, turn_number=_MAX_TURNS[Patience.LOW] + 1
+        )
         assert action.action_type == ActionType.STOP
         assert action.confidence == 1.0
         # LLM should not be called
@@ -333,23 +335,27 @@ class TestGuardrails:
         user, mock_client = _make_simulated_user(patience=Patience.MEDIUM)
         task = _make_task()
         history = _make_history(_MAX_TURNS[Patience.MEDIUM])
-        action = user.respond(task, "response", history)
+        action = user.respond(
+            task, "response", history, turn_number=_MAX_TURNS[Patience.MEDIUM] + 1
+        )
         assert action.action_type == ActionType.STOP
         mock_client.generate.assert_not_called()
 
     def test_high_patience_allows_long_conversations(self):
         user, mock_client = _make_simulated_user(patience=Patience.HIGH)
         task = _make_task()
-        # Just under the max
+        # At the max turn (not past it): the LLM still decides
         history = _make_history(_MAX_TURNS[Patience.HIGH] - 1)
-        user.respond(task, "response", history)
+        user.respond(task, "response", history, turn_number=_MAX_TURNS[Patience.HIGH])
         mock_client.generate.assert_called_once()
 
     def test_high_patience_forces_stop_at_max(self):
         user, mock_client = _make_simulated_user(patience=Patience.HIGH)
         task = _make_task()
         history = _make_history(_MAX_TURNS[Patience.HIGH])
-        action = user.respond(task, "response", history)
+        action = user.respond(
+            task, "response", history, turn_number=_MAX_TURNS[Patience.HIGH] + 1
+        )
         assert action.action_type == ActionType.STOP
         mock_client.generate.assert_not_called()
 
@@ -375,7 +381,7 @@ class TestFollowUpTypes:
             )
         )
         task = _make_task()
-        action = user.respond(task, "response", [])
+        action = user.respond(task, "response", [], turn_number=1)
         assert action.action_type == ActionType.FOLLOW_UP
         assert action.followup_type == FollowUpType(followup_type)
         assert action.message == f"A {followup_type} message"
@@ -392,7 +398,7 @@ class TestStopAndComplete:
             response=_mock_gemini_response(action_type="stop")
         )
         task = _make_task()
-        action = user.respond(task, "response", [])
+        action = user.respond(task, "response", [], turn_number=1)
         assert action.action_type == ActionType.STOP
         assert action.message is None
         assert action.followup_type is None
@@ -402,7 +408,7 @@ class TestStopAndComplete:
             response=_mock_gemini_response(action_type="task_complete")
         )
         task = _make_task()
-        action = user.respond(task, "response", [])
+        action = user.respond(task, "response", [], turn_number=1)
         assert action.action_type == ActionType.TASK_COMPLETE
         assert action.message is None
         assert action.followup_type is None
@@ -480,7 +486,7 @@ class TestIntegration:
         user = SimulatedUser()
 
         for agent_response in _TEST_AGENT_RESPONSES:
-            action = user.respond(task, agent_response, [])
+            action = user.respond(task, agent_response, [], turn_number=1)
             assert isinstance(action, UserAction)
             assert 0.0 <= action.confidence <= 1.0
             assert action.response_delay_ms >= 0
@@ -524,7 +530,7 @@ class TestIntegration:
 
         stop_count = 0
         for resp in _TEST_AGENT_RESPONSES[:10]:
-            action = user.respond(task, resp, [])
+            action = user.respond(task, resp, [], turn_number=1)
             if action.action_type == ActionType.STOP:
                 stop_count += 1
 
@@ -546,7 +552,9 @@ class TestIntegration:
 
             for turn in range(20):
                 # Use gold answer to maximize chance of completion
-                action = user.respond(task, task.gold_answer, history)
+                action = user.respond(
+                    task, task.gold_answer, history, turn_number=turn + 1
+                )
                 if action.action_type == ActionType.TASK_COMPLETE:
                     reached = True
                     break
@@ -571,7 +579,7 @@ class TestIntegration:
 
         types_seen: set[FollowUpType] = set()
         for resp in _TEST_AGENT_RESPONSES:
-            action = user.respond(task, resp, [])
+            action = user.respond(task, resp, [], turn_number=1)
             if action.action_type == ActionType.FOLLOW_UP and action.followup_type:
                 types_seen.add(action.followup_type)
 
@@ -597,7 +605,7 @@ def _run_episode(
 
     for _ in range(max_turns):
         agent_resp = f"Here is my answer about {task.question}: {task.gold_answer[:50]}..."
-        action = user.respond(task, agent_resp, history)
+        action = user.respond(task, agent_resp, history, turn_number=turns + 1)
         turns += 1
 
         if action.action_type in (ActionType.STOP, ActionType.TASK_COMPLETE):
@@ -622,7 +630,7 @@ def _count_corrections(task: ResearchQATask, strictness: Strictness, n_responses
         "Plants do something with sunlight.",
     ]
     for resp in responses[:n_responses]:
-        action = user.respond(task, resp, [])
+        action = user.respond(task, resp, [], turn_number=1)
         if (action.action_type == ActionType.FOLLOW_UP
                 and action.followup_type == FollowUpType.CORRECTION):
             count += 1
