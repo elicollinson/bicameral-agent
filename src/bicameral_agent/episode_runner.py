@@ -23,7 +23,13 @@ from bicameral_agent.gemini import GeminiClient
 from bicameral_agent.heuristic_controller import Action, DecisionLog, FullState, TOOL_IDS
 from bicameral_agent.logger import ConversationLogger
 from bicameral_agent.queue import ContextQueue, InterruptConfig
-from bicameral_agent.schema import Episode, Message, UserEvent, UserEventType
+from bicameral_agent.schema import (
+    Episode,
+    Message,
+    UserEvent,
+    UserEventType,
+    estimate_text_tokens,
+)
 from bicameral_agent.scorer import LexicalScorer, TaskScorer
 from bicameral_agent.signal_classifier import SignalClassifier
 from bicameral_agent.simulated_user import ActionType, Patience, SimulatedUser, Strictness
@@ -175,7 +181,7 @@ class EpisodeRunner:
 
         for turn in range(1, cfg.max_turns + 1):
             # (a) Log user message
-            user_token_count = len(user_message.split())
+            user_token_count = estimate_text_tokens(user_message)
             log.log_message("user", user_message, user_token_count)
 
             # (b) Track in schema_messages
@@ -200,6 +206,20 @@ class EpisodeRunner:
                     turn,
                 )
                 break
+
+            # (e) Track loop-internal interrupt fires and the generation they
+            # discarded, so the episode's cost accounting includes the waste.
+            if response.interrupted:
+                interrupt_count += 1
+            loop_waste = response.total_tokens - (
+                response.input_tokens + response.output_tokens
+            )
+            if loop_waste > 0:
+                log.log_wasted_tokens(loop_waste)
+
+            # (e2) Log assistant message at generation time so that any tool
+            # events later this turn come after it in reconstructed timelines.
+            log.log_message("assistant", response.content, response.output_tokens)
 
             # (f) Mark pending injections as consumed
             if response.context_injected:
@@ -293,10 +313,15 @@ class EpisodeRunner:
                             ctx = queue.drain_at_breakpoint()
                             if ctx is not None:
                                 regen = loop.regenerate_with_context(ctx)
-                                queue.report_wasted_tokens(
+                                discarded = (
                                     response.input_tokens + response.output_tokens
                                 )
+                                queue.report_wasted_tokens(discarded)
+                                log.log_wasted_tokens(discarded)
                                 response = regen
+                                log.replace_last_message(
+                                    regen.content, regen.output_tokens
+                                )
                                 for idx in pending_injection_indices:
                                     log.log_injection_consumed(idx, turn)
                                 pending_injection_indices.clear()
@@ -316,10 +341,9 @@ class EpisodeRunner:
                         tool_id,
                         turn,
                     )
-                    log.log_tool_completion(inv_idx, 0, result_deposited=False)
-
-            # (e') Log assistant message (deferred until after mode handling)
-            log.log_message("assistant", response.content, response.output_tokens)
+                    log.log_tool_completion(
+                        inv_idx, 0, result_deposited=False, budget_exceeded=True
+                    )
 
             schema_messages.append(
                 Message(
@@ -330,9 +354,10 @@ class EpisodeRunner:
                 )
             )
 
-            # (k) Simulated user responds
+            # (k) Simulated user responds. schema_messages already contains
+            # the current exchange, so the runner's turn is passed explicitly.
             user_action = sim_user.respond(
-                task, response.content, schema_messages
+                task, response.content, schema_messages, turn_number=turn
             )
 
             # (l) STOP
@@ -343,17 +368,23 @@ class EpisodeRunner:
 
             # (m) TASK_COMPLETE
             if user_action.action_type == ActionType.TASK_COMPLETE:
+                log.log_user_event(UserEventType.TASK_COMPLETE)
+                user_events.append(UserEventType.TASK_COMPLETE)
                 break
 
             # (n) FOLLOW_UP
             if user_action.action_type == ActionType.FOLLOW_UP:
-                log.log_user_event(UserEventType.FOLLOW_UP)
+                log.log_user_event(
+                    UserEventType.FOLLOW_UP,
+                    metadata={"followup_type": user_action.followup_type.value},
+                )
                 user_events.append(UserEventType.FOLLOW_UP)
                 user_message = user_action.message
 
         # Store metadata
         log.set_metadata("interrupt_count", interrupt_count)
         log.set_metadata("expired_queue_items", expired_count)
+        log.set_metadata("wasted_tokens", log.wasted_tokens)
         log.set_metadata("injection_mode", cfg.injection_mode.value)
         if self._hyper_config is not None:
             log.set_metadata("hyperparameters", self._hyper_config.to_dict())

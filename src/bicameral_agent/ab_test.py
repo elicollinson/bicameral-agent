@@ -21,9 +21,10 @@ from bicameral_agent.episode_runner import (
     EpisodeRunner,
     InjectionMode,
 )
-from bicameral_agent.followup_classifier import FollowUpClassifier, FollowUpType
+from bicameral_agent.followup_classifier import FollowUpType
 from bicameral_agent.gemini import GeminiClient
-from bicameral_agent.schema import Episode
+from bicameral_agent.queue import InterruptConfig, Priority
+from bicameral_agent.schema import Episode, UserEvent, UserEventType, episode_completed
 
 
 # ---------------------------------------------------------------------------
@@ -45,6 +46,19 @@ class Condition:
         return self.episode_config.injection_mode
 
 
+# Interrupt thresholds the tools can actually reach. Tools deposit at most one
+# item per turn (the queue is drained at every turn's breakpoint), and the
+# scanner/refresher top out at HIGH priority (only a rare auditor path emits
+# CRITICAL). The stock InterruptConfig (count>=5, tokens>=1000,
+# priority>=CRITICAL) therefore almost never fires, silently turning the 3-way
+# comparison into a 2-way one.
+AB_INTERRUPT_CONFIG = InterruptConfig(
+    count_threshold=2,
+    priority_threshold=Priority.HIGH,
+    token_threshold=256,
+)
+
+
 def default_conditions(controller_factory: Callable[[], Controller]) -> list[Condition]:
     """Return the three standard A/B test conditions."""
     return [
@@ -61,7 +75,10 @@ def default_conditions(controller_factory: Callable[[], Controller]) -> list[Con
         Condition(
             name="interrupt",
             controller_factory=controller_factory,
-            episode_config=EpisodeConfig(injection_mode=InjectionMode.INTERRUPT),
+            episode_config=EpisodeConfig(
+                injection_mode=InjectionMode.INTERRUPT,
+                interrupt_config=AB_INTERRUPT_CONFIG,
+            ),
         ),
     ]
 
@@ -84,16 +101,23 @@ class EpisodeMetrics:
     interrupt_count: int
     total_turns: int
     wall_clock_ms: float
+    task_completed: bool
 
 
-def count_derailments(messages: list) -> int:
-    """Count REDIRECT + CORRECTION follow-ups in conversation messages."""
+def count_derailments(user_events: list[UserEvent]) -> int:
+    """Count REDIRECT + CORRECTION follow-ups using the sim-user's own labels.
+
+    Reads the ground-truth ``followup_type`` recorded on FOLLOW_UP user events
+    rather than re-inferring types from message text. The opening question is
+    never a follow-up event, so turn 1 is never classified.
+    """
+    derailment_types = (FollowUpType.REDIRECT.value, FollowUpType.CORRECTION.value)
     count = 0
-    for msg in messages:
-        if msg.role == "user":
-            ft = FollowUpClassifier.classify(msg.content)
-            if ft in (FollowUpType.REDIRECT, FollowUpType.CORRECTION):
-                count += 1
+    for event in user_events:
+        if event.event_type != UserEventType.FOLLOW_UP:
+            continue
+        if event.metadata.get("followup_type") in derailment_types:
+            count += 1
     return count
 
 
@@ -110,10 +134,11 @@ def extract_metrics(
         quality_score=episode.outcome.quality_score,
         total_tokens=episode.outcome.total_tokens,
         coherence_score=coherence.overall,
-        derailment_count=count_derailments(episode.messages),
+        derailment_count=count_derailments(episode.user_events),
         interrupt_count=episode.metadata.get("interrupt_count", 0),
         total_turns=episode.outcome.total_turns,
         wall_clock_ms=episode.outcome.wall_clock_ms,
+        task_completed=episode_completed(episode),
     )
 
 
@@ -265,6 +290,7 @@ class ConditionResult(BaseModel):
     coherence: dict = Field(default_factory=dict)
     derailments: dict = Field(default_factory=dict)
     interrupts: dict = Field(default_factory=dict)
+    completion_rate: dict = Field(default_factory=dict)
 
 
 class ABTestResult(BaseModel):
@@ -349,6 +375,7 @@ class ABTestRunner:
             coherence_vals = [m.coherence_score for m in cond_metrics]
             derailment_vals = [float(m.derailment_count) for m in cond_metrics]
             interrupt_vals = [float(m.interrupt_count) for m in cond_metrics]
+            completion_vals = [1.0 if m.task_completed else 0.0 for m in cond_metrics]
 
             summaries = {
                 "quality": compute_summary(quality_vals) if quality_vals else None,
@@ -356,6 +383,7 @@ class ABTestRunner:
                 "coherence": compute_summary(coherence_vals),
                 "derailments": compute_summary(derailment_vals),
                 "interrupts": compute_summary(interrupt_vals),
+                "completion_rate": compute_summary(completion_vals),
             }
             summaries_by_condition[cond.name] = summaries
 
@@ -366,6 +394,7 @@ class ABTestRunner:
                 coherence=dataclasses.asdict(summaries["coherence"]),
                 derailments=dataclasses.asdict(summaries["derailments"]),
                 interrupts=dataclasses.asdict(summaries["interrupts"]),
+                completion_rate=dataclasses.asdict(summaries["completion_rate"]),
             ))
 
         # Determine best condition (primary: quality_score, secondary: total_tokens)
@@ -423,11 +452,18 @@ def _build_justification(
         q = summaries.get("quality")
         t = summaries.get("total_tokens")
         c = summaries.get("coherence")
+        i = summaries.get("interrupts")
+        comp = summaries.get("completion_rate")
 
         quality_str = f"quality={q.mean:.3f}" if q else "quality=N/A"
         tokens_str = f"tokens={t.mean:.0f}" if t else "tokens=0"
         coherence_str = f"coherence={c.mean:.3f}" if c else "coherence=0"
-        parts.append(f"{cond.name}: {quality_str}, {tokens_str}, {coherence_str}")
+        interrupts_str = f"interrupts={i.mean:.2f}" if i else "interrupts=0"
+        completion_str = f"completion_rate={comp.mean:.2f}" if comp else "completion_rate=0"
+        parts.append(
+            f"{cond.name}: {quality_str}, {tokens_str}, {coherence_str}, "
+            f"{interrupts_str}, {completion_str}"
+        )
 
     # Pairwise significance for quality
     cond_names = [c.name for c in conditions]

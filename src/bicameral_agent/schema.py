@@ -17,11 +17,23 @@ class UserEventType(str, enum.Enum):
     - STOP: User explicitly stopped the agent.
     - EDIT: User edited the agent's output before it was finalized.
     - FOLLOW_UP: User sent a follow-up message continuing the conversation.
+    - TASK_COMPLETE: User accepted the answer as complete.
     """
 
     STOP = "stop"
     EDIT = "edit"
     FOLLOW_UP = "follow_up"
+    TASK_COMPLETE = "task_complete"
+
+
+def estimate_text_tokens(text: str) -> int:
+    """Rough token estimate for text not measured by the API (~4 chars/token).
+
+    Single estimator shared by user-message logging and tool queue deposits so
+    that episode token totals use one unit throughout. Assistant messages keep
+    exact API-reported token counts.
+    """
+    return (len(text) + 3) // 4
 
 
 class Message(BaseModel):
@@ -114,6 +126,11 @@ class ToolInvocation(BaseModel):
 
     result_deposited: bool = False
     """Whether the tool's result was deposited back into the conversation."""
+
+    budget_exceeded: bool = False
+    """Whether the invocation aborted because the token budget was exceeded.
+    Budget-exceeded invocations have partial durations and must be excluded
+    from latency-prediction accuracy metrics."""
 
     @model_validator(mode="after")
     def check_temporal_order(self) -> ToolInvocation:
@@ -224,3 +241,10 @@ class Episode(BaseModel):
         from bicameral_agent.serialization import episode_from_parquet
 
         return episode_from_parquet(path)
+
+
+def episode_completed(episode: Episode) -> bool:
+    """Whether the simulated user marked the task complete in this episode."""
+    return any(
+        e.event_type == UserEventType.TASK_COMPLETE for e in episode.user_events
+    )

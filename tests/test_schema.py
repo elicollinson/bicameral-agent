@@ -13,6 +13,8 @@ from bicameral_agent.schema import (
     ToolInvocation,
     UserEvent,
     UserEventType,
+    episode_completed,
+    estimate_text_tokens,
 )
 
 
@@ -204,3 +206,38 @@ class TestEpisode:
         assert len(ep.tool_invocations) == 1
         assert ep.outcome.total_tokens == 100
         assert ep.metadata == {"source": "test"}
+
+
+class TestEstimateTextTokens:
+    def test_empty_string(self):
+        assert estimate_text_tokens("") == 0
+
+    def test_four_chars_per_token(self):
+        assert estimate_text_tokens("abcd") == 1
+        assert estimate_text_tokens("abcdefgh") == 2
+
+    def test_rounds_up(self):
+        assert estimate_text_tokens("abcde") == 2
+
+
+class TestEpisodeCompleted:
+    def _episode(self, user_events):
+        return Episode(
+            user_events=user_events,
+            outcome=EpisodeOutcome(total_tokens=0, total_turns=0, wall_clock_ms=0),
+        )
+
+    def test_true_with_task_complete_event(self):
+        ep = self._episode(
+            [UserEvent(event_type=UserEventType.TASK_COMPLETE, timestamp_ms=10)]
+        )
+        assert episode_completed(ep) is True
+
+    def test_false_without_task_complete_event(self):
+        ep = self._episode(
+            [UserEvent(event_type=UserEventType.STOP, timestamp_ms=10)]
+        )
+        assert episode_completed(ep) is False
+
+    def test_false_with_no_events(self):
+        assert episode_completed(self._episode([])) is False

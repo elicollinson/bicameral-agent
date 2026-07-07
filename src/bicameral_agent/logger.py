@@ -41,6 +41,7 @@ class ConversationLogger:
         self._pending_tools: dict[int, tuple[str, int, int]] = {}
         self._next_tool_index = 0
         self._next_injection_index = 0
+        self._wasted_tokens = 0
 
         self._lock = threading.Lock()
         self._finalized = False
@@ -83,6 +84,50 @@ class ConversationLogger:
                     token_count=token_count,
                 )
             )
+
+    def replace_last_message(self, content: str, token_count: int) -> None:
+        """Replace the most recent message's content (e.g. after regeneration).
+
+        The replacement keeps the original role but takes a fresh timestamp,
+        reflecting that the final content was produced after any intervening
+        tool/injection events.
+
+        Args:
+            content: New text content for the message.
+            token_count: Number of tokens in the new content.
+
+        Raises:
+            ValueError: If no message has been logged yet.
+        """
+        with self._lock:
+            self._check_not_finalized()
+            if not self._messages:
+                raise ValueError("No message to replace")
+            self._messages[-1] = Message(
+                role=self._messages[-1].role,
+                content=content,
+                timestamp_ms=self._now_ms(),
+                token_count=token_count,
+            )
+
+    def log_wasted_tokens(self, token_count: int) -> None:
+        """Record tokens spent on discarded generations (interrupt/regeneration).
+
+        Wasted tokens are folded into the episode outcome's total_tokens so
+        that conditions which regenerate are not undercounted.
+
+        Args:
+            token_count: Number of tokens in the discarded generation.
+        """
+        with self._lock:
+            self._check_not_finalized()
+            self._wasted_tokens += token_count
+
+    @property
+    def wasted_tokens(self) -> int:
+        """Total tokens recorded via log_wasted_tokens() so far."""
+        with self._lock:
+            return self._wasted_tokens
 
     def log_user_event(
         self, event_type: UserEventType, metadata: dict | None = None
@@ -127,6 +172,7 @@ class ConversationLogger:
         invocation_index: int,
         output_tokens: int,
         result_deposited: bool = False,
+        budget_exceeded: bool = False,
     ) -> None:
         """Record the completion of a tool invocation.
 
@@ -134,6 +180,7 @@ class ConversationLogger:
             invocation_index: Index returned by log_tool_invocation().
             output_tokens: Number of tokens in the tool's output.
             result_deposited: Whether the result was deposited into the conversation.
+            budget_exceeded: Whether the invocation aborted on budget exhaustion.
 
         Raises:
             ValueError: If invocation_index is not a pending tool.
@@ -156,6 +203,7 @@ class ConversationLogger:
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                     result_deposited=result_deposited,
+                    budget_exceeded=budget_exceeded,
                 ),
             ))
 
@@ -255,6 +303,7 @@ class ConversationLogger:
                     for c in self._context_injections
                     if c.consumed
                 )
+                + self._wasted_tokens
             )
             total_turns = sum(1 for m in self._messages if m.role == "user")
 

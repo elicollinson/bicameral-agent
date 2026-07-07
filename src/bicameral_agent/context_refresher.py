@@ -13,7 +13,7 @@ import hashlib
 import json
 
 from bicameral_agent.queue import Priority, QueueItem
-from bicameral_agent.schema import Message
+from bicameral_agent.schema import Message, estimate_text_tokens
 from bicameral_agent.tool_primitive import (
     BudgetExceededError,
     ToolMetadata,
@@ -179,7 +179,7 @@ class ContextRefresher(ToolPrimitive):
                 content=reminder,
                 priority=max_priority,
                 source_tool_id=self.tool_id,
-                token_count=len(words),
+                token_count=estimate_text_tokens(reminder),
                 expiry_turns=3,
                 dedup_key=dedup_key,
             ),

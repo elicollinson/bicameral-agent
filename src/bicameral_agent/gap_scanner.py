@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from bicameral_agent.queue import Priority, QueueItem
-from bicameral_agent.schema import Message
+from bicameral_agent.schema import Message, estimate_text_tokens
 from bicameral_agent.tool_primitive import ToolMetadata, ToolPrimitive, ToolResult
 
 
@@ -252,12 +252,13 @@ class ResearchGapScanner(ToolPrimitive):
                 all_search_results[gap.description] = results
 
         if not all_search_results:
+            gaps_content = _format_gaps_only(gaps)
             return ToolResult(
                 queue_deposit=QueueItem(
-                    content=_format_gaps_only(gaps),
+                    content=gaps_content,
                     priority=_max_priority(gaps),
                     source_tool_id=self.tool_id,
-                    token_count=sum(len(g.description.split()) for g in gaps) * 2,
+                    token_count=estimate_text_tokens(gaps_content),
                     dedup_key=_make_dedup_key(gaps),
                 ),
                 metadata=ToolMetadata(
@@ -278,12 +279,13 @@ class ResearchGapScanner(ToolPrimitive):
         relevant = [r for r in ranked_results if r.get("relevance_score", 0) >= 0.3]
 
         if not relevant:
+            gaps_content = _format_gaps_only(gaps)
             return ToolResult(
                 queue_deposit=QueueItem(
-                    content=_format_gaps_only(gaps),
+                    content=gaps_content,
                     priority=_max_priority(gaps),
                     source_tool_id=self.tool_id,
-                    token_count=sum(len(g.description.split()) for g in gaps) * 2,
+                    token_count=estimate_text_tokens(gaps_content),
                     dedup_key=_make_dedup_key(gaps),
                 ),
                 metadata=ToolMetadata(
@@ -304,7 +306,7 @@ class ResearchGapScanner(ToolPrimitive):
                 content=content,
                 priority=_max_priority(gaps),
                 source_tool_id=self.tool_id,
-                token_count=len(content.split()),
+                token_count=estimate_text_tokens(content),
                 dedup_key=_make_dedup_key(gaps),
             ),
             metadata=ToolMetadata(
