@@ -32,6 +32,7 @@ import logging
 import sys
 from pathlib import Path
 
+from bicameral_agent.baseline_benchmark import FAILURE_THRESHOLD
 from bicameral_agent.comparative_eval import (
     ComparativeEvaluator,
     baseline_condition_factories,
@@ -83,6 +84,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="Base seed; per-condition seeds are derived "
                              "deterministically from it.")
     parser.add_argument("--random-probability", type=float, default=0.2)
+    parser.add_argument("--failure-threshold", type=float, default=FAILURE_THRESHOLD,
+                        help="Abort a condition once contained transport "
+                             "failures exceed this fraction of its episodes.")
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args(argv)
 
@@ -155,7 +159,11 @@ def main(argv: list[str] | None = None) -> int:
             completed[condition], str(output_dir / f"{condition}.parquet")
         )
 
-    evaluator = ComparativeEvaluator(runner, on_episode=persist_episode)
+    evaluator = ComparativeEvaluator(
+        runner,
+        on_episode=persist_episode,
+        failure_threshold=args.failure_threshold,
+    )
     result = evaluator.run(tasks, conditions)
 
     report = build_report(

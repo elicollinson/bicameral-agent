@@ -53,6 +53,21 @@ What IS deterministic for a fixed seed and fixed inputs:
   summaries, CIs, Welch t-tests / p-values, difficulty breakdown, and
   both report serializations are pure functions of the episodes.
 
+Transport failures and pairing
+------------------------------
+:func:`~bicameral_agent.baseline_benchmark.run_condition` contains
+per-episode ``TransportExhausted`` failures (issue #81): a failed
+episode is recorded, not fatal, until ``failure_threshold`` aborts the
+condition. A failure breaks the pair for its task, so *all* statistics
+(summary table, pairwise tests, difficulty breakdown) are computed over
+the tasks that completed in every condition — dropping the broken pair
+for all conditions is the smallest change that keeps the comparison
+paired and unbiased (keeping asymmetric samples would let one
+condition's failures shift another's means). The dropped task ids are
+recorded in the report (``excluded_task_ids``) next to the raw
+``failures``; per-task ``results`` rows still include every completed
+episode.
+
 Evaluation integrity: judge blinding
 ------------------------------------
 The issue's "human eval blinded" item is N/A here: this framework has no
@@ -79,14 +94,16 @@ from pydantic import BaseModel, Field
 
 from bicameral_agent.ab_test import MetricSummary, compute_summary, welch_t_test
 from bicameral_agent.baseline_benchmark import (
+    FAILURE_THRESHOLD,
     ControllerFactory,
     EpisodeCallback,
+    EpisodeFailure,
     TaskMetrics,
     run_condition,
 )
 from bicameral_agent.dataset import ResearchQADataset, ResearchQATask, TaskDifficulty
 from bicameral_agent.episode_runner import EpisodeRunner
-from bicameral_agent.eval_report import EvalReport, TaskResult
+from bicameral_agent.eval_report import EvalReport, TaskFailure, TaskResult
 from bicameral_agent.no_subconscious_controller import NoSubconsciousController
 from bicameral_agent.random_controller import RandomController
 from bicameral_agent.schema import Episode
@@ -295,28 +312,72 @@ def learned_condition_factories(
 class ComparativeResult:
     """Paired episodes + extracted metrics for every condition.
 
-    ``episodes[c][i]`` and ``metrics[c][i]`` correspond to ``tasks[i]``
-    for every condition ``c`` (the paired design).
+    ``episodes[c]`` / ``metrics[c]`` hold only the *completed* episodes
+    of condition ``c`` in task order; contained transport failures (issue
+    #81) are recorded in ``failures[c]`` with their task index. Use
+    :meth:`completed_indices` to map an episode position back to its
+    task, and :meth:`paired_metrics` / :attr:`paired_tasks` for the
+    subset of tasks completed in *every* condition (the paired design).
     """
 
     tasks: list[ResearchQATask]
     episodes: dict[str, list[Episode]] = dataclasses.field(default_factory=dict)
     metrics: dict[str, list[TaskMetrics]] = dataclasses.field(default_factory=dict)
+    failures: dict[str, list[EpisodeFailure]] = dataclasses.field(default_factory=dict)
 
     @property
     def task_ids(self) -> list[str]:
         """Shared task order (identical across conditions)."""
         return [t.task_id for t in self.tasks]
 
+    def completed_indices(self, condition: str) -> list[int]:
+        """Task indices the condition completed, aligned with its episodes."""
+        failed = {f.episode_index for f in self.failures.get(condition, ())}
+        return [i for i in range(len(self.tasks)) if i not in failed]
+
+    @property
+    def paired_indices(self) -> list[int]:
+        """Task indices completed by every condition."""
+        failed = {f.episode_index for fs in self.failures.values() for f in fs}
+        return [i for i in range(len(self.tasks)) if i not in failed]
+
+    @property
+    def paired_tasks(self) -> list[ResearchQATask]:
+        """Tasks completed by every condition, in task order."""
+        return [self.tasks[i] for i in self.paired_indices]
+
+    @property
+    def excluded_task_ids(self) -> list[str]:
+        """Tasks dropped from paired analyses (failed in >= 1 condition)."""
+        paired = set(self.paired_indices)
+        return [t.task_id for i, t in enumerate(self.tasks) if i not in paired]
+
+    def paired_metrics(self) -> dict[str, list[TaskMetrics]]:
+        """Per-condition metrics restricted to the paired task subset."""
+        paired = set(self.paired_indices)
+        return {
+            condition: [
+                m
+                for i, m in zip(self.completed_indices(condition), metrics)
+                if i in paired
+            ]
+            for condition, metrics in self.metrics.items()
+        }
+
 
 class ComparativeEvaluator:
     """Runs every condition over the same task list in the same order."""
 
     def __init__(
-        self, runner: EpisodeRunner, *, on_episode: EpisodeCallback | None = None
+        self,
+        runner: EpisodeRunner,
+        *,
+        on_episode: EpisodeCallback | None = None,
+        failure_threshold: float = FAILURE_THRESHOLD,
     ) -> None:
         self._runner = runner
         self._on_episode = on_episode
+        self._failure_threshold = failure_threshold
 
     def run(
         self,
@@ -329,22 +390,27 @@ class ComparativeEvaluator:
         factory (called with the task index). Conditions run in dict
         order; within a condition, tasks run in list order — the same
         list for every condition, which is what makes the comparison
-        paired.
+        paired. Per-episode transport failures are contained by
+        :func:`~bicameral_agent.baseline_benchmark.run_condition` (which
+        raises ``ConditionAbortedError`` past ``failure_threshold``) and
+        recorded on the result.
         """
         result = ComparativeResult(tasks=list(tasks))
         for condition, factory in conditions.items():
             logger.info(
                 "Running %d episodes for condition %r", len(result.tasks), condition
             )
-            episodes, metrics = run_condition(
+            episodes, metrics, failures = run_condition(
                 self._runner,
                 result.tasks,
                 factory,
                 condition=condition,
                 on_episode=self._on_episode,
+                failure_threshold=self._failure_threshold,
             )
             result.episodes[condition] = episodes
             result.metrics[condition] = metrics
+            result.failures[condition] = failures
         return result
 
 
@@ -601,6 +667,10 @@ class ComparativeReport(EvalReport):
     pairwise: list[PairwiseTestResult]
     by_difficulty: dict[str, dict[str, dict[str, dict]]]
     results: list[ComparativeTaskResult] = Field(default_factory=list)
+    excluded_task_ids: list[str] = Field(default_factory=list)
+    """Tasks dropped from all paired analyses: they failed on transport
+    in at least one condition, so keeping them would break the pairing.
+    The raw failures are in the inherited ``failures`` field."""
 
     @classmethod
     def from_benchmark(cls, *args: object, **kwargs: object) -> ComparativeReport:
@@ -637,16 +707,25 @@ def build_report(
     Pure function of the collected episodes/metrics: identical inputs
     produce byte-identical JSON and markdown (the deterministic side of
     the boundary documented in the module docstring).
+
+    All statistics (summary table, pairwise tests, difficulty breakdown)
+    are computed over the *paired* subset — tasks completed in every
+    condition — so a transport failure in one condition cannot bias the
+    comparison in either direction; the dropped tasks are recorded in
+    ``excluded_task_ids`` and the raw failures in ``failures``. The
+    per-task ``results`` rows keep every completed episode, mapped back
+    to its task via each condition's completed indices.
     """
+    paired_metrics = result.paired_metrics()
     conditions = {
         condition: {
-            "n_episodes": len(metrics),
+            "n_episodes": len(result.metrics[condition]),
             "summaries": {
                 name: dataclasses.asdict(summary)
                 for name, summary in condition_summaries(metrics).items()
             },
         }
-        for condition, metrics in result.metrics.items()
+        for condition, metrics in paired_metrics.items()
     }
     difficulty = {
         tier: {
@@ -656,19 +735,24 @@ def build_report(
             for condition, summaries in per_condition.items()
         }
         for tier, per_condition in difficulty_breakdown(
-            result.tasks, result.metrics
+            result.paired_tasks, paired_metrics
         ).items()
     }
     results = [
         ComparativeTaskResult(
-            task_id=task.task_id,
+            task_id=result.tasks[i].task_id,
             condition=condition,
             score=episode.outcome.quality_score,
             detail=(episode.metadata.get("verification") or {}).get("detail"),
-            difficulty=task.difficulty.value,
+            difficulty=result.tasks[i].difficulty.value,
         )
         for condition, episodes in result.episodes.items()
-        for task, episode in zip(result.tasks, episodes)
+        for i, episode in zip(result.completed_indices(condition), episodes)
+    ]
+    failures = [
+        TaskFailure(task_id=f.task_id, condition=condition, error=f.error)
+        for condition, condition_failures in result.failures.items()
+        for f in condition_failures
     ]
     task_mix = Counter(t.difficulty.value for t in result.tasks)
     return ComparativeReport(
@@ -682,9 +766,11 @@ def build_report(
         task_mix=dict(task_mix),
         task_ids=result.task_ids,
         conditions=conditions,
-        pairwise=pairwise_tests(result.metrics),
+        pairwise=pairwise_tests(paired_metrics),
         by_difficulty=difficulty,
         results=results,
+        failures=failures,
+        excluded_task_ids=result.excluded_task_ids,
     )
 
 
@@ -781,6 +867,20 @@ def _render_markdown(report: ComparativeReport) -> str:
         lines.extend(
             _summary_table(tier_conditions, lambda c, _pc=per_condition: _pc[c])
         )
+
+    lines.extend(["", "## Transport failures", ""])
+    if report.failures or report.excluded_task_ids:
+        for failure in report.failures:
+            lines.append(
+                f"- {failure.condition} / {failure.task_id}: {failure.error}"
+            )
+        lines.append(
+            f"- Paired analyses cover {len(report.task_ids) - len(report.excluded_task_ids)}"
+            f"/{len(report.task_ids)} tasks; excluded (failed in >= 1 "
+            f"condition): {', '.join(report.excluded_task_ids)}"
+        )
+    else:
+        lines.append("- none")
 
     lines.extend(
         [
