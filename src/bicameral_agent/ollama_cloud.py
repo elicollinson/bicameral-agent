@@ -15,6 +15,7 @@ simulated user already parse with ``json.loads(response.content)``.
 
 from __future__ import annotations
 
+import http.client
 import json
 import os
 import random
@@ -236,5 +237,17 @@ class OllamaCloudClient:
     def _is_retryable(exc: Exception) -> bool:
         if isinstance(exc, urllib.error.HTTPError):
             return exc.code == 429 or 500 <= exc.code < 600
-        # Network-level failures (timeouts, connection resets) are transient.
-        return isinstance(exc, urllib.error.URLError)
+        # Network-level failures are transient, whether they hit at connect
+        # time (URLError) or mid-read: timeouts and connection resets during
+        # response.read(), truncated chunked bodies (IncompleteRead), and a
+        # 200 whose truncated body fails JSON decoding.
+        return isinstance(
+            exc,
+            (
+                urllib.error.URLError,
+                TimeoutError,
+                ConnectionResetError,
+                http.client.HTTPException,
+                json.JSONDecodeError,
+            ),
+        )

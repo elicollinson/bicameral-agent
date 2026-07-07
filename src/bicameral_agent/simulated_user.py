@@ -8,13 +8,13 @@ objects with simulated timing metadata for episode construction.
 from __future__ import annotations
 
 import enum
-import json
 
 from pydantic import BaseModel, Field, model_validator
 
 from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.followup_classifier import FollowUpType
 from bicameral_agent.gemini import GeminiClient
+from bicameral_agent.llm_output import clamp, coerce_int, safe_parse_json
 from bicameral_agent.schema import Message
 
 
@@ -263,24 +263,54 @@ class SimulatedUser:
             response_schema=_RESPONSE_SCHEMA,
         )
 
-        raw = json.loads(response.content)
+        raw = safe_parse_json(
+            response, context="SimulatedUser.respond", default=None
+        )
         return self._parse_response(raw)
 
     @staticmethod
-    def _parse_response(raw: dict) -> UserAction:
-        """Parse the LLM's structured response into a UserAction."""
-        action_type = ActionType(raw["action_type"])
+    def _parse_response(raw: dict | None) -> UserAction:
+        """Parse the LLM's structured response into a UserAction.
+
+        Malformed/truncated output degrades to a neutral follow-up rather than
+        crashing; the patience guardrail still bounds episode length.
+        """
+        if raw is None:
+            return _fallback_action()
+        try:
+            action_type = ActionType(raw["action_type"])
+        except (KeyError, ValueError):
+            return _fallback_action()
 
         # The LLM occasionally treats confidence as a 1-5 scale; clamp to [0, 1].
-        confidence = max(0.0, min(1.0, float(raw.get("confidence", 0.8))))
+        confidence = clamp(raw.get("confidence"), 0.0, 1.0, 0.8)
+        # response_delay_ms feeds Field(ge=0); clamp negatives/non-numerics.
+        response_delay_ms = max(0, coerce_int(raw.get("response_delay_ms"), 500))
         kwargs: dict = {
             "action_type": action_type,
-            "response_delay_ms": raw.get("response_delay_ms", 500),
+            "response_delay_ms": response_delay_ms,
             "confidence": confidence,
         }
 
         if action_type == ActionType.FOLLOW_UP:
-            kwargs["message"] = raw.get("message", "Can you elaborate?")
-            kwargs["followup_type"] = FollowUpType(raw.get("followup_type", "elaboration"))
+            kwargs["message"] = raw.get("message") or "Can you elaborate?"
+            try:
+                followup_type = FollowUpType(raw.get("followup_type", "elaboration"))
+            except ValueError:
+                followup_type = FollowUpType.ELABORATION
+            if followup_type not in _VALID_FOLLOWUP_TYPES:
+                followup_type = FollowUpType.ELABORATION
+            kwargs["followup_type"] = followup_type
 
         return UserAction(**kwargs)
+
+
+def _fallback_action() -> UserAction:
+    """Neutral action used when the LLM's structured output is unusable."""
+    return UserAction(
+        action_type=ActionType.FOLLOW_UP,
+        message="Can you elaborate?",
+        followup_type=FollowUpType.ELABORATION,
+        response_delay_ms=500,
+        confidence=0.5,
+    )

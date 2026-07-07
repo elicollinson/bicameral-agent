@@ -171,6 +171,20 @@ class ContextRefresher(ToolPrimitive):
         words = reminder.split()[:100]
         reminder = " ".join(words)
 
+        # Drift with a null/empty reminder would deposit a blank QueueItem,
+        # injecting an empty context update; skip the deposit instead.
+        if not reminder:
+            return ToolResult(
+                queue_deposit=None,
+                metadata=ToolMetadata(
+                    tool_id=self.tool_id,
+                    action_taken="detected drift but no reminder produced",
+                    confidence=0.3,
+                    items_found=len(drifts),
+                    estimated_relevance=0.0,
+                ),
+            )
+
         max_priority = max((_drift_priority(cat) for cat, _ in drifts), default=Priority.MEDIUM)
         dedup_key = _make_dedup_key(drifts)
 

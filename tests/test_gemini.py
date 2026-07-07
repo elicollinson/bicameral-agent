@@ -5,8 +5,10 @@ import time
 from unittest.mock import MagicMock, patch
 
 import pytest
+from google.genai import errors as genai_errors
 
 from bicameral_agent.gemini import (
+    BlockedResponseError,
     ChatMessage,
     GeminiClient,
     GeminiResponse,
@@ -191,7 +193,9 @@ class TestRetryLogic:
 
     def test_retry_on_5xx(self, mock_client):
         client, sdk = mock_client
-        exc_500 = Exception("500 Internal Server Error")
+        exc_500 = genai_errors.ServerError(
+            500, {"error": {"message": "Internal Server Error"}}
+        )
         sdk.models.generate_content.side_effect = [
             exc_500, _make_mock_response()
         ]
@@ -199,6 +203,38 @@ class TestRetryLogic:
             result = client.generate([{"role": "user", "content": "hi"}])
         assert result.content == "Hello!"
         assert sdk.models.generate_content.call_count == 2
+
+    def test_retry_on_typed_429(self, mock_client):
+        client, sdk = mock_client
+        exc_429 = genai_errors.ClientError(
+            429, {"error": {"message": "Resource exhausted"}}
+        )
+        sdk.models.generate_content.side_effect = [
+            exc_429, _make_mock_response()
+        ]
+        with patch("bicameral_agent.gemini.time.sleep"):
+            result = client.generate([{"role": "user", "content": "hi"}])
+        assert result.content == "Hello!"
+        assert sdk.models.generate_content.call_count == 2
+
+    def test_no_retry_on_typed_4xx(self, mock_client):
+        client, sdk = mock_client
+        exc_400 = genai_errors.ClientError(
+            400, {"error": {"message": "Bad Request"}}
+        )
+        sdk.models.generate_content.side_effect = exc_400
+        with pytest.raises(genai_errors.ClientError):
+            client.generate([{"role": "user", "content": "hi"}])
+        assert sdk.models.generate_content.call_count == 1
+
+    def test_no_retry_on_5xx_lookalike_message(self, mock_client):
+        """A 3-digit number in the message must not trigger retries (was `5\\d{2}` regex)."""
+        client, sdk = mock_client
+        exc = Exception("your quota is 500 requests per day")
+        sdk.models.generate_content.side_effect = exc
+        with pytest.raises(Exception, match="quota"):
+            client.generate([{"role": "user", "content": "hi"}])
+        assert sdk.models.generate_content.call_count == 1
 
     def test_no_retry_on_400(self, mock_client):
         client, sdk = mock_client
@@ -627,3 +663,90 @@ class TestIntegration:
         assert recorded[0][0] == result.input_tokens
         assert recorded[0][1] == result.output_tokens
         assert recorded[0][2] == result.duration_ms
+
+
+# ---------------------------------------------------------------------------
+# TestBlockedResponses (issue #47)
+# ---------------------------------------------------------------------------
+
+
+class TestBlockedResponses:
+    def test_empty_candidates_raises_typed_error_with_block_reason(self):
+        response = MagicMock()
+        response.candidates = []
+        response.usage_metadata.prompt_token_count = 10
+        response.usage_metadata.candidates_token_count = 0
+        response.prompt_feedback.block_reason = "SAFETY"
+
+        with patch("bicameral_agent.gemini.genai.Client") as MockClient:
+            instance = MockClient.return_value
+            instance.models.generate_content.return_value = response
+            client = GeminiClient(api_key="key")
+            with pytest.raises(BlockedResponseError, match="SAFETY") as exc_info:
+                client.generate([{"role": "user", "content": "hi"}])
+        assert exc_info.value.reason == "SAFETY"
+
+    def test_none_candidates_raises_typed_error(self):
+        response = MagicMock()
+        response.candidates = None
+        response.usage_metadata.prompt_token_count = 10
+        response.usage_metadata.candidates_token_count = 0
+        response.prompt_feedback = None
+
+        with patch("bicameral_agent.gemini.genai.Client") as MockClient:
+            instance = MockClient.return_value
+            instance.models.generate_content.return_value = response
+            client = GeminiClient(api_key="key")
+            with pytest.raises(BlockedResponseError, match="no candidates"):
+                client.generate([{"role": "user", "content": "hi"}])
+
+    def test_none_parts_raises_typed_error_with_finish_reason(self):
+        """MAX_TOKENS hit during thinking yields content.parts=None."""
+        candidate = MagicMock()
+        candidate.finish_reason = "MAX_TOKENS"
+        candidate.content.parts = None
+
+        response = MagicMock()
+        response.candidates = [candidate]
+        response.usage_metadata.prompt_token_count = 10
+        response.usage_metadata.candidates_token_count = 0
+
+        with patch("bicameral_agent.gemini.genai.Client") as MockClient:
+            instance = MockClient.return_value
+            instance.models.generate_content.return_value = response
+            client = GeminiClient(api_key="key")
+            with pytest.raises(BlockedResponseError, match="MAX_TOKENS"):
+                client.generate([{"role": "user", "content": "hi"}])
+
+    def test_none_content_raises_typed_error(self):
+        candidate = MagicMock()
+        candidate.finish_reason = "SAFETY"
+        candidate.content = None
+
+        response = MagicMock()
+        response.candidates = [candidate]
+        response.usage_metadata.prompt_token_count = 10
+        response.usage_metadata.candidates_token_count = 0
+
+        with patch("bicameral_agent.gemini.genai.Client") as MockClient:
+            instance = MockClient.return_value
+            instance.models.generate_content.return_value = response
+            client = GeminiClient(api_key="key")
+            with pytest.raises(BlockedResponseError, match="SAFETY"):
+                client.generate([{"role": "user", "content": "hi"}])
+
+    def test_blocked_response_not_retried(self):
+        response = MagicMock()
+        response.candidates = []
+        response.usage_metadata.prompt_token_count = 10
+        response.usage_metadata.candidates_token_count = 0
+        response.prompt_feedback.block_reason = "SAFETY"
+
+        with patch("bicameral_agent.gemini.genai.Client") as MockClient:
+            instance = MockClient.return_value
+            instance.models.generate_content.return_value = response
+            client = GeminiClient(api_key="key")
+            with patch("bicameral_agent.gemini.time.sleep"):
+                with pytest.raises(BlockedResponseError):
+                    client.generate([{"role": "user", "content": "hi"}])
+        assert instance.models.generate_content.call_count == 1

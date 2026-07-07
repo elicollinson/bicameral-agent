@@ -7,13 +7,13 @@ coherence using Gemini Flash. Thread-safe with caching and batch support.
 from __future__ import annotations
 
 import hashlib
-import json
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from pydantic import BaseModel, Field
 
 from bicameral_agent.gemini import GeminiClient
+from bicameral_agent.llm_output import coerce_int, safe_parse_json
 from bicameral_agent.schema import Message
 from bicameral_agent.scorer import _normalize_score
 
@@ -153,8 +153,14 @@ class CoherenceJudge:
             max_output_tokens=100,
             response_schema=_JUDGE_RESPONSE_SCHEMA,
         )
-        parsed = json.loads(response.content)
-        return CoherenceScore.from_raw(**parsed)
+        # Malformed/truncated judge output degrades to a neutral mid-scale
+        # score (3 normalizes to 0.5); extra keys are ignored, not splatted.
+        parsed = safe_parse_json(response, context="CoherenceJudge", default={})
+        return CoherenceScore.from_raw(
+            logical_flow=coerce_int(parsed.get("logical_flow"), 3),
+            consistency=coerce_int(parsed.get("consistency"), 3),
+            overall=coerce_int(parsed.get("overall"), 3),
+        )
 
 
 def _format_transcript(messages: list[Message]) -> str:

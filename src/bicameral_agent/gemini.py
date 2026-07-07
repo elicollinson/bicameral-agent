@@ -11,12 +11,12 @@ from __future__ import annotations
 
 import os
 import random
-import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from google import genai
+from google.genai import errors as genai_errors
 from google.genai import types
 
 _MODEL = "gemini-3.1-flash-lite-preview"
@@ -26,6 +26,19 @@ _BACKOFF_FACTOR = 2.0
 _MAX_JITTER = 0.5
 
 _VALID_THINKING_LEVELS = {"minimal", "low", "medium", "high"}
+
+
+class BlockedResponseError(RuntimeError):
+    """Raised when Gemini returns no usable content, naming the block reason.
+
+    Covers documented response shapes that would otherwise crash parsing:
+    empty ``candidates`` (prompt blocked, e.g. safety) and ``content.parts``
+    of ``None`` (MAX_TOKENS hit during thinking, SAFETY, RECITATION).
+    """
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(f"Gemini returned no usable content (reason: {reason})")
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,15 +226,26 @@ class GeminiClient:
         input_tokens = usage.prompt_token_count or 0
         output_tokens = usage.candidates_token_count or 0
 
+        if not response.candidates:
+            feedback = getattr(response, "prompt_feedback", None)
+            block_reason = getattr(feedback, "block_reason", None)
+            raise BlockedResponseError(
+                str(block_reason) if block_reason else "no candidates returned"
+            )
+
         candidate = response.candidates[0]
         finish_reason = (
             str(candidate.finish_reason) if candidate.finish_reason else "STOP"
         )
 
+        parts = candidate.content.parts if candidate.content is not None else None
+        if parts is None:
+            raise BlockedResponseError(finish_reason)
+
         text_parts: list[str] = []
         fc_parts: list[dict[str, Any]] = []
 
-        for part in candidate.content.parts:
+        for part in parts:
             if part.function_call is not None:
                 fc = part.function_call
                 fc_parts.append({
@@ -245,10 +269,13 @@ class GeminiClient:
 
     @staticmethod
     def _is_retryable(exc: Exception) -> bool:
+        # Typed google-genai exceptions carry the HTTP status in .code.
+        if isinstance(exc, genai_errors.APIError):
+            return exc.code == 429 or (
+                isinstance(exc.code, int) and 500 <= exc.code < 600
+            )
         status = getattr(exc, "code", None) or getattr(exc, "status", None)
         if isinstance(status, int):
             return status == 429 or 500 <= status < 600
         exc_str = str(exc).lower()
-        if "429" in exc_str or "too many requests" in exc_str:
-            return True
-        return bool(re.search(r"5\d{2}", exc_str))
+        return "429" in exc_str or "too many requests" in exc_str
