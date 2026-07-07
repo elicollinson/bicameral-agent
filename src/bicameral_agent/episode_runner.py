@@ -163,16 +163,15 @@ class EpisodeRunner:
         if self._cost_tracker is not None:
             self._cost_tracker.reset_episode()
             active_client = CostTrackedClient(self._client, self._cost_tracker)
-            judge_client = (
-                active_client
-                if self._judge_client is self._client
-                else CostTrackedClient(self._judge_client, self._cost_tracker)
-            )
-            sim_user_client = (
-                active_client
-                if self._sim_user_client is self._client
-                else CostTrackedClient(self._sim_user_client, self._cost_tracker)
-            )
+
+            def _tracked(role_client: ModelClient) -> ModelClient:
+                """Reuse the answerer's wrapper when the role shares its client."""
+                if role_client is self._client:
+                    return active_client
+                return CostTrackedClient(role_client, self._cost_tracker)
+
+            judge_client = _tracked(self._judge_client)
+            sim_user_client = _tracked(self._sim_user_client)
 
         # Initialize components
         queue = ContextQueue()
