@@ -272,19 +272,35 @@ class TestAggregate:
             assert name in report.summaries
 
 
+def _quality_reports(
+    heuristic: list[float], baseline: list[float], name: str = "random"
+) -> dict:
+    return {
+        "heuristic": aggregate(
+            "heuristic", [_metrics(quality_score=q) for q in heuristic]
+        ),
+        name: aggregate(name, [_metrics(quality_score=q) for q in baseline]),
+    }
+
+
 class TestComparisons:
     def test_heuristic_outperforms_random(self):
-        reports = {
-            "heuristic": aggregate("heuristic", [_metrics(quality_score=0.8)]),
-            "random": aggregate("random", [_metrics(quality_score=0.4)]),
-        }
+        # Clearly separated samples: higher mean AND Welch-significant.
+        reports = _quality_reports([0.8, 0.82, 0.78], [0.4, 0.42, 0.38])
         assert heuristic_outperforms(reports, "random") is True
 
     def test_heuristic_does_not_outperform(self):
-        reports = {
-            "heuristic": aggregate("heuristic", [_metrics(quality_score=0.3)]),
-            "random": aggregate("random", [_metrics(quality_score=0.4)]),
-        }
+        reports = _quality_reports([0.3, 0.32, 0.28], [0.4, 0.42, 0.38])
+        assert heuristic_outperforms(reports, "random") is False
+
+    def test_higher_mean_but_not_significant(self):
+        # Means differ slightly but overlap heavily: no winner declared.
+        reports = _quality_reports([0.5, 0.7, 0.3], [0.45, 0.65, 0.25])
+        assert heuristic_outperforms(reports, "random") is False
+
+    def test_single_episode_is_never_significant(self):
+        # n=1 per condition cannot reach significance under Welch's t-test.
+        reports = _quality_reports([0.8], [0.4])
         assert heuristic_outperforms(reports, "random") is False
 
     def test_missing_baseline_returns_false(self):
@@ -296,11 +312,14 @@ class TestFormatReport:
     def test_includes_all_conditions(self):
         from bicameral_agent.baseline_benchmark import BenchmarkResult
 
+        def _report(name: str, qualities: list[float]):
+            return aggregate(name, [_metrics(quality_score=q) for q in qualities])
+
         result = BenchmarkResult()
         result.reports = {
-            "heuristic": aggregate("heuristic", [_metrics(quality_score=0.6)]),
-            "random": aggregate("random", [_metrics(quality_score=0.4)]),
-            "no_subconscious": aggregate("no_subconscious", [_metrics(quality_score=0.3)]),
+            "heuristic": _report("heuristic", [0.6, 0.62, 0.58]),
+            "random": _report("random", [0.4, 0.42, 0.38]),
+            "no_subconscious": _report("no_subconscious", [0.3, 0.32, 0.28]),
         }
         text = format_report(result)
         assert "heuristic" in text
@@ -308,8 +327,8 @@ class TestFormatReport:
         assert "no_subconscious" in text
         assert "MAPE" in text
         assert "quality_score" in text
-        assert "heuristic > random on quality_score: YES" in text
-        assert "heuristic > no_subconscious on quality_score: YES" in text
+        assert "heuristic > random on quality_score (Welch 95%): YES" in text
+        assert "heuristic > no_subconscious on quality_score (Welch 95%): YES" in text
 
 
 class _StubController:

@@ -340,7 +340,7 @@ class TestDataClasses:
             label="test",
             input_tokens=100,
             output_tokens=200,
-            latency=LatencyEstimate(mean_ms=100.0, p25_ms=80.0, p75_ms=120.0),
+            latency=LatencyEstimate(mean_ms=100.0, sigma_ms=30.0),
         )
         with pytest.raises(AttributeError):
             sc.label = "changed"
@@ -348,7 +348,7 @@ class TestDataClasses:
     def test_tool_prediction_frozen(self):
         pred = ToolPrediction(
             tool_id="test",
-            latency=LatencyEstimate(mean_ms=100.0, p25_ms=80.0, p75_ms=120.0),
+            latency=LatencyEstimate(mean_ms=100.0, sigma_ms=30.0),
             cost=CostEstimate(input_cost=0.001, output_cost=0.002, total=0.003),
             token_estimate=TokenEstimate(input_tokens=100, output_tokens=200, num_calls=1),
             sub_calls=(),

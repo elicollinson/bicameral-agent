@@ -9,7 +9,7 @@ import pytest
 
 from bicameral_agent.conscious_loop import AssistantResponse, ConsciousLoop
 from bicameral_agent.gemini import ChatMessage, GeminiClient, GeminiResponse
-from bicameral_agent.queue import ContextQueue, InterruptConfig, Priority, QueueItem
+from bicameral_agent.queue import ContextQueue, Priority, QueueItem
 
 
 def _make_response(
@@ -30,7 +30,6 @@ def _make_response(
 def _make_loop(
     generate_side_effect=None,
     system_prompt=None,
-    interrupt_config=None,
     on_completion=None,
     persistent_injection=True,
 ) -> tuple[ConsciousLoop, MagicMock, ContextQueue]:
@@ -45,41 +44,10 @@ def _make_loop(
         client,
         queue,
         system_prompt=system_prompt,
-        interrupt_config=interrupt_config,
         on_completion=on_completion,
         persistent_injection=persistent_injection,
     )
     return loop, client, queue
-
-
-def _enqueue_on_generate(
-    queue: ContextQueue,
-    responses: list[GeminiResponse],
-    *,
-    enqueue_on: set[int] | None = None,
-    content: str = "CRITICAL",
-    priority: Priority = Priority.CRITICAL,
-    source_tool_id: str = "urgent",
-):
-    """Return a generate side_effect that enqueues items on specified call indices."""
-    if enqueue_on is None:
-        enqueue_on = {0}
-    call_count = 0
-
-    def side_effect(*args, **kwargs):
-        nonlocal call_count
-        idx = call_count
-        call_count += 1
-        if idx in enqueue_on:
-            queue.enqueue(QueueItem(
-                content=f"{content} {idx}" if len(enqueue_on) > 1 else content,
-                priority=priority,
-                source_tool_id=f"{source_tool_id}{idx}" if len(enqueue_on) > 1 else source_tool_id,
-                token_count=10,
-            ))
-        return responses[idx]
-
-    return side_effect
 
 
 class TestBasicTurnExecution:
@@ -91,7 +59,6 @@ class TestBasicTurnExecution:
 
         assert result.content == "Hello!"
         assert result.turn_number == 1
-        assert not result.interrupted
         assert not result.context_injected
         client.generate.assert_called_once()
 
@@ -257,149 +224,6 @@ class TestInjectionPersistence:
         loop.regenerate_with_context("NEW CONTEXT")
 
         assert loop.history[0].content == "Hello"
-
-    def test_persistent_interrupt_combined_context_persists(self):
-        """Persistent: breakpoint + interrupt context both persist across turns."""
-        responses = [
-            _make_response("first"),
-            _make_response("second"),
-            _make_response("r2"),
-        ]
-        loop, client, queue = _make_loop(
-            interrupt_config=InterruptConfig(priority_threshold=Priority.CRITICAL),
-        )
-        # Breakpoint item drained before generation; a critical item arrives
-        # during the first generation and triggers the interrupt path.
-        self._enqueue(queue, content="BREAKPOINT FACT")
-        client.generate.side_effect = _enqueue_on_generate(
-            queue, responses, content="INTERRUPT FACT",
-        )
-
-        result = loop.run_turn("msg1")
-
-        assert result.interrupted
-        stored = loop.history[0].content
-        assert "BREAKPOINT FACT" in stored
-        assert "INTERRUPT FACT" in stored
-        assert "msg1" in stored
-
-        # The combined context is visible in the next turn's API call.
-        loop.run_turn("msg2")
-        third_call_msgs = client.generate.call_args_list[2][0][0]
-        prior = "\n".join(m.content for m in third_call_msgs[:-1])
-        assert "BREAKPOINT FACT" in prior
-        assert "INTERRUPT FACT" in prior
-
-    def test_transient_interrupt_context_not_persisted(self):
-        """Transient: interrupt context vanishes from history after the turn."""
-        responses = [
-            _make_response("first"),
-            _make_response("second"),
-            _make_response("r2"),
-        ]
-        loop, client, queue = _make_loop(
-            interrupt_config=InterruptConfig(priority_threshold=Priority.CRITICAL),
-            persistent_injection=False,
-        )
-        client.generate.side_effect = _enqueue_on_generate(
-            queue, responses, content="INTERRUPT FACT",
-        )
-
-        result = loop.run_turn("msg1")
-
-        assert result.interrupted
-        assert loop.history[0].content == "msg1"
-
-        loop.run_turn("msg2")
-        third_call_msgs = client.generate.call_args_list[2][0][0]
-        assert all("INTERRUPT FACT" not in m.content for m in third_call_msgs)
-
-
-class TestInterrupt:
-    """Critical item triggers turn restart with injection."""
-
-    def test_interrupt_triggers_regeneration(self):
-        """When a critical item arrives, the turn should be interrupted and regenerated."""
-        responses = [
-            _make_response("first attempt", input_tokens=10, output_tokens=20),
-            _make_response("second attempt", input_tokens=15, output_tokens=25),
-        ]
-        loop, client, queue = _make_loop(
-            interrupt_config=InterruptConfig(priority_threshold=Priority.CRITICAL),
-        )
-        client.generate.side_effect = _enqueue_on_generate(
-            queue, responses, content="CRITICAL UPDATE",
-        )
-
-        result = loop.run_turn("Hello")
-
-        assert result.interrupted
-        assert result.context_injected
-        assert result.content == "second attempt"
-        assert client.generate.call_count == 2
-
-    def test_interrupt_injects_context_in_retry(self):
-        """The retry generation should include the critical context."""
-        responses = [_make_response("first"), _make_response("second")]
-        loop, client, queue = _make_loop(
-            interrupt_config=InterruptConfig(priority_threshold=Priority.CRITICAL),
-        )
-        client.generate.side_effect = _enqueue_on_generate(
-            queue, responses, content="URGENT INFO",
-        )
-
-        loop.run_turn("Hello")
-
-        second_call_msgs = client.generate.call_args_list[1][0][0]
-        last_msg = second_call_msgs[-1]
-        assert "URGENT INFO" in last_msg.content
-
-
-class TestMaxOneInterrupt:
-    """After 1 interrupt, freeze prevents a second."""
-
-    def test_freeze_prevents_second_interrupt(self):
-        """Only one interrupt per turn — freeze suppresses further threshold checks."""
-        responses = [_make_response("first"), _make_response("second")]
-        loop, client, queue = _make_loop(
-            interrupt_config=InterruptConfig(priority_threshold=Priority.CRITICAL),
-        )
-        client.generate.side_effect = _enqueue_on_generate(
-            queue, responses, enqueue_on={0, 1}, content="CRITICAL",
-        )
-
-        result = loop.run_turn("Hello")
-
-        # Should only generate twice (one interrupt), not three times
-        assert client.generate.call_count == 2
-        assert result.interrupted
-        assert result.content == "second"
-
-
-class TestWastedTokens:
-    """Wasted tokens are logged correctly on interrupt."""
-
-    def test_wasted_tokens_reported(self):
-        responses = [
-            _make_response("wasted", input_tokens=50, output_tokens=30),
-            _make_response("kept", input_tokens=60, output_tokens=40),
-        ]
-        loop, client, queue = _make_loop(
-            interrupt_config=InterruptConfig(priority_threshold=Priority.CRITICAL),
-        )
-        client.generate.side_effect = _enqueue_on_generate(queue, responses)
-
-        result = loop.run_turn("Hello")
-
-        assert queue.wasted_tokens == 80  # 50 + 30
-        assert result.total_tokens == 80 + 60 + 40  # wasted + final
-
-    def test_total_tokens_without_interrupt(self):
-        loop, _, _ = _make_loop()
-        result = loop.run_turn("Hi")
-
-        assert result.total_tokens == result.input_tokens + result.output_tokens
-
 
 class TestTurnMetadata:
     """Turn number, tokens, and duration are accurate."""

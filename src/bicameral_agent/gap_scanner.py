@@ -8,15 +8,23 @@ results as a QueueItem for context injection.
 from __future__ import annotations
 
 import enum
-import hashlib
-import re
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
-from bicameral_agent.llm_output import clamp, safe_parse_json
+from bicameral_agent.llm_output import (
+    clamp,
+    format_conversation,
+    safe_parse_json,
+    tokenize,
+)
 from bicameral_agent.queue import Priority, QueueItem
-from bicameral_agent.schema import Message, estimate_text_tokens
-from bicameral_agent.tool_primitive import ToolMetadata, ToolPrimitive, ToolResult
+from bicameral_agent.schema import estimate_text_tokens
+from bicameral_agent.tool_primitive import (
+    ToolMetadata,
+    ToolPrimitive,
+    ToolResult,
+    make_dedup_key,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -71,11 +79,6 @@ class SearchProvider(Protocol):
         ...
 
 
-def _tokenize(text: str) -> list[str]:
-    """Lowercase, split on non-alphanumeric, filter empty."""
-    return [t for t in re.split(r"[^a-z0-9]+", text.lower()) if t]
-
-
 class MockSearchProvider:
     """Keyword-matching search over built-in research snippets."""
 
@@ -103,15 +106,15 @@ class MockSearchProvider:
     ]
 
     def search(self, query: str, max_results: int = 3) -> list[SearchResult]:
-        query_tokens = set(_tokenize(query))
+        query_tokens = set(tokenize(query))
         if not query_tokens:
             return []
 
         scored: list[tuple[float, dict[str, str]]] = []
         for snippet_data in self._SNIPPETS:
             doc_tokens = set(
-                _tokenize(snippet_data["title"])
-                + _tokenize(snippet_data["snippet"])
+                tokenize(snippet_data["title"])
+                + tokenize(snippet_data["snippet"])
             )
             if not doc_tokens:
                 continue
@@ -227,7 +230,7 @@ class ResearchGapScanner(ToolPrimitive):
 
     def _execute(self, conversation_history, reasoning_state, client):
         # Format conversation (last 10 messages)
-        conv_text = _format_conversation(conversation_history)
+        conv_text = format_conversation(conversation_history)
 
         # Call 1: Identify gaps
         gaps = _identify_gaps(conv_text, client)
@@ -329,15 +332,6 @@ class ResearchGapScanner(ToolPrimitive):
 # ---------------------------------------------------------------------------
 
 
-def _format_conversation(history: list[Message]) -> str:
-    """Format last 10 messages as [role]: content lines."""
-    recent = history[-10:]
-    lines = []
-    for msg in recent:
-        lines.append(f"[{msg.role}]: {msg.content}")
-    return "\n".join(lines)
-
-
 def _identify_gaps(conv_text: str, client) -> list[IdentifiedGap]:
     """Call 1: Send conversation to LLM, parse structured gap JSON."""
     response = client.generate(
@@ -417,10 +411,8 @@ def _max_priority(gaps: list[IdentifiedGap]) -> Priority:
 
 
 def _make_dedup_key(gaps: list[IdentifiedGap]) -> str:
-    """SHA-256 hash of sorted gap descriptions, prefixed gap_scanner:."""
-    descriptions = sorted(g.description for g in gaps)
-    h = hashlib.sha256("|".join(descriptions).encode()).hexdigest()
-    return f"gap_scanner:{h}"
+    """Dedup key from gap descriptions, prefixed gap_scanner:."""
+    return make_dedup_key("gap_scanner", (g.description for g in gaps))
 
 
 def _format_gaps_only(gaps: list[IdentifiedGap]) -> str:

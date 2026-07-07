@@ -6,8 +6,23 @@ import time
 import pytest
 
 from bicameral_agent.logger import ConversationLogger
+from bicameral_agent.queue import Priority, QueueItem
 from bicameral_agent.schema import UserEventType
 from bicameral_agent.validation import EpisodeValidator
+
+
+def _queue_item(
+    content: str = "ctx",
+    source_tool_id: str = "tool",
+    priority: Priority = Priority.LOW,
+    token_count: int = 1,
+) -> QueueItem:
+    return QueueItem(
+        content=content,
+        source_tool_id=source_tool_id,
+        priority=priority,
+        token_count=token_count,
+    )
 
 
 class TestBasicConstruction:
@@ -60,10 +75,12 @@ class TestRoundTrip:
         # 6 context injections (3 consumed)
         for i in range(6):
             inj_idx = logger.log_context_injection(
-                content=f"context {i}",
-                source_tool_id=f"src-{i}",
-                priority=i,
-                token_count=15 + i,
+                _queue_item(
+                    content=f"context {i}",
+                    source_tool_id=f"src-{i}",
+                    priority=Priority(i % 4),
+                    token_count=15 + i,
+                )
             )
             if i < 3:
                 logger.log_injection_consumed(inj_idx, turn_number=i)
@@ -133,7 +150,7 @@ class TestMonotonicTimestamps:
     def test_context_injection_timestamps_sorted(self):
         logger = ConversationLogger()
         for i in range(50):
-            logger.log_context_injection(f"ctx {i}", "tool", priority=0, token_count=1)
+            logger.log_context_injection(_queue_item(content=f"ctx {i}"))
         episode = logger.finalize()
         timestamps = [c.timestamp_ms for c in episode.context_injections]
         assert timestamps == sorted(timestamps)
@@ -212,7 +229,9 @@ class TestValidatorCompliance:
         logger.log_message("assistant", "hello", token_count=3)
         idx = logger.log_tool_invocation("search", input_tokens=5)
         logger.log_tool_completion(idx, output_tokens=10, result_deposited=True)
-        inj = logger.log_context_injection("extra context", "search", priority=1, token_count=8)
+        inj = logger.log_context_injection(
+            _queue_item("extra context", "search", Priority.MEDIUM, token_count=8)
+        )
         logger.log_injection_consumed(inj, turn_number=0)
         logger.log_user_event(UserEventType.FOLLOW_UP)
         episode = logger.finalize(quality_score=0.9)
@@ -259,7 +278,7 @@ class TestFinalizeGuards:
         with pytest.raises(RuntimeError, match="Cannot log events after finalize"):
             logger.log_tool_invocation("tool", input_tokens=1)
         with pytest.raises(RuntimeError, match="Cannot log events after finalize"):
-            logger.log_context_injection("ctx", "tool", priority=0, token_count=1)
+            logger.log_context_injection(_queue_item())
 
 
 class TestToolInvocationSorting:
@@ -291,7 +310,7 @@ class TestInjectionEdgeCases:
 
     def test_double_consume_raises(self):
         logger = ConversationLogger()
-        idx = logger.log_context_injection("ctx", "tool", priority=0, token_count=5)
+        idx = logger.log_context_injection(_queue_item(token_count=5))
         logger.log_injection_consumed(idx, turn_number=0)
         with pytest.raises(ValueError, match="already consumed"):
             logger.log_injection_consumed(idx, turn_number=1)
@@ -311,8 +330,10 @@ class TestOutcomeComputation:
         idx = logger.log_tool_invocation("tool", input_tokens=5)
         logger.log_tool_completion(idx, output_tokens=15)
 
-        inj0 = logger.log_context_injection("consumed", "src", priority=0, token_count=8)
-        logger.log_context_injection("not consumed", "src", priority=0, token_count=100)
+        inj0 = logger.log_context_injection(
+            _queue_item("consumed", "src", token_count=8)
+        )
+        logger.log_context_injection(_queue_item("not consumed", "src", token_count=100))
         logger.log_injection_consumed(inj0, turn_number=0)
 
         episode = logger.finalize()

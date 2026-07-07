@@ -13,7 +13,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Callable
 
-from bicameral_agent.ab_test import MetricSummary, compute_summary
+from bicameral_agent.ab_test import MetricSummary, compute_summary, welch_t_test_from_stats
 from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.episode_runner import Controller, EpisodeRunner
 from bicameral_agent.gemini import GeminiClient
@@ -247,12 +247,19 @@ def heuristic_outperforms(
     baseline: str,
     metric: str = "quality_score",
 ) -> bool:
-    """Whether ``heuristic`` mean strictly exceeds ``baseline`` mean on ``metric``."""
+    """Whether ``heuristic`` significantly exceeds ``baseline`` on ``metric``.
+
+    Requires both a strictly higher mean and a significant Welch's t-test at
+    95% confidence — a raw mean difference alone does not declare a winner.
+    """
     if "heuristic" not in reports or baseline not in reports:
         return False
-    h = reports["heuristic"].summaries[metric].mean
-    b = reports[baseline].summaries[metric].mean
-    return h > b
+    h = reports["heuristic"].summaries[metric]
+    b = reports[baseline].summaries[metric]
+    if h.mean <= b.mean:
+        return False
+    _, significant = welch_t_test_from_stats(h.mean, h.std, h.n, b.mean, b.std, b.n)
+    return significant
 
 
 def format_report(result: BenchmarkResult) -> str:
@@ -280,7 +287,8 @@ def format_report(result: BenchmarkResult) -> str:
             if baseline in result.reports:
                 ok = heuristic_outperforms(result.reports, baseline)
                 lines.append(
-                    f"  heuristic > {baseline} on quality_score: {'YES' if ok else 'NO'}"
+                    f"  heuristic > {baseline} on quality_score "
+                    f"(Welch 95%): {'YES' if ok else 'NO'}"
                 )
     lines.append("")
     return "\n".join(lines)

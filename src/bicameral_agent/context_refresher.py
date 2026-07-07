@@ -9,7 +9,6 @@ no drift is detected.
 from __future__ import annotations
 
 import enum
-import hashlib
 import json
 
 from bicameral_agent.queue import Priority, QueueItem
@@ -19,6 +18,7 @@ from bicameral_agent.tool_primitive import (
     ToolMetadata,
     ToolPrimitive,
     ToolResult,
+    make_dedup_key,
 )
 
 
@@ -244,7 +244,5 @@ def _format_recent_messages(messages: list[Message]) -> str:
 
 
 def _make_dedup_key(drifts: list[tuple[DriftCategory, str]]) -> str:
-    """SHA-256 hash of sorted drift descriptions, prefixed context_refresher:."""
-    descriptions = sorted(desc for _, desc in drifts)
-    h = hashlib.sha256("|".join(descriptions).encode()).hexdigest()
-    return f"context_refresher:{h}"
+    """Dedup key from drift descriptions, prefixed context_refresher:."""
+    return make_dedup_key("context_refresher", (desc for _, desc in drifts))

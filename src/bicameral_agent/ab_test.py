@@ -257,8 +257,29 @@ def welch_t_test(a: list[float], b: list[float]) -> tuple[float, bool]:
     var_a = sum((x - mean_a) ** 2 for x in a) / (na - 1)
     var_b = sum((x - mean_b) ** 2 for x in b) / (nb - 1)
 
-    se_a = var_a / na
-    se_b = var_b / nb
+    return welch_t_test_from_stats(
+        mean_a, math.sqrt(var_a), na, mean_b, math.sqrt(var_b), nb
+    )
+
+
+def welch_t_test_from_stats(
+    mean_a: float,
+    std_a: float,
+    n_a: int,
+    mean_b: float,
+    std_b: float,
+    n_b: int,
+) -> tuple[float, bool]:
+    """Welch's t-test from summary statistics (mean, sample std, n).
+
+    Same semantics as :func:`welch_t_test` but computable directly from a
+    :class:`MetricSummary` when the raw samples are no longer at hand.
+    """
+    if n_a < 2 or n_b < 2:
+        return 0.0, False
+
+    se_a = (std_a**2) / n_a
+    se_b = (std_b**2) / n_b
     se_sum = se_a + se_b
 
     if se_sum == 0:
@@ -268,7 +289,7 @@ def welch_t_test(a: list[float], b: list[float]) -> tuple[float, bool]:
 
     # Welch-Satterthwaite degrees of freedom
     df = (se_sum ** 2) / (
-        (se_a ** 2 / (na - 1)) + (se_b ** 2 / (nb - 1))
+        (se_a ** 2 / (n_a - 1)) + (se_b ** 2 / (n_b - 1))
     )
     df = max(1, int(df))
 

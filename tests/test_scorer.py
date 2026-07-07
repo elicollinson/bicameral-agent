@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 from bicameral_agent.dataset import ResearchQATask, TaskDifficulty, TaskSplit
+from bicameral_agent.llm_output import tokenize
 from bicameral_agent.scorer import (
     LexicalScorer,
     TaskScore,
@@ -16,7 +17,6 @@ from bicameral_agent.scorer import (
     _lcs_length,
     _rouge_l,
     _token_f1,
-    _tokenize,
 )
 
 
@@ -129,19 +129,19 @@ class TestTaskScore:
 
 class TestTokenize:
     def test_basic(self):
-        assert _tokenize("Hello World") == ["hello", "world"]
+        assert tokenize("Hello World") == ["hello", "world"]
 
     def test_punctuation_stripped(self):
-        assert _tokenize("Hello, world! How's it?") == ["hello", "world", "how", "s", "it"]
+        assert tokenize("Hello, world! How's it?") == ["hello", "world", "how", "s", "it"]
 
     def test_empty_string(self):
-        assert _tokenize("") == []
+        assert tokenize("") == []
 
     def test_numbers_preserved(self):
-        assert _tokenize("HTTP/1.1 200 OK") == ["http", "1", "1", "200", "ok"]
+        assert tokenize("HTTP/1.1 200 OK") == ["http", "1", "1", "200", "ok"]
 
     def test_all_punctuation(self):
-        assert _tokenize("...!!!") == []
+        assert tokenize("...!!!") == []
 
 
 # ---------------------------------------------------------------------------

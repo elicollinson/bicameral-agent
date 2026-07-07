@@ -182,7 +182,6 @@ class EpisodeRunner:
             system_prompt=cfg.system_prompt,
             thinking_level=cfg.thinking_level,
             temperature=cfg.temperature,
-            interrupt_config=cfg.interrupt_config,
             persistent_injection=cfg.persistent_injection,
         )
         sim_user = SimulatedUser(
@@ -243,17 +242,7 @@ class EpisodeRunner:
                 )
                 break
 
-            # (e) Track loop-internal interrupt fires and the generation they
-            # discarded, so the episode's cost accounting includes the waste.
-            if response.interrupted:
-                interrupt_count += 1
-            loop_waste = response.total_tokens - (
-                response.input_tokens + response.output_tokens
-            )
-            if loop_waste > 0:
-                log.log_wasted_tokens(loop_waste)
-
-            # (e2) Log assistant message at generation time so that any tool
+            # (e) Log assistant message at generation time so that any tool
             # events later this turn come after it in reconstructed timelines.
             log.log_message("assistant", response.content, response.output_tokens)
 
@@ -340,12 +329,7 @@ class EpisodeRunner:
                             update=deposit_update
                         )
                         queue.enqueue(deposit)
-                        inj_idx = log.log_context_injection(
-                            content=deposit.content,
-                            source_tool_id=deposit.source_tool_id,
-                            priority=int(deposit.priority),
-                            token_count=deposit.token_count,
-                        )
+                        inj_idx = log.log_context_injection(deposit)
                         pending_injection_indices.append(inj_idx)
 
                         # (j2) Mode-specific handling after tool deposit
@@ -357,7 +341,6 @@ class EpisodeRunner:
                                 discarded = (
                                     response.input_tokens + response.output_tokens
                                 )
-                                queue.report_wasted_tokens(discarded)
                                 log.log_wasted_tokens(discarded)
                                 response = regen
                                 log.replace_last_message(

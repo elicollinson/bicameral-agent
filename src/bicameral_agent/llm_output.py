@@ -4,13 +4,20 @@ LLM responses routinely come back malformed: truncated at the
 ``max_output_tokens`` cap (``finish_reason=MAX_TOKENS``), wrapped in prose
 preamble, or carrying out-of-range numerics. A single such response must not
 crash an episode -- callers degrade to a no-op result or neutral score instead.
+
+Also hosts the small text helpers shared across LLM-facing modules
+(``tokenize``, ``format_conversation``), alongside ``clamp``/``coerce_int``.
 """
 
 from __future__ import annotations
 
 import json
 import logging
-from typing import Any
+import re
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from bicameral_agent.schema import Message
 
 logger = logging.getLogger(__name__)
 
@@ -75,3 +82,22 @@ def coerce_int(value: Any, default: int) -> int:
         return int(float(value))
     except (TypeError, ValueError, OverflowError):
         return default
+
+
+def tokenize(text: str) -> list[str]:
+    """Lowercase, split on non-alphanumeric, filter empty.
+
+    Shared lexical tokenizer used by the lexical scorers and the mock
+    search provider (issue #54).
+    """
+    return [t for t in re.split(r"[^a-z0-9]+", text.lower()) if t]
+
+
+def format_conversation(history: list[Message]) -> str:
+    """Format the last 10 messages as ``[role]: content`` lines.
+
+    Shared prompt-context formatter used by the gap scanner and assumption
+    auditor (issue #54). The simulated user keeps its own variant with
+    different selection and labeling semantics.
+    """
+    return "\n".join(f"[{msg.role}]: {msg.content}" for msg in history[-10:])

@@ -37,14 +37,24 @@ def _assert_finite_positive(est: LatencyEstimate) -> None:
 
 
 class TestLatencyEstimate:
-    def test_fields_accessible(self):
-        est = LatencyEstimate(mean_ms=100.0, p25_ms=80.0, p75_ms=120.0)
+    def test_percentiles_derived_from_sigma(self):
+        est = LatencyEstimate(mean_ms=100.0, sigma_ms=10.0)
         assert est.mean_ms == 100.0
-        assert est.p25_ms == 80.0
-        assert est.p75_ms == 120.0
+        assert est.p25_ms == pytest.approx(100.0 - 0.6745 * 10.0)
+        assert est.p75_ms == pytest.approx(100.0 + 0.6745 * 10.0)
+
+    def test_p25_clamped_at_zero(self):
+        est = LatencyEstimate(mean_ms=10.0, sigma_ms=100.0)
+        assert est.p25_ms == 0.0
+        assert est.sigma_ms == 100.0  # sigma unaffected by the clamp
+
+    def test_zero_sigma_collapses_percentiles(self):
+        est = LatencyEstimate(mean_ms=100.0)
+        assert est.p25_ms == 100.0
+        assert est.p75_ms == 100.0
 
     def test_frozen(self):
-        est = LatencyEstimate(mean_ms=100.0, p25_ms=80.0, p75_ms=120.0)
+        est = LatencyEstimate(mean_ms=100.0, sigma_ms=10.0)
         with pytest.raises(AttributeError):
             est.mean_ms = 200.0
 

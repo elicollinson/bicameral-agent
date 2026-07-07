@@ -10,6 +10,7 @@ import threading
 import time
 import uuid
 
+from bicameral_agent.queue import QueueItem
 from bicameral_agent.schema import (
     ContextInjection,
     Episode,
@@ -207,20 +208,12 @@ class ConversationLogger:
                 ),
             ))
 
-    def log_context_injection(
-        self,
-        content: str,
-        source_tool_id: str,
-        priority: int,
-        token_count: int,
-    ) -> int:
-        """Record a context injection.
+    def log_context_injection(self, item: QueueItem) -> int:
+        """Record a context injection from a queue item.
 
         Args:
-            content: The injected context text.
-            source_tool_id: Identifier of the tool that produced this context.
-            priority: Priority level (higher = more important).
-            token_count: Number of tokens in the injected content.
+            item: The queue item being deposited; converted to the schema-level
+                ContextInjection via ContextInjection.from_queue_item().
 
         Returns:
             An opaque injection index to pass to log_injection_consumed().
@@ -231,13 +224,7 @@ class ConversationLogger:
             idx = self._next_injection_index
             self._next_injection_index += 1
             self._context_injections.append(
-                ContextInjection(
-                    content=content,
-                    source_tool_id=source_tool_id,
-                    priority=priority,
-                    timestamp_ms=ts,
-                    token_count=token_count,
-                )
+                ContextInjection.from_queue_item(item, timestamp_ms=ts)
             )
             return idx
 

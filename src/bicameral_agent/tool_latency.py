@@ -18,9 +18,6 @@ from bicameral_agent.token_estimator import (
     sub_call_inputs,
 )
 
-# Normal distribution z-score for 25th percentile
-_Z_25 = 0.6745
-
 # Gemini pricing
 _INPUT_COST_PER_TOKEN = 0.50 / 1_000_000  # $0.50 per 1M input tokens
 _OUTPUT_COST_PER_TOKEN = 3.00 / 1_000_000  # $3.00 per 1M output tokens
@@ -202,19 +199,8 @@ class ToolLatencyModel:
     ) -> LatencyEstimate:
         """Sum sub-call latencies assuming sequential independent calls."""
         total_mean = sum(sc.latency.mean_ms for sc in sub_calls)
-
-        total_var = 0.0
-        for sc in sub_calls:
-            spread = sc.latency.p75_ms - sc.latency.p25_ms
-            sigma = spread / (2 * _Z_25) if spread > 0 else 0.0
-            total_var += sigma * sigma
-
-        total_sigma = math.sqrt(total_var)
-        return LatencyEstimate(
-            mean_ms=total_mean,
-            p25_ms=max(total_mean - _Z_25 * total_sigma, 0.0),
-            p75_ms=total_mean + _Z_25 * total_sigma,
-        )
+        total_var = sum(sc.latency.sigma_ms**2 for sc in sub_calls)
+        return LatencyEstimate(mean_ms=total_mean, sigma_ms=math.sqrt(total_var))
 
     @staticmethod
     def _compute_cost(token_est: TokenEstimate) -> CostEstimate:

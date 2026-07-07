@@ -6,6 +6,7 @@ import time
 
 from bicameral_agent.followup_classifier import FollowUpType
 from bicameral_agent.heuristic_controller import (
+    TOOL_IDS,
     Action,
     ExecutingTool,
     FullState,
@@ -90,7 +91,7 @@ class TestRuleIsolation:
             _state(
                 stop_count=1,
                 executing_tools=(ExecutingTool("t1", 3000.0),),
-                predicted_latencies={Action.AUDITOR.value: 3500.0},
+                predicted_latencies={TOOL_IDS[Action.AUDITOR]: 3500.0},
             )
         )
         assert action == Action.DO_NOTHING
@@ -125,7 +126,7 @@ class TestGuards:
             _state(
                 turn_number=1,
                 executing_tools=(ExecutingTool("t1", 3000.0),),
-                predicted_latencies={Action.SCANNER.value: 3500.0},
+                predicted_latencies={TOOL_IDS[Action.SCANNER]: 3500.0},
             )
         )
         assert action == Action.DO_NOTHING
@@ -137,7 +138,7 @@ class TestGuards:
             _state(
                 turn_number=1,
                 executing_tools=(ExecutingTool("t1", 3000.0),),
-                predicted_latencies={Action.SCANNER.value: 1000.0},
+                predicted_latencies={TOOL_IDS[Action.SCANNER]: 1000.0},
             )
         )
         assert action == Action.SCANNER

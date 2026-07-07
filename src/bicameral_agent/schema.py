@@ -8,7 +8,12 @@ from __future__ import annotations
 
 import enum
 import uuid
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+if TYPE_CHECKING:
+    from bicameral_agent.queue import QueueItem
 
 
 class UserEventType(str, enum.Enum):
@@ -100,6 +105,21 @@ class ContextInjection(BaseModel):
 
     consumed_at_turn: int | None = Field(default=None, ge=0)
     """The turn number at which this injection was consumed, if applicable."""
+
+    @classmethod
+    def from_queue_item(cls, item: QueueItem, *, timestamp_ms: int) -> ContextInjection:
+        """Convert a queue-internal QueueItem into its schema-level record.
+
+        Single conversion point so the parallel field sets of QueueItem and
+        ContextInjection cannot drift out of sync at enqueue/log sites.
+        """
+        return cls(
+            content=item.content,
+            source_tool_id=item.source_tool_id,
+            priority=int(item.priority),
+            timestamp_ms=timestamp_ms,
+            token_count=item.token_count,
+        )
 
 
 class ToolInvocation(BaseModel):
