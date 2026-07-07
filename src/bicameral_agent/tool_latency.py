@@ -12,7 +12,13 @@ from dataclasses import dataclass
 
 from bicameral_agent.heuristic_controller import TOOL_IDS, Action
 from bicameral_agent.latency import APILatencyModel, LatencyEstimate
-from bicameral_agent.token_estimator import ContextFeatures, TokenEstimate, TokenEstimator
+from bicameral_agent.token_estimator import (
+    AUDITOR_ASSESSMENT_INPUT_TOKENS,
+    SCANNER_RANKING_INPUT_TOKENS,
+    ContextFeatures,
+    TokenEstimate,
+    TokenEstimator,
+)
 
 # Normal distribution z-score for 25th percentile
 _Z_25 = 0.6745
@@ -170,17 +176,29 @@ class ToolLatencyModel:
         context_features: ContextFeatures,
         token_est: TokenEstimate,
     ) -> tuple[SubCallPrediction, ...]:
-        """Break a tool invocation into per-sub-call predictions."""
+        """Break a tool invocation into per-sub-call predictions.
+
+        Sub-call structure mirrors the actual tool implementations: the
+        scanner makes two LLM calls (gap identification + result ranking;
+        searches run against a local provider), the auditor makes two
+        (assumption extraction + evidence assessment), and the refresher
+        makes a single call.
+        """
         output_per_call = token_est.output_tokens // max(token_est.num_calls, 1)
         conv = context_features.conversation_length_tokens
 
+        calls: list[tuple[str, int]] | None = None
         if tool_id == TOOL_IDS[Action.SCANNER]:
-            gaps = token_est.num_calls - 2
             calls = [
                 ("gap_identification", 500 + conv),
-                *((f"search_{i + 1}", 2000) for i in range(gaps)),
-                ("synthesis", 500 + conv + gaps * 2000),
+                ("result_ranking", SCANNER_RANKING_INPUT_TOKENS),
             ]
+        elif tool_id == TOOL_IDS[Action.AUDITOR]:
+            calls = [
+                ("assumption_extraction", 400 + conv),
+                ("evidence_assessment", AUDITOR_ASSESSMENT_INPUT_TOKENS),
+            ]
+        if calls is not None:
             return tuple(
                 SubCallPrediction(
                     label=label,

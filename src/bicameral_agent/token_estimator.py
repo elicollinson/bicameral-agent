@@ -37,26 +37,37 @@ class _ToolProfile:
 
     system_prompt_tokens: int
     default_output_per_call: int
-    fixed_calls: int | None  # None = variable (computed from context)
+    num_calls: int
 
 
+# Call counts mirror the actual tool implementations: the scanner makes
+# exactly two LLM calls (gap identification + result ranking; its searches
+# run against a local provider), the auditor makes two (assumption
+# extraction + evidence assessment), and the refresher makes one.
+# Default output-per-call values are anchored to the median recorded
+# output token counts from the #23 baseline run (#44).
 _TOOL_PROFILES: dict[str, _ToolProfile] = {
     TOOL_IDS[Action.SCANNER]: _ToolProfile(
         system_prompt_tokens=500,
-        default_output_per_call=400,
-        fixed_calls=None,
+        default_output_per_call=670,
+        num_calls=2,
     ),
     TOOL_IDS[Action.AUDITOR]: _ToolProfile(
         system_prompt_tokens=400,
-        default_output_per_call=450,
-        fixed_calls=1,
+        default_output_per_call=750,
+        num_calls=2,
     ),
     TOOL_IDS[Action.REFRESHER]: _ToolProfile(
         system_prompt_tokens=300,
-        default_output_per_call=100,
-        fixed_calls=1,
+        default_output_per_call=1100,
+        num_calls=1,
     ),
 }
+
+# Estimated input size of the scanner's second call (identified gaps plus
+# local search results) and the auditor's second call (evidence block).
+SCANNER_RANKING_INPUT_TOKENS = 1500
+AUDITOR_ASSESSMENT_INPUT_TOKENS = 1200
 
 # EMA smoothing factor
 _EMA_ALPHA = 0.3
@@ -98,8 +109,8 @@ class TokenEstimator:
         conv = context_features.conversation_length_tokens
         turns = context_features.conversation_turn_count
 
-        num_calls = self._compute_num_calls(profile, conv)
-        input_tokens = self._compute_input_tokens(tool_id, conv, turns, num_calls)
+        num_calls = profile.num_calls
+        input_tokens = self._compute_input_tokens(tool_id, conv, turns)
 
         with self._lock:
             obs = self._observations.get(tool_id)
@@ -133,9 +144,7 @@ class TokenEstimator:
         if profile is None:
             raise ValueError(f"Unknown tool: {tool_id!r}")
 
-        conv = context_features.conversation_length_tokens
-        num_calls = self._compute_num_calls(profile, conv)
-        per_call = actual_output_tokens / max(num_calls, 1)
+        per_call = actual_output_tokens / max(profile.num_calls, 1)
 
         with self._lock:
             obs = self._observations.get(tool_id)
@@ -148,21 +157,11 @@ class TokenEstimator:
                 self._observations[tool_id] = (new_mean, count + 1)
 
     @staticmethod
-    def _compute_num_calls(profile: _ToolProfile, conv: int) -> int:
-        if profile.fixed_calls is not None:
-            return profile.fixed_calls
-        gaps = min(max(1, conv // 2000), 5)
-        return 2 + gaps
-
-    @staticmethod
-    def _compute_input_tokens(
-        tool_id: str, conv: int, turns: int, num_calls: int
-    ) -> int:
+    def _compute_input_tokens(tool_id: str, conv: int, turns: int) -> int:
         if tool_id == TOOL_IDS[Action.SCANNER]:
-            gaps = num_calls - 2
-            return (500 + conv) + (gaps * 2000) + (500 + conv + gaps * 2000)
+            return (500 + conv) + SCANNER_RANKING_INPUT_TOKENS
         if tool_id == TOOL_IDS[Action.AUDITOR]:
-            return 400 + conv
+            return (400 + conv) + AUDITOR_ASSESSMENT_INPUT_TOKENS
         if tool_id == TOOL_IDS[Action.REFRESHER]:
             avg_msg = conv / max(turns, 1)
             bounded = min(4 * avg_msg, conv)

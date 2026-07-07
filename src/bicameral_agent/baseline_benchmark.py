@@ -59,6 +59,9 @@ def _latency_pairs(
     decision corresponds to the nth ToolInvocation in the episode.
     Budget-exceeded invocations are excluded explicitly (their partial
     durations are not meaningful), as are any zero-duration invocations.
+    Pairs whose invocation tool_id does not match the decision's action are
+    dropped defensively: a mismatch means the positional alignment is wrong
+    and the predicted/actual values belong to different tools.
     """
     tool_decisions = [d for d in decisions if d.action != Action.DO_NOTHING]
     pairs: list[tuple[float, float]] = []
@@ -69,6 +72,8 @@ def _latency_pairs(
         if actual <= 0:
             continue
         tool_id = TOOL_IDS[decision.action]
+        if inv.tool_id != tool_id:
+            continue
         predicted = decision.state.predicted_latencies.get(tool_id)
         if predicted is None or predicted <= 0:
             continue

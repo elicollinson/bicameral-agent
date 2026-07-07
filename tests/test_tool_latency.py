@@ -2,12 +2,19 @@
 
 import threading
 import time
+from pathlib import Path
 
 import numpy as np
 import pytest
 
 from bicameral_agent.latency import APILatencyModel, LatencyEstimate
-from bicameral_agent.token_estimator import ContextFeatures, TokenEstimate, TokenEstimator
+from bicameral_agent.token_estimator import (
+    AUDITOR_ASSESSMENT_INPUT_TOKENS,
+    SCANNER_RANKING_INPUT_TOKENS,
+    ContextFeatures,
+    TokenEstimate,
+    TokenEstimator,
+)
 from bicameral_agent.tool_latency import (
     CostEstimate,
     SubCallPrediction,
@@ -60,22 +67,20 @@ class TestComposition:
 
 
 class TestScannerDecomposition:
-    """AC2: Scanner with predicted 2 gaps decomposes correctly."""
+    """AC2: Scanner decomposes into its two actual LLM calls (#44)."""
 
-    def test_scanner_2_gaps_structure(self):
-        """At conv=4000, gaps=2, so 4 sub-calls: gap + 2 search + synthesis."""
+    def test_scanner_structure(self):
+        """Two sub-calls: gap identification + result ranking."""
         model = ToolLatencyModel()
         ctx = ContextFeatures(conversation_length_tokens=4000, conversation_turn_count=15)
         pred = model.predict("research_gap_scanner", ctx)
 
-        assert pred.token_estimate.num_calls == 4
-        assert len(pred.sub_calls) == 4
+        assert pred.token_estimate.num_calls == 2
+        assert len(pred.sub_calls) == 2
         assert pred.sub_calls[0].label == "gap_identification"
-        assert pred.sub_calls[1].label == "search_1"
-        assert pred.sub_calls[2].label == "search_2"
-        assert pred.sub_calls[3].label == "synthesis"
+        assert pred.sub_calls[1].label == "result_ranking"
 
-    def test_scanner_2_gaps_input_tokens(self):
+    def test_scanner_input_tokens(self):
         """Verify per-call input token counts match the formulas."""
         model = ToolLatencyModel()
         conv = 4000
@@ -83,12 +88,10 @@ class TestScannerDecomposition:
         pred = model.predict("research_gap_scanner", ctx)
 
         assert pred.sub_calls[0].input_tokens == 500 + conv
-        assert pred.sub_calls[1].input_tokens == 2000
-        assert pred.sub_calls[2].input_tokens == 2000
-        assert pred.sub_calls[3].input_tokens == 500 + conv + 2 * 2000
+        assert pred.sub_calls[1].input_tokens == SCANNER_RANKING_INPUT_TOKENS
 
-    def test_scanner_2_gaps_mean_is_sum(self):
-        """Total mean latency = sum of 4 individual call means."""
+    def test_scanner_mean_is_sum(self):
+        """Total mean latency = sum of individual call means."""
         model = ToolLatencyModel()
         ctx = ContextFeatures(conversation_length_tokens=4000, conversation_turn_count=15)
         pred = model.predict("research_gap_scanner", ctx)
@@ -96,16 +99,103 @@ class TestScannerDecomposition:
         expected_mean = sum(sc.latency.mean_ms for sc in pred.sub_calls)
         assert abs(pred.latency.mean_ms - expected_mean) < 1e-6
 
-    def test_scanner_varying_gaps(self):
-        """Scanner sub-call count scales with conversation length."""
+
+class TestAuditorDecomposition:
+    """Auditor decomposes into assumption extraction + evidence assessment."""
+
+    def test_auditor_structure(self):
         model = ToolLatencyModel()
-        small = ContextFeatures(conversation_length_tokens=500, conversation_turn_count=3)
-        large = ContextFeatures(
-            conversation_length_tokens=12000, conversation_turn_count=40
+        conv = 3000
+        ctx = ContextFeatures(conversation_length_tokens=conv, conversation_turn_count=10)
+        pred = model.predict("assumption_auditor", ctx)
+
+        assert pred.token_estimate.num_calls == 2
+        assert len(pred.sub_calls) == 2
+        assert pred.sub_calls[0].label == "assumption_extraction"
+        assert pred.sub_calls[0].input_tokens == 400 + conv
+        assert pred.sub_calls[1].label == "evidence_assessment"
+        assert pred.sub_calls[1].input_tokens == AUDITOR_ASSESSMENT_INPUT_TOKENS
+
+
+class TestCalibratedColdStart:
+    """#44: cold-start predictions land in the measured latency range.
+
+    Ranges bracket the tool durations measured in the #23 baseline run
+    (data/baseline: scanner ~1.7-4.5s, auditor ~2.7-2.9s,
+    refresher ~0.9-1.3s) with headroom for larger conversations.
+    """
+
+    _RANGES = {
+        "research_gap_scanner": (1500.0, 4500.0),
+        "assumption_auditor": (1500.0, 4500.0),
+        "context_refresher": (600.0, 2200.0),
+    }
+
+    @pytest.mark.parametrize("tool_id", _TOOL_IDS)
+    @pytest.mark.parametrize(
+        "ctx", _CONV_SIZES, ids=lambda c: f"conv={c.conversation_length_tokens}"
+    )
+    def test_cold_start_within_calibrated_range(self, tool_id, ctx):
+        model = ToolLatencyModel()
+        est = model.predict_tool_duration(tool_id, ctx)
+        lo, hi = self._RANGES[tool_id]
+        assert lo <= est.mean_ms <= hi, (
+            f"{tool_id} cold-start mean {est.mean_ms:.0f}ms outside [{lo}, {hi}]"
         )
-        pred_small = model.predict("research_gap_scanner", small)
-        pred_large = model.predict("research_gap_scanner", large)
-        assert len(pred_large.sub_calls) >= len(pred_small.sub_calls)
+
+    @pytest.mark.parametrize("tool_id", _TOOL_IDS)
+    def test_monotonic_in_context_size(self, tool_id):
+        """Predicted mean is nondecreasing in conversation length."""
+        model = ToolLatencyModel()
+        means = [
+            model.predict_tool_duration(tool_id, ctx).mean_ms for ctx in _CONV_SIZES
+        ]
+        assert means == sorted(means), f"{tool_id} means not monotonic: {means}"
+
+
+_BASELINE_DIR = Path(__file__).resolve().parents[1] / "data" / "baseline"
+
+
+@pytest.mark.skipif(
+    not _BASELINE_DIR.exists(), reason="baseline episode data not available"
+)
+class TestBaselineMape:
+    """#44 AC: cold-start MAPE < 50% against measured baseline tool durations."""
+
+    def test_cold_start_mape_under_50_percent(self):
+        from bicameral_agent.serialization import episodes_from_parquet
+
+        rows: list[tuple[str, int, int, float]] = []
+        for pq_file in sorted(_BASELINE_DIR.glob("*.parquet")):
+            for episode in episodes_from_parquet(str(pq_file)):
+                for inv in episode.tool_invocations:
+                    if inv.budget_exceeded:
+                        continue
+                    actual_ms = float(inv.completed_at_ms - inv.invoked_at_ms)
+                    if actual_ms <= 0:
+                        continue
+                    prior = [
+                        m
+                        for m in episode.messages
+                        if m.timestamp_ms <= inv.invoked_at_ms
+                    ]
+                    conv_tokens = sum(m.token_count for m in prior)
+                    rows.append((inv.tool_id, conv_tokens, len(prior), actual_ms))
+
+        assert rows, "no usable tool invocations in baseline data"
+
+        model = ToolLatencyModel()
+        errors = []
+        for tool_id, conv_tokens, turns, actual_ms in rows:
+            ctx = ContextFeatures(
+                conversation_length_tokens=conv_tokens,
+                conversation_turn_count=turns,
+            )
+            predicted = model.predict_tool_duration(tool_id, ctx).mean_ms
+            errors.append(abs(predicted - actual_ms) / actual_ms)
+
+        mape = 100.0 * sum(errors) / len(errors)
+        assert mape < 50.0, f"cold-start MAPE {mape:.1f}% >= 50%"
 
 
 class TestCostEstimates:
@@ -261,7 +351,7 @@ class TestDataClasses:
 class TestSingleCallTools:
     """Single-call tools have exactly one sub-call."""
 
-    @pytest.mark.parametrize("tool_id", ["assumption_auditor", "context_refresher"])
+    @pytest.mark.parametrize("tool_id", ["context_refresher"])
     def test_single_sub_call(self, tool_id):
         model = ToolLatencyModel()
         ctx = ContextFeatures(conversation_length_tokens=3000, conversation_turn_count=10)
