@@ -1,0 +1,240 @@
+"""Thin wrapper around the Ollama Cloud chat API (issue #43).
+
+A drop-in alternative to ``GeminiClient`` for running episodes/benchmarks
+against an open Gemma-class model. Mirrors the ``GeminiClient`` interface
+exactly -- same ``generate(...)`` signature, same ``GeminiResponse`` return
+type, same retry/timing/callback behaviour -- so it is interchangeable at every
+call site (``EpisodeRunner``, ``SimulatedUser``, ``TaskScorer``, tools).
+
+Transport is stdlib ``urllib`` (no extra dependency): a single non-streaming
+``POST`` to ``{host}/api/chat`` with a Bearer token. The native Ollama chat
+endpoint accepts a JSON schema in its ``format`` field for structured output and
+returns the JSON as ``message.content`` -- the same shape the scorer and
+simulated user already parse with ``json.loads(response.content)``.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import random
+import time
+import urllib.error
+import urllib.request
+from typing import Any, Callable
+
+from bicameral_agent.gemini import ChatMessage, GeminiResponse
+
+_MODEL = "gemma4:31b-cloud"
+_DEFAULT_HOST = "https://ollama.com"
+_MAX_RETRIES = 3
+_BASE_DELAY = 1.0
+_BACKOFF_FACTOR = 2.0
+_MAX_JITTER = 0.5
+_TIMEOUT_S = 120.0
+
+_VALID_THINKING_LEVELS = {"minimal", "low", "medium", "high"}
+
+
+class OllamaCloudClient:
+    """Thin wrapper around the Ollama Cloud chat API with retry, timing, callbacks.
+
+    Thread-safe: no mutable state after __init__.
+    """
+
+    def __init__(
+        self,
+        api_key: str | None = None,
+        on_completion: Callable[[int, int, float], None] | None = None,
+        model: str = _MODEL,
+        host: str | None = None,
+    ) -> None:
+        resolved_key = api_key or os.environ.get("OLLAMA_API_KEY")
+        if not resolved_key:
+            raise ValueError(
+                "API key required: pass api_key= or set OLLAMA_API_KEY env var"
+            )
+        self._api_key = resolved_key
+        self._on_completion = on_completion
+        self._model = model
+        self._host = (host or os.environ.get("OLLAMA_HOST") or _DEFAULT_HOST).rstrip("/")
+
+    @property
+    def model(self) -> str:
+        """The model name used for API calls."""
+        return self._model
+
+    def generate(
+        self,
+        messages: list[ChatMessage] | list[dict[str, str]],
+        *,
+        system_prompt: str | None = None,
+        thinking_level: str = "medium",
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+        tools: list[dict] | None = None,
+        response_schema: dict | None = None,
+    ) -> GeminiResponse:
+        """Generate a response from the Ollama Cloud chat API.
+
+        Args mirror ``GeminiClient.generate`` for drop-in compatibility:
+            messages: Conversation history with 'role' and 'content' keys.
+            system_prompt: Optional system instruction (prepended as a system message).
+            thinking_level: 'minimal', 'low', 'medium', 'high'. 'minimal' disables
+                thinking; the rest map to Ollama's ``think`` string. Requires a
+                reasoning-capable model (e.g. gemma4:31b-cloud).
+            temperature: Sampling temperature; None uses model default.
+            max_output_tokens: Maps to Ollama ``options.num_predict``.
+            tools: Function declarations (dicts with 'name', 'description',
+                'parameters_json_schema' keys), translated to Ollama tool format.
+            response_schema: JSON schema dict; passed through to Ollama ``format``.
+
+        Returns:
+            GeminiResponse with content, token counts, timing, and finish reason.
+        """
+        if thinking_level.lower() not in _VALID_THINKING_LEVELS:
+            raise ValueError(
+                f"Invalid thinking_level {thinking_level!r}; "
+                f"must be one of {sorted(_VALID_THINKING_LEVELS)}"
+            )
+
+        payload = self._build_payload(
+            messages,
+            system_prompt=system_prompt,
+            thinking_level=thinking_level.lower(),
+            temperature=temperature,
+            max_output_tokens=max_output_tokens,
+            tools=tools,
+            response_schema=response_schema,
+        )
+        return self._execute_with_retry(payload)
+
+    def _build_payload(
+        self,
+        messages: list[ChatMessage] | list[dict[str, str]],
+        *,
+        system_prompt: str | None,
+        thinking_level: str,
+        temperature: float | None,
+        max_output_tokens: int | None,
+        tools: list[dict] | None,
+        response_schema: dict | None,
+    ) -> dict[str, Any]:
+        api_messages: list[dict[str, str]] = []
+        if system_prompt is not None:
+            api_messages.append({"role": "system", "content": system_prompt})
+        for msg in messages:
+            if isinstance(msg, ChatMessage):
+                role, content = msg.role, msg.content
+            else:
+                role, content = msg["role"], msg["content"]
+            # Gemini uses 'model' for the assistant turn; Ollama uses 'assistant'.
+            if role == "model":
+                role = "assistant"
+            api_messages.append({"role": role, "content": content})
+
+        payload: dict[str, Any] = {
+            "model": self._model,
+            "messages": api_messages,
+            "stream": False,
+            # 'minimal' means "don't think"; other levels pass through.
+            "think": False if thinking_level == "minimal" else thinking_level,
+        }
+
+        options: dict[str, Any] = {}
+        if temperature is not None:
+            options["temperature"] = temperature
+        if max_output_tokens is not None:
+            options["num_predict"] = max_output_tokens
+        if options:
+            payload["options"] = options
+
+        if response_schema is not None:
+            payload["format"] = response_schema
+
+        if tools is not None:
+            payload["tools"] = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": decl["name"],
+                        "description": decl.get("description", ""),
+                        "parameters": decl.get("parameters_json_schema", {}),
+                    },
+                }
+                for decl in tools
+            ]
+
+        return payload
+
+    def _execute_with_retry(self, payload: dict[str, Any]) -> GeminiResponse:
+        last_exc: Exception | None = None
+
+        for attempt in range(_MAX_RETRIES + 1):
+            if attempt > 0:
+                delay = _BASE_DELAY * (_BACKOFF_FACTOR ** (attempt - 1))
+                jitter = random.uniform(0, _MAX_JITTER)
+                time.sleep(delay + jitter)
+
+            try:
+                start_ns = time.monotonic_ns()
+                data = self._post(payload)
+                duration_ms = (time.monotonic_ns() - start_ns) / 1_000_000
+                return self._parse_response(data, duration_ms)
+
+            except Exception as exc:
+                if self._is_retryable(exc) and attempt < _MAX_RETRIES:
+                    last_exc = exc
+                    continue
+                raise
+
+        raise last_exc  # type: ignore[misc]
+
+    def _post(self, payload: dict[str, Any]) -> dict[str, Any]:
+        body = json.dumps(payload).encode("utf-8")
+        request = urllib.request.Request(
+            f"{self._host}/api/chat",
+            data=body,
+            headers={
+                "Authorization": f"Bearer {self._api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=_TIMEOUT_S) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+    def _parse_response(self, data: dict[str, Any], duration_ms: float) -> GeminiResponse:
+        input_tokens = data.get("prompt_eval_count") or 0
+        output_tokens = data.get("eval_count") or 0
+        finish_reason = data.get("done_reason") or "stop"
+
+        message = data.get("message") or {}
+        content = message.get("content") or ""
+
+        fc_parts: list[dict[str, Any]] = []
+        for call in message.get("tool_calls") or []:
+            fn = call.get("function") or {}
+            fc_parts.append({
+                "name": fn.get("name"),
+                "args": dict(fn.get("arguments") or {}),
+            })
+
+        if self._on_completion is not None:
+            self._on_completion(input_tokens, output_tokens, duration_ms)
+
+        return GeminiResponse(
+            content=content,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            duration_ms=duration_ms,
+            finish_reason=finish_reason,
+            function_calls=fc_parts or None,
+        )
+
+    @staticmethod
+    def _is_retryable(exc: Exception) -> bool:
+        if isinstance(exc, urllib.error.HTTPError):
+            return exc.code == 429 or 500 <= exc.code < 600
+        # Network-level failures (timeouts, connection resets) are transient.
+        return isinstance(exc, urllib.error.URLError)

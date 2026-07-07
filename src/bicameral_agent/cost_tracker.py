@@ -21,12 +21,21 @@ class ModelPricing:
 
 
 # Pricing in dollars per token (derived from per-million-token rates).
-GEMINI_PRICING: dict[str, ModelPricing] = {
+MODEL_PRICING: dict[str, ModelPricing] = {
     "gemini-3.1-flash-lite-preview": ModelPricing(
         input_cost_per_token=0.50 / 1_000_000,
         output_cost_per_token=3.00 / 1_000_000,
     ),
+    # Ollama Cloud Gemma is subscription-flat: $0/token so calls/tokens are
+    # still recorded (call_count increments) without inventing a per-token rate.
+    "gemma4:31b-cloud": ModelPricing(
+        input_cost_per_token=0.0,
+        output_cost_per_token=0.0,
+    ),
 }
+
+# Backwards-compatible alias (the dict previously held only Gemini models).
+GEMINI_PRICING = MODEL_PRICING
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,12 +77,12 @@ class CostTracker:
         """Record a completed API call and accumulate costs.
 
         Raises:
-            ValueError: If *model* is not in ``GEMINI_PRICING``.
+            ValueError: If *model* is not in ``MODEL_PRICING``.
         """
-        pricing = GEMINI_PRICING.get(model)
+        pricing = MODEL_PRICING.get(model)
         if pricing is None:
             raise ValueError(
-                f"Unknown model {model!r}; known models: {sorted(GEMINI_PRICING)}"
+                f"Unknown model {model!r}; known models: {sorted(MODEL_PRICING)}"
             )
         input_cost = input_tokens * pricing.input_cost_per_token
         output_cost = output_tokens * pricing.output_cost_per_token

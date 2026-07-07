@@ -4,6 +4,7 @@
 # Override per-run via TOML file or BICAMERAL_ environment variables.
 
 [model]
+provider = "gemini"        # "gemini" or "ollama"
 name = "gemini-3.1-flash-lite-preview"
 thinking_level = "medium"
 # temperature is unset (uses model default)

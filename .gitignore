@@ -208,3 +208,7 @@ __marimo__/
 
 # Latency-collection outputs (issue #35)
 data/latency/
+
+# Externally-sourced benchmark data, not redistributed (issue #42).
+# Fetch with: python scripts/fetch_hard_benchmark.py  (see docs/hard_benchmark.md)
+data/external/

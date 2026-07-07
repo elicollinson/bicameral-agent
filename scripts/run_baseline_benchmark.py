@@ -27,8 +27,8 @@ from bicameral_agent.baseline_benchmark import format_report, run_benchmark
 from bicameral_agent.cost_tracker import CostTracker
 from bicameral_agent.dataset import ResearchQADataset, ResearchQATask, TaskDifficulty
 from bicameral_agent.episode_runner import EpisodeConfig, EpisodeRunner
-from bicameral_agent.gemini import GeminiClient
 from bicameral_agent.heuristic_controller import HeuristicController
+from bicameral_agent.model_client import build_client
 from bicameral_agent.no_subconscious_controller import NoSubconsciousController
 from bicameral_agent.random_controller import RandomController
 from bicameral_agent.serialization import episodes_to_parquet
@@ -69,6 +69,10 @@ def select_tasks(dataset: ResearchQADataset, total: int) -> list[ResearchQATask]
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", default="data/baseline")
+    parser.add_argument("--provider", choices=["gemini", "ollama"], default="gemini",
+                        help="Model backend to run the answerer against.")
+    parser.add_argument("--model", default=None,
+                        help="Model id/tag (defaults to the provider's default).")
     parser.add_argument("--tasks-per-condition", type=int, default=50)
     parser.add_argument("--max-turns", type=int, default=10)
     parser.add_argument("--random-seed", type=int, default=42)
@@ -94,7 +98,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.episode_budget is not None:
         cost_tracker.set_episode_budget(args.episode_budget)
 
-    client = GeminiClient()
+    client = build_client(args.provider, args.model)
     runner = EpisodeRunner(
         client,
         config=EpisodeConfig(max_turns=args.max_turns, score_episode=True),

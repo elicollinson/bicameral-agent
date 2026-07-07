@@ -10,6 +10,7 @@ from __future__ import annotations
 import enum
 import json
 from importlib.resources import files
+from pathlib import Path
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -90,6 +91,18 @@ class ResearchQADataset:
     def _load_from_package() -> list[ResearchQATask]:
         raw = json.loads(_DATA_PATH.read_text(encoding="utf-8"))
         return [ResearchQATask.model_validate(item) for item in raw]
+
+    @classmethod
+    def from_path(cls, path) -> ResearchQADataset:
+        """Load a dataset from a JSON file of ResearchQATask records.
+
+        ``path`` may be a path string, ``Path``, or ``importlib`` traversable.
+        Used to load externally-sourced task pools (e.g. the hard benchmark)
+        that are not bundled with the package.
+        """
+        source = path if hasattr(path, "read_text") else Path(path)
+        raw = json.loads(source.read_text(encoding="utf-8"))
+        return cls([ResearchQATask.model_validate(item) for item in raw])
 
     @property
     def tasks(self) -> list[ResearchQATask]:
