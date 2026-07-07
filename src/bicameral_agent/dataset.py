@@ -44,6 +44,18 @@ class TaskSplit(str, enum.Enum):
     TOOL_TEST = "tool_test"
 
 
+class RubricItem(BaseModel):
+    """One weighted criterion of a per-task rubric (Issue #56).
+
+    Points may be negative (e.g. HealthBench penalty items); the
+    rubric-coverage verifier normalizes earned points against the sum of
+    positive points.
+    """
+
+    criterion: str
+    points: float
+
+
 class ResearchQATask(BaseModel):
     """A single research QA evaluation task."""
 
@@ -55,6 +67,12 @@ class ResearchQATask(BaseModel):
     known_gaps: list[str] | None = Field(default=None)
     known_assumptions: list[str] | None = Field(default=None)
     scoring_rubric: str
+    choices: list[str] | None = Field(default=None)
+    """Multiple-choice options (e.g. SuperGPQA); None for free-form tasks."""
+    rubric_items: list[RubricItem] | None = Field(default=None)
+    """Weighted rubric criteria (HealthBench/ResearchQA); None otherwise."""
+    abstention_expected: bool | None = Field(default=None)
+    """Whether the correct behavior is to abstain (AbstentionBench label)."""
 
     @model_validator(mode="after")
     def check_tricky_has_assumptions(self) -> ResearchQATask:
@@ -63,6 +81,22 @@ class ResearchQATask(BaseModel):
             if not self.known_assumptions:
                 msg = f"Tricky task {self.task_id} must have at least one known_assumptions entry"
                 raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def check_empty_gold_requires_rubric(self) -> ResearchQATask:
+        """An empty gold answer is only valid for rubric-scored tasks.
+
+        Rubric-native datasets (e.g. ResearchQA) have no single gold answer;
+        everywhere else an empty gold answer is a mapping bug.
+        """
+        if self.gold_answer == "" and not self.rubric_items:
+            msg = (
+                f"Task {self.task_id} has an empty gold_answer but no "
+                "rubric_items; empty gold answers are only valid for "
+                "rubric-scored tasks"
+            )
+            raise ValueError(msg)
         return self
 
     @model_validator(mode="after")

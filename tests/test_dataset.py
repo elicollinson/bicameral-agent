@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from bicameral_agent.dataset import (
     ResearchQADataset,
     ResearchQATask,
+    RubricItem,
     TaskDifficulty,
     TaskSplit,
 )
@@ -130,6 +131,56 @@ class TestSchemaRejection:
                 gold_answer="A",
                 scoring_rubric="rubric",
             )
+
+
+class TestSchemaExtensions:
+    """Issue #56: optional choices / rubric_items / abstention_expected."""
+
+    @staticmethod
+    def _task(**overrides):
+        defaults = dict(
+            task_id="ext_001",
+            difficulty=TaskDifficulty.TYPICAL,
+            split=TaskSplit.EVAL,
+            question="Q?",
+            gold_answer="A.",
+            scoring_rubric="5: Good. 1: Bad.",
+        )
+        defaults.update(overrides)
+        return ResearchQATask(**defaults)
+
+    def test_new_fields_default_to_none(self):
+        task = self._task()
+        assert task.choices is None
+        assert task.rubric_items is None
+        assert task.abstention_expected is None
+
+    def test_new_fields_round_trip(self):
+        task = self._task(
+            choices=["red", "blue"],
+            rubric_items=[RubricItem(criterion="mentions blue", points=2.0)],
+            abstention_expected=False,
+        )
+        reloaded = ResearchQATask.model_validate(task.model_dump(mode="json"))
+        assert reloaded.choices == ["red", "blue"]
+        assert reloaded.rubric_items[0].criterion == "mentions blue"
+        assert reloaded.rubric_items[0].points == 2.0
+        assert reloaded.abstention_expected is False
+
+    def test_empty_gold_without_rubric_rejected(self):
+        with pytest.raises(ValidationError, match="rubric_items"):
+            self._task(gold_answer="")
+
+    def test_empty_gold_with_rubric_accepted(self):
+        task = self._task(
+            gold_answer="",
+            rubric_items=[RubricItem(criterion="covers topic", points=1.0)],
+        )
+        assert task.gold_answer == ""
+
+    def test_empty_gold_with_empty_rubric_rejected(self):
+        with pytest.raises(ValidationError, match="rubric_items"):
+            self._task(gold_answer="", rubric_items=[])
 
 
 class TestLoaderFiltering:

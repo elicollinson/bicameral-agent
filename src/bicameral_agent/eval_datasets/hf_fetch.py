@@ -11,6 +11,7 @@ No HF ``datasets``/``pandas`` dependency, per repo policy -- plain ``urllib``.
 from __future__ import annotations
 
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
@@ -26,16 +27,18 @@ RETRY_BASE_DELAY_S = 2.0
 RETRYABLE_HTTP_CODES = frozenset({429, 500, 502, 503, 504})
 
 
-def http_get_json(url: str) -> dict:
-    """GET *url* as JSON, retrying transient (rate-limit / 5xx / network) errors."""
+def http_get_text(url: str, headers: dict[str, str] | None = None) -> str:
+    """GET *url* as text, retrying transient (rate-limit / 5xx / network) errors."""
     last_err: Exception | None = None
     for attempt in range(MAX_ATTEMPTS):
         if attempt > 0:
             time.sleep(RETRY_BASE_DELAY_S * 2 ** (attempt - 1))
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            req = urllib.request.Request(
+                url, headers={"User-Agent": USER_AGENT, **(headers or {})}
+            )
             with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 (trusted hosts)
-                return json.loads(resp.read())
+                return resp.read().decode("utf-8")
         except urllib.error.HTTPError as err:
             if err.code not in RETRYABLE_HTTP_CODES:
                 raise
@@ -47,13 +50,28 @@ def http_get_json(url: str) -> dict:
     ) from last_err
 
 
-def fetch_page(dataset: str, split: str, offset: int, length: int) -> list[dict]:
-    """Fetch one page of raw rows from the datasets-server rows API."""
+def http_get_json(url: str, headers: dict[str, str] | None = None) -> dict:
+    """GET *url* as JSON, retrying transient (rate-limit / 5xx / network) errors."""
+    return json.loads(http_get_text(url, headers=headers))
+
+
+def fetch_page(
+    dataset: str, split: str, offset: int, length: int, config: str = "default"
+) -> list[dict]:
+    """Fetch one page of raw rows from the datasets-server rows API.
+
+    Gated datasets (e.g. ``cais/hle``) are fetched with the ``HF_TOKEN``
+    environment variable as a bearer token when it is set; the token is only
+    ever sent to the datasets-server endpoint.
+    """
     url = (
         f"{HF_ROWS_ENDPOINT}?dataset={urllib.parse.quote(dataset)}"
-        f"&config=default&split={split}&offset={offset}&length={length}"
+        f"&config={urllib.parse.quote(config)}"
+        f"&split={split}&offset={offset}&length={length}"
     )
-    payload = http_get_json(url)
+    token = os.environ.get("HF_TOKEN")
+    headers = {"Authorization": f"Bearer {token}"} if token else None
+    payload = http_get_json(url, headers=headers)
     if "rows" not in payload:
         # An error payload (e.g. rate-limit body) must not read as an empty
         # terminal page — that silently truncates the benchmark.

@@ -17,8 +17,6 @@ Real API calls are made; budget the run accordingly.
 from __future__ import annotations
 
 import argparse
-import dataclasses
-import json
 import logging
 import sys
 from pathlib import Path
@@ -28,6 +26,7 @@ from bicameral_agent.config import HyperConfig
 from bicameral_agent.dataset import ResearchQADataset, ResearchQATask, TaskDifficulty
 from bicameral_agent.episode_runner import EpisodeRunner
 from bicameral_agent.eval_datasets import build_dataset, dataset_names, resolve_metric
+from bicameral_agent.eval_report import EvalReport
 from bicameral_agent.model_client import build_client, default_model, provider_names
 from bicameral_agent.no_subconscious_controller import NoSubconsciousController
 from bicameral_agent.random_controller import RandomController
@@ -35,26 +34,6 @@ from bicameral_agent.schema import Episode
 from bicameral_agent.serialization import episodes_to_parquet
 
 logger = logging.getLogger(__name__)
-
-# EpisodeRunner expresses scorer choice as a boolean (use_lexical_scorer)
-# today -- #45 owns that wiring -- so only these two metrics are runnable.
-_RUNNABLE_METRICS = ("llm_judge", "lexical")
-
-
-def ensure_runnable_metric(metric: str) -> str:
-    """Refuse metrics EpisodeRunner cannot express yet.
-
-    Guards the metric -> use_lexical_scorer boolean collapse below: a future
-    verifier registered in ``bicameral_agent.verifiers`` must fail loudly here
-    rather than silently fall back to the LLM judge.
-    """
-    if metric not in _RUNNABLE_METRICS:
-        raise ValueError(
-            f"Metric {metric!r} cannot be run by EpisodeRunner yet; runnable "
-            f"metrics: {list(_RUNNABLE_METRICS)}. New verifiers need runner "
-            "wiring through bicameral_agent.verifiers.build_verifier first."
-        )
-    return metric
 
 
 def select_tasks(dataset: ResearchQADataset, total: int) -> list[ResearchQATask]:
@@ -137,7 +116,7 @@ def main(argv: list[str] | None = None) -> int:
     ).with_env_overrides()
 
     eval_dataset = build_dataset(args.dataset)
-    metric = ensure_runnable_metric(resolve_metric(eval_dataset, args.metric))
+    metric = resolve_metric(eval_dataset, args.metric)
     dataset = eval_dataset.load()
     tasks = select_tasks(dataset, args.tasks_per_condition)
     logger.info(
@@ -175,14 +154,12 @@ def main(argv: list[str] | None = None) -> int:
         provider, client.model, judge_provider, judge_client.model,
     )
 
-    # The resolved metric passed ensure_runnable_metric, so this boolean
-    # collapse is exhaustive over _RUNNABLE_METRICS.
     runner = EpisodeRunner(
         client,
         config=hyper.to_episode_config(
             max_turns=args.max_turns,
             score_episode=True,
-            use_lexical_scorer=(metric == "lexical"),
+            metric=metric,
         ),
         hyper_config=hyper,
         cost_tracker=cost_tracker,
@@ -217,19 +194,16 @@ def main(argv: list[str] | None = None) -> int:
     (output_dir / "report.txt").write_text(report_text)
     sys.stdout.write(report_text)
 
-    summary = {
-        "dataset": args.dataset,
-        "metric": metric,
-        "answerer": {"provider": provider, "model": client.model},
-        "measurement": {"provider": judge_provider, "model": judge_client.model},
-        "tasks_per_condition": args.tasks_per_condition,
-        "max_turns": args.max_turns,
-        "conditions": {
-            condition: dataclasses.asdict(report)
-            for condition, report in result.reports.items()
-        },
-    }
-    (output_dir / "summary.json").write_text(json.dumps(summary, indent=2))
+    report = EvalReport.from_benchmark(
+        result,
+        dataset=args.dataset,
+        metric=metric,
+        answerer={"provider": provider, "model": client.model},
+        measurement={"provider": judge_provider, "model": judge_client.model},
+        tasks_per_condition=args.tasks_per_condition,
+        max_turns=args.max_turns,
+    )
+    (output_dir / "summary.json").write_text(report.to_json())
     logger.info("Wrote summary.json and report.txt to %s", output_dir)
 
     return 0

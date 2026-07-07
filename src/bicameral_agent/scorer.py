@@ -37,6 +37,9 @@ class TaskScore(BaseModel):
     overall: float = Field(ge=0.0, le=1.0)
     """Weighted aggregate score. Compatible with EpisodeOutcome.quality_score."""
 
+    detail: str | None = None
+    """Optional verifier-specific report (e.g. matched vs expected answer)."""
+
     @classmethod
     def from_raw(cls, quality: int, completeness: int, accuracy: int) -> TaskScore:
         """Create from raw 1-5 integer scores, normalizing to [0, 1].

@@ -115,7 +115,7 @@ class TestPager:
 
     def test_error_payload_raises_instead_of_empty_page(self, monkeypatch):
         monkeypatch.setattr(
-            hf_fetch, "http_get_json", lambda url: {"error": "rate limited"}
+            hf_fetch, "http_get_json", lambda url, headers=None: {"error": "rate limited"}
         )
         with pytest.raises(RuntimeError, match="rate limited"):
             hf_fetch.fetch_page("some/dataset", "test", 0, 100)
