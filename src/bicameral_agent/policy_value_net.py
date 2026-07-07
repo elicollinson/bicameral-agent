@@ -104,7 +104,8 @@ class PolicyValueNetwork(nn.Module):
         Parameters
         ----------
         state:
-            1-D array of shape ``(input_dim,)``.
+            1-D array of shape ``(input_dim,)``. Any float dtype is
+            accepted; the input is cast to float32.
 
         Returns
         -------
@@ -112,33 +113,50 @@ class PolicyValueNetwork(nn.Module):
             ``(probs, value)`` where ``probs`` is shape ``(num_actions,)``
             and ``value`` is a Python float.
         """
-        x = torch.from_numpy(state).unsqueeze(0)
+        x = torch.as_tensor(state, dtype=torch.float32).unsqueeze(0)
         probs, value = self.forward(x)
         return probs.squeeze(0).numpy(), value.item()
 
     @torch.no_grad()
-    def sample_action(self, state: np.ndarray, temperature: float = 1.0) -> Action:
+    def sample_action(
+        self,
+        state: np.ndarray,
+        temperature: float = 1.0,
+        generator: torch.Generator | None = None,
+    ) -> Action:
         """Sample an action from the policy with temperature scaling.
 
         Parameters
         ----------
         state:
-            1-D array of shape ``(input_dim,)``.
+            1-D array of shape ``(input_dim,)``. Any float dtype is
+            accepted; the input is cast to float32.
         temperature:
             Controls exploration. Values < 1 sharpen the distribution
             (more greedy), values > 1 flatten it (more exploratory).
-            Must be positive.
+            Must be strictly positive.
+        generator:
+            Optional ``torch.Generator`` for reproducible sampling.
+            When *None*, the global torch RNG is used.
 
         Returns
         -------
         Action
             The sampled action.
+
+        Raises
+        ------
+        ValueError
+            If ``temperature`` is not strictly positive.
         """
-        x = torch.from_numpy(state).unsqueeze(0)
+        if temperature <= 0.0:
+            msg = f"temperature must be > 0, got {temperature}"
+            raise ValueError(msg)
+        x = torch.as_tensor(state, dtype=torch.float32).unsqueeze(0)
         logits, _ = self._shared_forward(x)
         scaled_logits = logits / temperature
         probs = torch.softmax(scaled_logits, dim=-1)
-        idx = torch.multinomial(probs, num_samples=1).item()
+        idx = torch.multinomial(probs, num_samples=1, generator=generator).item()
         return ACTION_ORDER[idx]
 
     @property

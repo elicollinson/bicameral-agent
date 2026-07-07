@@ -271,6 +271,42 @@ class TestIterDecisionPoints:
             assert isinstance(point.state, ReplayState)
             assert isinstance(point.action, Message)
 
+    def test_same_millisecond_event_excluded_from_decision_state(self):
+        """An event at exactly the action's timestamp must not leak into
+        that decision point's state (it may have been logged after the
+        action within the same millisecond)."""
+        episode = Episode(
+            messages=[
+                Message(role="user", content="hi", timestamp_ms=100, token_count=2),
+                Message(role="assistant", content="hello", timestamp_ms=200, token_count=2),
+            ],
+            user_events=[
+                UserEvent(event_type=UserEventType.STOP, timestamp_ms=200),
+            ],
+            tool_invocations=[
+                ToolInvocation(
+                    tool_id="tool-a",
+                    invoked_at_ms=150,
+                    completed_at_ms=200,
+                    input_tokens=1,
+                    output_tokens=1,
+                ),
+            ],
+            outcome=EpisodeOutcome(total_tokens=4, total_turns=1, wall_clock_ms=100),
+        )
+        replayer = EpisodeReplayer(episode)
+        (point,) = replayer.iter_decision_points()
+
+        # The same-millisecond STOP is not part of the decision state
+        assert len(point.state.user_events) == 0
+        # The tool completing at exactly the cutoff is still active, not done
+        assert len(point.state.completed_tool_invocations) == 0
+        assert len(point.state.active_tool_invocations) == 1
+
+        # state_at_time keeps its documented inclusive semantics
+        state = replayer.state_at_time(200)
+        assert len(state.user_events) == 1
+
     def test_no_assistant_messages_yields_nothing(self):
         """An episode with no assistant messages yields no decision points."""
         episode = Episode(

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import dataclasses
 import enum
+import re
 
 import numpy as np
 
@@ -86,7 +87,8 @@ _SENTIMENT_INDEX = {SentimentShift.POSITIVE: 15, SentimentShift.NEUTRAL: 16, Sen
 
 
 # ---------------------------------------------------------------------------
-# Sentiment keywords (duplicated from encoder.py for module independence)
+# Sentiment keywords (canonical copy; encoder.py imports _sentiment_score
+# from this module so both stay in sync)
 # ---------------------------------------------------------------------------
 _POSITIVE_KEYWORDS: frozenset[str] = frozenset(
     {
@@ -128,11 +130,20 @@ _NEGATIVE_KEYWORDS: frozenset[str] = frozenset(
 )
 
 
+# Word-boundary patterns so keywords don't fire inside other words
+# (e.g. "no" inside "know"/"nothing", "right" inside "bright").
+_POSITIVE_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
+    re.compile(rf"\b{re.escape(kw)}\b", re.IGNORECASE) for kw in _POSITIVE_KEYWORDS
+)
+_NEGATIVE_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
+    re.compile(rf"\b{re.escape(kw)}\b", re.IGNORECASE) for kw in _NEGATIVE_KEYWORDS
+)
+
+
 def _sentiment_score(text: str) -> int:
-    """Simple keyword-counting sentiment score."""
-    text_lower = text.lower()
-    pos = sum(1 for kw in _POSITIVE_KEYWORDS if kw in text_lower)
-    neg = sum(1 for kw in _NEGATIVE_KEYWORDS if kw in text_lower)
+    """Simple keyword-counting sentiment score (word-boundary matching)."""
+    pos = sum(1 for p in _POSITIVE_PATTERNS if p.search(text))
+    neg = sum(1 for p in _NEGATIVE_PATTERNS if p.search(text))
     return pos - neg
 
 
