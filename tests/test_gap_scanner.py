@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 from bicameral_agent.gemini import GeminiResponse
+from bicameral_agent.llm_output import format_conversation
 from bicameral_agent.queue import Priority
 from bicameral_agent.schema import Message
 from bicameral_agent.tool_primitive import TokenBudget
@@ -18,7 +19,6 @@ from bicameral_agent.gap_scanner import (
     MockSearchProvider,
     ResearchGapScanner,
     SearchResult,
-    _format_conversation,
     _make_dedup_key,
     _max_priority,
 )
@@ -345,13 +345,13 @@ class TestConversationFormatting:
             Message(role="user", content=f"msg{i}", timestamp_ms=i * 1000, token_count=5)
             for i in range(15)
         ]
-        formatted = _format_conversation(messages)
+        formatted = format_conversation(messages)
         lines = formatted.strip().split("\n")
         assert len(lines) == 10
 
     def test_format_includes_role(self):
         messages = _make_messages()
-        formatted = _format_conversation(messages)
+        formatted = format_conversation(messages)
         assert "[user]:" in formatted
         assert "[assistant]:" in formatted
 
@@ -394,7 +394,7 @@ class TestIntegration:
         """Run against tasks with known gaps, verify >=70% gap identification."""
         from bicameral_agent.dataset import ResearchQADataset
         from bicameral_agent.gemini import GeminiClient
-        from bicameral_agent.gap_scanner import _tokenize
+        from bicameral_agent.llm_output import tokenize
 
         dataset = ResearchQADataset()
         gap_tasks = dataset.with_gaps()[:15]
@@ -417,9 +417,9 @@ class TestIntegration:
 
             if result.queue_deposit is not None:
                 # Fuzzy check: do gap descriptions overlap with known_gaps?
-                deposit_tokens = set(_tokenize(result.queue_deposit.content))
+                deposit_tokens = set(tokenize(result.queue_deposit.content))
                 for known_gap in task.known_gaps or []:
-                    gap_tokens = set(_tokenize(known_gap))
+                    gap_tokens = set(tokenize(known_gap))
                     overlap = len(deposit_tokens & gap_tokens) / max(len(gap_tokens), 1)
                     if overlap > 0.2:
                         identified_count += 1

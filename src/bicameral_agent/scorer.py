@@ -7,7 +7,6 @@ for evaluating agent answers against research QA tasks with scoring rubrics.
 from __future__ import annotations
 
 import hashlib
-import re
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -15,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.gemini import GeminiClient
-from bicameral_agent.llm_output import coerce_int, safe_parse_json
+from bicameral_agent.llm_output import coerce_int, safe_parse_json, tokenize
 
 
 def _normalize_score(v: int) -> float:
@@ -260,15 +259,6 @@ class TaskScorer(CachedConcurrentScorer):
         )
 
 
-def _tokenize(text: str) -> list[str]:
-    """Lowercase, split on non-alphanumeric, filter empty.
-
-    Canonical copy; gap_scanner imports this rather than keeping its own
-    (issue #54).
-    """
-    return [t for t in re.split(r"[^a-z0-9]+", text.lower()) if t]
-
-
 def _f_measure(precision: float, recall: float) -> float:
     """Compute F1-measure from precision and recall."""
     if precision + recall == 0:
@@ -281,8 +271,8 @@ def _token_f1(reference: str, hypothesis: str) -> tuple[float, float, float]:
 
     Returns (precision, recall, f1) each in [0.0, 1.0].
     """
-    ref_tokens = set(_tokenize(reference))
-    hyp_tokens = set(_tokenize(hypothesis))
+    ref_tokens = set(tokenize(reference))
+    hyp_tokens = set(tokenize(hypothesis))
     if not ref_tokens or not hyp_tokens:
         return (0.0, 0.0, 0.0)
     common = ref_tokens & hyp_tokens
@@ -316,8 +306,8 @@ def _rouge_l(reference: str, hypothesis: str) -> tuple[float, float, float]:
 
     Returns (precision, recall, f_measure) each in [0.0, 1.0].
     """
-    ref_tokens = _tokenize(reference)
-    hyp_tokens = _tokenize(hypothesis)
+    ref_tokens = tokenize(reference)
+    hyp_tokens = tokenize(hypothesis)
     if not ref_tokens or not hyp_tokens:
         return (0.0, 0.0, 0.0)
     lcs = _lcs_length(ref_tokens, hyp_tokens)

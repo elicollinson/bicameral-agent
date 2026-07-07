@@ -14,9 +14,8 @@ from bicameral_agent.gap_scanner import (
     MockSearchProvider,
     SearchProvider,
     SearchResult,
-    _format_conversation,
 )
-from bicameral_agent.llm_output import safe_parse_json
+from bicameral_agent.llm_output import format_conversation, safe_parse_json
 from bicameral_agent.queue import Priority, QueueItem
 from bicameral_agent.schema import estimate_text_tokens
 from bicameral_agent.tool_primitive import (
@@ -206,7 +205,7 @@ class AssumptionAuditor(ToolPrimitive):
         self._search_provider = search_provider or MockSearchProvider()
 
     def _execute(self, conversation_history, reasoning_state, client):
-        conv_text = _format_conversation(conversation_history)
+        conv_text = format_conversation(conversation_history)
 
         # Call 1: Extract assumptions
         assumptions = _extract_assumptions(conv_text, client)
