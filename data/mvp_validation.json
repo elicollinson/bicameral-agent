@@ -1,0 +1,164 @@
+{
+  "issue": 31,
+  "determinations": {
+    "criterion_1": "FAIL",
+    "criterion_2": "FAIL",
+    "criterion_3": "PASS",
+    "criterion_4": "PASS",
+    "criterion_5": "UNRESOLVABLE",
+    "criterion_6": "UNEVALUATED"
+  },
+  "criteria": {
+    "criterion_1": {
+      "name": "Learned policy outperforms random by >= 15% on task quality",
+      "determination": "FAIL",
+      "threshold_relative_pct": 15.0,
+      "learned_condition": "learned_no_search",
+      "baseline_condition": "random",
+      "learned_mean": 0.6475,
+      "learned_ci": [
+        0.6076934353626434,
+        0.6873065646373565
+      ],
+      "baseline_mean": 0.6183333333333334,
+      "baseline_ci": [
+        0.5815317920920217,
+        0.6551348745746451
+      ],
+      "absolute_difference": 0.029166666666666563,
+      "difference_ci95": [
+        -0.02472217697748897,
+        0.08305551031082209
+      ],
+      "relative_improvement_pct": 4.716981132075454,
+      "welch_p_value": 0.28701776229076914,
+      "threshold_met": false,
+      "significant_at_95": false,
+      "n_per_condition": [
+        100,
+        100
+      ]
+    },
+    "criterion_2": {
+      "name": "Learned policy outperforms heuristic by >= 8% on task quality",
+      "determination": "FAIL",
+      "threshold_relative_pct": 8.0,
+      "learned_condition": "learned_no_search",
+      "baseline_condition": "heuristic",
+      "learned_mean": 0.6475,
+      "learned_ci": [
+        0.6076934353626434,
+        0.6873065646373565
+      ],
+      "baseline_mean": 0.6225,
+      "baseline_ci": [
+        0.585379006295234,
+        0.6596209937047661
+      ],
+      "absolute_difference": 0.02499999999999991,
+      "difference_ci95": [
+        -0.02910162231604603,
+        0.07910162231604585
+      ],
+      "relative_improvement_pct": 4.0160642570280976,
+      "welch_p_value": 0.3631907105359964,
+      "threshold_met": false,
+      "significant_at_95": false,
+      "n_per_condition": [
+        100,
+        100
+      ]
+    },
+    "criterion_3": {
+      "name": "At least one emergent timing pattern not in the heuristic",
+      "determination": "PASS",
+      "pattern": "secondary-tool inhibition gate (fire one tool early, then suppress)",
+      "multi_tool_episode_rate_by_iteration": [
+        0.28,
+        0.24,
+        0.04,
+        0.02,
+        0.02
+      ],
+      "p_invoke_turn1_final": 0.9878339032316581,
+      "p_invoke_turn2plus_final": 0.0239305783201147,
+      "inhibition_gap_by_iteration": [
+        0.7010115840492976,
+        0.8776640638374482,
+        0.9236138213193044,
+        0.997262427571288,
+        0.9639033249115434
+      ],
+      "inhibition_gap_final": 0.9639033249115434,
+      "inhibition_gap_min_required": 0.5,
+      "multi_tool_rate_halved": true,
+      "evidence": "docs/emergent_behavior_2026-07.md, docs/figures/emergent/"
+    },
+    "criterion_4": {
+      "name": "Training converged within 500 episodes",
+      "determination": "PASS",
+      "total_episodes": 250,
+      "episode_budget": 500,
+      "policy_entropy_by_iteration": [
+        0.6736875772476196,
+        0.35442596673965454,
+        0.22121386229991913,
+        0.02451946586370468,
+        0.14024749398231506
+      ],
+      "train_loss_by_iteration": [
+        0.6535010635852814,
+        0.3630329519510269,
+        0.22167762368917465,
+        0.03122452273964882,
+        0.14474927634000778
+      ],
+      "kl_from_heuristic_by_iteration": [
+        0.58343168580856,
+        0.22508741868869547,
+        0.060177169903595104,
+        0.01580152355342139,
+        0.04605410215947715
+      ],
+      "entropy_threshold": 0.2,
+      "loss_fraction_threshold": 0.25,
+      "within_budget": true,
+      "entropy_converged": true,
+      "loss_converged": true,
+      "curve": "docs/figures/emergent/training_dynamics.png"
+    },
+    "criterion_5": {
+      "name": "Learned policy triggers fewer unintended interrupts than heuristic",
+      "determination": "UNRESOLVABLE",
+      "learned_mean": 0.0,
+      "learned_ci": [
+        0.0,
+        0.0
+      ],
+      "heuristic_mean": 0.0,
+      "heuristic_ci": [
+        0.0,
+        0.0
+      ],
+      "absolute_difference": 0.0,
+      "difference_ci95": [
+        0.0,
+        0.0
+      ],
+      "n_per_condition": [
+        100,
+        100
+      ],
+      "note": "Both conditions measured exactly zero interrupts across all episodes. The evaluation ran in BREAKPOINT injection mode, which drains the queue at every turn boundary before an interrupt threshold can be crossed, so mid-turn interrupts are structurally impossible and equality-at-zero cannot demonstrate 'fewer'."
+    },
+    "criterion_6": {
+      "name": "Queue-based delivery produces fewer derailments than synchronous injection",
+      "committed_episodes_by_injection_mode": {
+        "breakpoint": 1095
+      },
+      "determination": "UNEVALUATED",
+      "note": "No committed run contains SYNCHRONOUS-mode episodes; every committed episode ran in BREAKPOINT mode. The #22 A/B framework (bicameral_agent.ab_test) is implemented and tested but has not been run live against a synchronous arm.",
+      "command_to_produce_data": "GEMINI_API_KEY=... uv run python - <<'PY'\nfrom pathlib import Path\n\nfrom bicameral_agent.ab_test import ABTestRunner, default_conditions\nfrom bicameral_agent.eval_datasets import build_dataset\nfrom bicameral_agent.gemini import GeminiClient\nfrom bicameral_agent.heuristic_controller import HeuristicController\n\nPath(\"data/ab_test\").mkdir(parents=True, exist_ok=True)\ntasks = build_dataset(\"builtin\").load().eval_tasks()[:50]\nresult = ABTestRunner(GeminiClient()).run(tasks, default_conditions(HeuristicController))\nresult.to_json(\"data/ab_test/report.json\")\nresult.to_csv(\"data/ab_test/episodes.csv\")\nPY"
+    }
+  }
+}
