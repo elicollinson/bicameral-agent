@@ -63,15 +63,16 @@ class TestColdStart:
     """AC1: With 0 observations, predict() returns calibrated prior estimates.
 
     Priors are calibrated against the measured single-call latencies from
-    the #23 baseline run (~0.9-1.5s per call), see #44.
+    the #46 baseline re-run on the Ollama cloud backend (~2-5s per call,
+    dominated by a fixed per-call cost), see #44.
     """
 
     def test_zero_observations_in_calibrated_range(self):
         model = APILatencyModel()
         est = model.predict(1000, 500)
-        # A ~1k-input / 500-output call was measured at roughly a second;
-        # the cold-start prior must land in the same order of magnitude.
-        assert 500.0 <= est.mean_ms <= 2500.0
+        # Single calls on the Ollama cloud backend measure roughly 2-5s;
+        # the cold-start prior must land in the same range.
+        assert 2000.0 <= est.mean_ms <= 5000.0
 
     def test_zero_observations_has_wide_spread(self):
         model = APILatencyModel()

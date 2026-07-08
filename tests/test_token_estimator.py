@@ -187,7 +187,7 @@ class TestObserveUpdates:
         estimator = TokenEstimator()
         ctx = ContextFeatures(conversation_length_tokens=3000, conversation_turn_count=10)
 
-        # Default for auditor is 750 per call
+        # Default for auditor is 930 per call
         estimator.observe_tool("assumption_auditor", ctx, 1000)
         est = estimator.estimate("assumption_auditor", ctx)
 

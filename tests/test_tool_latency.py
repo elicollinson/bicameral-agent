@@ -1,5 +1,6 @@
 """Tests for the composite tool latency model (Issue #9)."""
 
+import json
 import threading
 import time
 from pathlib import Path
@@ -129,15 +130,17 @@ class TestAuditorDecomposition:
 class TestCalibratedColdStart:
     """#44: cold-start predictions land in the measured latency range.
 
-    Ranges bracket the tool durations measured in the #23 baseline run
-    (data/baseline: scanner ~1.7-4.5s, auditor ~2.7-2.9s,
-    refresher ~0.9-1.3s) with headroom for larger conversations.
+    Ranges bracket the tool durations measured in the #46 baseline
+    re-run on the Ollama cloud backend (data/baseline_full +
+    data/baseline_pilot_v2 medians: scanner ~10.1s, auditor ~8.8s,
+    refresher ~2.3s with a heavy right tail) with headroom for larger
+    conversations.
     """
 
     _RANGES = {
-        "research_gap_scanner": (1500.0, 4500.0),
-        "assumption_auditor": (1500.0, 4500.0),
-        "context_refresher": (600.0, 2200.0),
+        "research_gap_scanner": (6500.0, 11000.0),
+        "assumption_auditor": (6500.0, 11000.0),
+        "context_refresher": (2000.0, 5500.0),
     }
 
     @pytest.mark.parametrize("tool_id", _TOOL_IDS)
@@ -165,18 +168,28 @@ class TestCalibratedColdStart:
 _BASELINE_DIR = Path(__file__).resolve().parents[1] / "data" / "baseline"
 
 
+def _baseline_run_provider() -> str | None:
+    """Answerer provider recorded in the committed baseline run's summary."""
+    summary = _BASELINE_DIR / "summary.json"
+    if not summary.exists():
+        return None
+    answerer = json.loads(summary.read_text()).get("answerer")
+    return answerer.get("provider") if isinstance(answerer, dict) else None
+
+
 @pytest.mark.skipif(
-    not _BASELINE_DIR.exists(), reason="baseline episode data not available"
+    _baseline_run_provider() != "ollama",
+    reason="committed baseline episodes missing or not from the Ollama "
+    "backend the cold-start priors are calibrated against (#44/#46)",
 )
 class TestBaselineMape:
-    """#44 AC: cold-start MAPE < 50% against measured baseline tool durations."""
+    """#44 AC: cold-start MAPE < 50% against measured baseline tool durations.
 
-    @pytest.mark.xfail(
-        reason="priors were fit on Gemini-era durations; the 2026-07 baseline "
-        "re-run uses the slower Ollama backend (MAPE 62-75%). Re-enable once "
-        "the #44 Ollama latency refit lands.",
-        strict=False,
-    )
+    Guarded on the run's recorded answerer provider: the priors are
+    calibrated to the Ollama cloud backend, so the regression is only
+    meaningful against episodes collected on that backend.
+    """
+
     def test_cold_start_mape_under_50_percent(self):
         from bicameral_agent.serialization import episodes_from_parquet
 
