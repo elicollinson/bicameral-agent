@@ -212,6 +212,10 @@ data/latency/
 # Baseline run log is a committed artifact of the #46 re-run (*.log is ignored above).
 !data/baseline/run.log
 
+# Live training (#29) and comparative evaluation (#30) run logs are committed artifacts.
+!data/mcts_training/run.log
+!data/comparative/run.log
+
 # Externally-sourced benchmark data, not redistributed (issue #42).
 # Fetch with: python scripts/fetch_hard_benchmark.py  (see docs/hard_benchmark.md)
 data/external/

@@ -54,7 +54,7 @@ The hypothesis: a small neural network trained via Monte Carlo Tree Search can l
 
 ## Project Phases
 
-> **Status note:** the baseline control run (#23) produced no usable signal — see the RCA in epic [#41](https://github.com/elicollinson/bicameral-agent/issues/41). Remediation is in progress under that epic (harder benchmark, multi-provider backends, experiment-validity fixes); the original phase plan below is superseded by that epic. The #46 baseline re-run completed 2026-07 (validity restored) — see [docs/baseline_rerun_2026-07.md](docs/baseline_rerun_2026-07.md).
+> **Status note:** the baseline control run (#23) produced no usable signal — see the RCA in epic [#41](https://github.com/elicollinson/bicameral-agent/issues/41). Remediation is in progress under that epic (harder benchmark, multi-provider backends, experiment-validity fixes); the original phase plan below is superseded by that epic. The #46 baseline re-run completed 2026-07 (validity restored) — see [docs/baseline_rerun_2026-07.md](docs/baseline_rerun_2026-07.md). Live MCTS training (#29), the 5-condition comparative evaluation (#30), and refreshed supervised pre-training (#26) completed 2026-07 — see [docs/live_training_and_comparative_2026-07.md](docs/live_training_and_comparative_2026-07.md).
 
 The project is organized into 6 phases with 40 tracked issues:
 

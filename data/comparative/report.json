@@ -1,0 +1,6033 @@
+{
+  "dataset": "builtin",
+  "metric": "llm_judge",
+  "answerer": {
+    "provider": "ollama",
+    "model": "gemma4:31b-cloud"
+  },
+  "measurement": {
+    "provider": "ollama",
+    "model": "gemma4:31b-cloud"
+  },
+  "tasks_per_condition": 100,
+  "max_turns": 6,
+  "conditions": {
+    "no_subconscious": {
+      "n_episodes": 100,
+      "summaries": {
+        "task_quality": {
+          "mean": 0.6066666666666667,
+          "std": 0.1854257696475404,
+          "ci_lower": 0.5698726311955052,
+          "ci_upper": 0.6434607021378281,
+          "n": 100
+        },
+        "task_completed": {
+          "mean": 0.99,
+          "std": 0.1,
+          "ci_lower": 0.9701569999999999,
+          "ci_upper": 1.009843,
+          "n": 100
+        },
+        "token_efficiency": {
+          "mean": 3329.92,
+          "std": 960.224297029637,
+          "ci_lower": 3139.3826927404093,
+          "ci_upper": 3520.457307259591,
+          "n": 100
+        },
+        "user_stops": {
+          "mean": 0.01,
+          "std": 0.1,
+          "ci_lower": -0.009843,
+          "ci_upper": 0.029843,
+          "n": 100
+        },
+        "time_to_completion_ms": {
+          "mean": 44668.84,
+          "std": 26217.16064136911,
+          "ci_lower": 39466.568813933125,
+          "ci_upper": 49871.11118606687,
+          "n": 100
+        },
+        "tool_precision": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 100
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        },
+        "latency_mape": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        }
+      }
+    },
+    "random": {
+      "n_episodes": 100,
+      "summaries": {
+        "task_quality": {
+          "mean": 0.6183333333333334,
+          "std": 0.18546359543068974,
+          "ci_lower": 0.5815317920920217,
+          "ci_upper": 0.6551348745746451,
+          "n": 100
+        },
+        "task_completed": {
+          "mean": 0.98,
+          "std": 0.14070529413628968,
+          "ci_lower": 0.952079848484536,
+          "ci_upper": 1.0079201515154639,
+          "n": 100
+        },
+        "token_efficiency": {
+          "mean": 4057.08,
+          "std": 1644.812320385803,
+          "ci_lower": 3730.699891265845,
+          "ci_upper": 4383.460108734155,
+          "n": 100
+        },
+        "user_stops": {
+          "mean": 0.02,
+          "std": 0.14070529413628968,
+          "ci_lower": -0.00792015151546396,
+          "ci_upper": 0.04792015151546396,
+          "n": 100
+        },
+        "time_to_completion_ms": {
+          "mean": 56004.04,
+          "std": 28474.715987416632,
+          "ci_lower": 50353.80210661692,
+          "ci_upper": 61654.277893383085,
+          "n": 100
+        },
+        "tool_precision": {
+          "mean": 0.1,
+          "std": 0.30512857662936466,
+          "ci_lower": -0.013957515132493173,
+          "ci_upper": 0.21395751513249317,
+          "n": 30
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 100
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 3
+        },
+        "latency_mape": {
+          "mean": 47.55454855833819,
+          "std": 27.689949214599142,
+          "ci_lower": 37.213079262023925,
+          "ci_upper": 57.896017854652456,
+          "n": 30
+        }
+      }
+    },
+    "heuristic": {
+      "n_episodes": 100,
+      "summaries": {
+        "task_quality": {
+          "mean": 0.6225,
+          "std": 0.1870734954632164,
+          "ci_lower": 0.585379006295234,
+          "ci_upper": 0.6596209937047661,
+          "n": 100
+        },
+        "task_completed": {
+          "mean": 0.99,
+          "std": 0.1,
+          "ci_lower": 0.9701569999999999,
+          "ci_upper": 1.009843,
+          "n": 100
+        },
+        "token_efficiency": {
+          "mean": 5516.11,
+          "std": 680.2441910776964,
+          "ci_lower": 5381.129145164452,
+          "ci_upper": 5651.090854835547,
+          "n": 100
+        },
+        "user_stops": {
+          "mean": 0.01,
+          "std": 0.1,
+          "ci_lower": -0.009843,
+          "ci_upper": 0.029843,
+          "n": 100
+        },
+        "time_to_completion_ms": {
+          "mean": 69490.16,
+          "std": 25793.522914440706,
+          "ci_lower": 64371.951248087535,
+          "ci_upper": 74608.36875191247,
+          "n": 100
+        },
+        "tool_precision": {
+          "mean": 0.41,
+          "std": 0.49431107042371036,
+          "ci_lower": 0.31191385429582313,
+          "ci_upper": 0.5080861457041769,
+          "n": 100
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 100
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 41
+        },
+        "latency_mape": {
+          "mean": 34.44123428141064,
+          "std": 24.159276240955165,
+          "ci_lower": 29.6473090969179,
+          "ci_upper": 39.23515946590337,
+          "n": 100
+        }
+      }
+    },
+    "learned_no_search": {
+      "n_episodes": 100,
+      "summaries": {
+        "task_quality": {
+          "mean": 0.6475,
+          "std": 0.20060759279018567,
+          "ci_lower": 0.6076934353626434,
+          "ci_upper": 0.6873065646373565,
+          "n": 100
+        },
+        "task_completed": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 100
+        },
+        "token_efficiency": {
+          "mean": 5464.73,
+          "std": 638.5842114008967,
+          "ci_lower": 5338.01573493172,
+          "ci_upper": 5591.4442650682795,
+          "n": 100
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 100
+        },
+        "time_to_completion_ms": {
+          "mean": 68484.2,
+          "std": 28860.750393794846,
+          "ci_lower": 62757.36129935928,
+          "ci_upper": 74211.03870064071,
+          "n": 100
+        },
+        "tool_precision": {
+          "mean": 0.35,
+          "std": 0.4793724854411023,
+          "ci_lower": 0.25487811771392205,
+          "ci_upper": 0.4451218822860779,
+          "n": 100
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 100
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 35
+        },
+        "latency_mape": {
+          "mean": 37.17021392626529,
+          "std": 26.834337220752086,
+          "ci_lower": 31.845476391551454,
+          "ci_upper": 42.494951460979124,
+          "n": 100
+        }
+      }
+    },
+    "learned_with_search": {
+      "n_episodes": 100,
+      "summaries": {
+        "task_quality": {
+          "mean": 0.6391666666666667,
+          "std": 0.1960807771200545,
+          "ci_lower": 0.6002583580627342,
+          "ci_upper": 0.6780749752705991,
+          "n": 100
+        },
+        "task_completed": {
+          "mean": 0.99,
+          "std": 0.1,
+          "ci_lower": 0.9701569999999999,
+          "ci_upper": 1.009843,
+          "n": 100
+        },
+        "token_efficiency": {
+          "mean": 5679.94,
+          "std": 1092.909672351376,
+          "ci_lower": 5463.073933715316,
+          "ci_upper": 5896.806066284683,
+          "n": 100
+        },
+        "user_stops": {
+          "mean": 0.01,
+          "std": 0.1,
+          "ci_lower": -0.009843,
+          "ci_upper": 0.029843,
+          "n": 100
+        },
+        "time_to_completion_ms": {
+          "mean": 69259.4,
+          "std": 32380.34404643744,
+          "ci_lower": 62834.16833086541,
+          "ci_upper": 75684.63166913457,
+          "n": 100
+        },
+        "tool_precision": {
+          "mean": 0.34,
+          "std": 0.4760952285695233,
+          "ci_lower": 0.24552842379494952,
+          "ci_upper": 0.4344715762050505,
+          "n": 100
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 100
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 34
+        },
+        "latency_mape": {
+          "mean": 34.63810678532196,
+          "std": 25.843898524282345,
+          "ci_lower": 29.509902001148614,
+          "ci_upper": 39.76631156949531,
+          "n": 100
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "task_id": "typical_001",
+      "condition": "no_subconscious",
+      "score": 0.9166666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_002",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_003",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_004",
+      "condition": "no_subconscious",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_005",
+      "condition": "no_subconscious",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_006",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_007",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_008",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_009",
+      "condition": "no_subconscious",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_010",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_011",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_012",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_013",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_014",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_015",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_016",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_017",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_018",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_019",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_020",
+      "condition": "no_subconscious",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_021",
+      "condition": "no_subconscious",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_022",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_023",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_024",
+      "condition": "no_subconscious",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_025",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_026",
+      "condition": "no_subconscious",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_027",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_028",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_029",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_030",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_031",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_032",
+      "condition": "no_subconscious",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_033",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_034",
+      "condition": "no_subconscious",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_035",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_036",
+      "condition": "no_subconscious",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_037",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_038",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_039",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_040",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_041",
+      "condition": "no_subconscious",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_042",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_043",
+      "condition": "no_subconscious",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_044",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_045",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_046",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_047",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_048",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_049",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_050",
+      "condition": "no_subconscious",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "hard_001",
+      "condition": "no_subconscious",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_002",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_003",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_004",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_005",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_006",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_007",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_008",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_009",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_010",
+      "condition": "no_subconscious",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_011",
+      "condition": "no_subconscious",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_012",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_013",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_014",
+      "condition": "no_subconscious",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_015",
+      "condition": "no_subconscious",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_016",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_017",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_018",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_019",
+      "condition": "no_subconscious",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_020",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_021",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_022",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_023",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_024",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_025",
+      "condition": "no_subconscious",
+      "score": 0.9166666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "tricky_001",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_002",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_003",
+      "condition": "no_subconscious",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_004",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_005",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_006",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_007",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_008",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_009",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_010",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_011",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_012",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_013",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_014",
+      "condition": "no_subconscious",
+      "score": 0.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_015",
+      "condition": "no_subconscious",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_016",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_017",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_018",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_019",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_020",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_021",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_022",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_023",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_024",
+      "condition": "no_subconscious",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_025",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "typical_001",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_002",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_003",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_004",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_005",
+      "condition": "random",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_006",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_007",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_008",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_009",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_010",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_011",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_012",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_013",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_014",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_015",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_016",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_017",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_018",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_019",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_020",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_021",
+      "condition": "random",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_022",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_023",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_024",
+      "condition": "random",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_025",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_026",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_027",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_028",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_029",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_030",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_031",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_032",
+      "condition": "random",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_033",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_034",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_035",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_036",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_037",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_038",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_039",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_040",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_041",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_042",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_043",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_044",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_045",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_046",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_047",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_048",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_049",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_050",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "hard_001",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_002",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_003",
+      "condition": "random",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_004",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_005",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_006",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_007",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_008",
+      "condition": "random",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_009",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_010",
+      "condition": "random",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_011",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_012",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_013",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_014",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_015",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_016",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_017",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_018",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_019",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_020",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_021",
+      "condition": "random",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_022",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_023",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_024",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_025",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "tricky_001",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_002",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_003",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_004",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_005",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_006",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_007",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_008",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_009",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_010",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_011",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_012",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_013",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_014",
+      "condition": "random",
+      "score": 0.25,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_015",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_016",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_017",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_018",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_019",
+      "condition": "random",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_020",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_021",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_022",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_023",
+      "condition": "random",
+      "score": 0.25,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_024",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_025",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "typical_001",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_002",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_003",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_004",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_005",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_006",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_007",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_008",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_009",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_010",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_011",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_012",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_013",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_014",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_015",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_016",
+      "condition": "heuristic",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_017",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_018",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_019",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_020",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_021",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_022",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_023",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_024",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_025",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_026",
+      "condition": "heuristic",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_027",
+      "condition": "heuristic",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_028",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_029",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_030",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_031",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_032",
+      "condition": "heuristic",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_033",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_034",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_035",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_036",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_037",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_038",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_039",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_040",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_041",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_042",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_043",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_044",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_045",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_046",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_047",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_048",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_049",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_050",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "hard_001",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_002",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_003",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_004",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_005",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_006",
+      "condition": "heuristic",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_007",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_008",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_009",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_010",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_011",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_012",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_013",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_014",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_015",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_016",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_017",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_018",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_019",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_020",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_021",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_022",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_023",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_024",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_025",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "tricky_001",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_002",
+      "condition": "heuristic",
+      "score": 0.25,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_003",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_004",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_005",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_006",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_007",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_008",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_009",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_010",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_011",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_012",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_013",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_014",
+      "condition": "heuristic",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_015",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_016",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_017",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_018",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_019",
+      "condition": "heuristic",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_020",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_021",
+      "condition": "heuristic",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_022",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_023",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_024",
+      "condition": "heuristic",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_025",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "typical_001",
+      "condition": "learned_no_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_002",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_003",
+      "condition": "learned_no_search",
+      "score": 0.9166666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_004",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_005",
+      "condition": "learned_no_search",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_006",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_007",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_008",
+      "condition": "learned_no_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_009",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_010",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_011",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_012",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_013",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_014",
+      "condition": "learned_no_search",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_015",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_016",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_017",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_018",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_019",
+      "condition": "learned_no_search",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_020",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_021",
+      "condition": "learned_no_search",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_022",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_023",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_024",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_025",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_026",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_027",
+      "condition": "learned_no_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_028",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_029",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_030",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_031",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_032",
+      "condition": "learned_no_search",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_033",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_034",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_035",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_036",
+      "condition": "learned_no_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_037",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_038",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_039",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_040",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_041",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_042",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_043",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_044",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_045",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_046",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_047",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_048",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_049",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_050",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "hard_001",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_002",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_003",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_004",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_005",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_006",
+      "condition": "learned_no_search",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_007",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_008",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_009",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_010",
+      "condition": "learned_no_search",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_011",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_012",
+      "condition": "learned_no_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_013",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_014",
+      "condition": "learned_no_search",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_015",
+      "condition": "learned_no_search",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_016",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_017",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_018",
+      "condition": "learned_no_search",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_019",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_020",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_021",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_022",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_023",
+      "condition": "learned_no_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_024",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_025",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "tricky_001",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_002",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_003",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_004",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_005",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_006",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_007",
+      "condition": "learned_no_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_008",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_009",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_010",
+      "condition": "learned_no_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_011",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_012",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_013",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_014",
+      "condition": "learned_no_search",
+      "score": 0.9166666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_015",
+      "condition": "learned_no_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_016",
+      "condition": "learned_no_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_017",
+      "condition": "learned_no_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_018",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_019",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_020",
+      "condition": "learned_no_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_021",
+      "condition": "learned_no_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_022",
+      "condition": "learned_no_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_023",
+      "condition": "learned_no_search",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_024",
+      "condition": "learned_no_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_025",
+      "condition": "learned_no_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "typical_001",
+      "condition": "learned_with_search",
+      "score": 0.9166666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_002",
+      "condition": "learned_with_search",
+      "score": 0.08333333333333333,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_003",
+      "condition": "learned_with_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_004",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_005",
+      "condition": "learned_with_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_006",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_007",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_008",
+      "condition": "learned_with_search",
+      "score": 0.8333333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_009",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_010",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_011",
+      "condition": "learned_with_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_012",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_013",
+      "condition": "learned_with_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_014",
+      "condition": "learned_with_search",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_015",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_016",
+      "condition": "learned_with_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_017",
+      "condition": "learned_with_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_018",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_019",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_020",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_021",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_022",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_023",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_024",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_025",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_026",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_027",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_028",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_029",
+      "condition": "learned_with_search",
+      "score": 0.3333333333333333,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_030",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_031",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_032",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_033",
+      "condition": "learned_with_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_034",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_035",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_036",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_037",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_038",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_039",
+      "condition": "learned_with_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_040",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_041",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_042",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_043",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_044",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_045",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_046",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_047",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_048",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_049",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "typical_050",
+      "condition": "learned_with_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "typical"
+    },
+    {
+      "task_id": "hard_001",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_002",
+      "condition": "learned_with_search",
+      "score": 0.8333333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_003",
+      "condition": "learned_with_search",
+      "score": 0.9166666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_004",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_005",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_006",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_007",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_008",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_009",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_010",
+      "condition": "learned_with_search",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_011",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_012",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_013",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_014",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_015",
+      "condition": "learned_with_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_016",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_017",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_018",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_019",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_020",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_021",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_022",
+      "condition": "learned_with_search",
+      "score": 0.4166666666666667,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_023",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_024",
+      "condition": "learned_with_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "hard_025",
+      "condition": "learned_with_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "hard"
+    },
+    {
+      "task_id": "tricky_001",
+      "condition": "learned_with_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_002",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_003",
+      "condition": "learned_with_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_004",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_005",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_006",
+      "condition": "learned_with_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_007",
+      "condition": "learned_with_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_008",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_009",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_010",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_011",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_012",
+      "condition": "learned_with_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_013",
+      "condition": "learned_with_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_014",
+      "condition": "learned_with_search",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_015",
+      "condition": "learned_with_search",
+      "score": 0.5,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_016",
+      "condition": "learned_with_search",
+      "score": 0.5833333333333334,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_017",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_018",
+      "condition": "learned_with_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_019",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_020",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_021",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_022",
+      "condition": "learned_with_search",
+      "score": 0.75,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_023",
+      "condition": "learned_with_search",
+      "score": 0.6666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_024",
+      "condition": "learned_with_search",
+      "score": 0.16666666666666666,
+      "detail": null,
+      "difficulty": "tricky"
+    },
+    {
+      "task_id": "tricky_025",
+      "condition": "learned_with_search",
+      "score": 1.0,
+      "detail": null,
+      "difficulty": "tricky"
+    }
+  ],
+  "failures": [],
+  "base_seed": 42,
+  "task_mix": {
+    "typical": 50,
+    "hard": 25,
+    "tricky": 25
+  },
+  "task_ids": [
+    "typical_001",
+    "typical_002",
+    "typical_003",
+    "typical_004",
+    "typical_005",
+    "typical_006",
+    "typical_007",
+    "typical_008",
+    "typical_009",
+    "typical_010",
+    "typical_011",
+    "typical_012",
+    "typical_013",
+    "typical_014",
+    "typical_015",
+    "typical_016",
+    "typical_017",
+    "typical_018",
+    "typical_019",
+    "typical_020",
+    "typical_021",
+    "typical_022",
+    "typical_023",
+    "typical_024",
+    "typical_025",
+    "typical_026",
+    "typical_027",
+    "typical_028",
+    "typical_029",
+    "typical_030",
+    "typical_031",
+    "typical_032",
+    "typical_033",
+    "typical_034",
+    "typical_035",
+    "typical_036",
+    "typical_037",
+    "typical_038",
+    "typical_039",
+    "typical_040",
+    "typical_041",
+    "typical_042",
+    "typical_043",
+    "typical_044",
+    "typical_045",
+    "typical_046",
+    "typical_047",
+    "typical_048",
+    "typical_049",
+    "typical_050",
+    "hard_001",
+    "hard_002",
+    "hard_003",
+    "hard_004",
+    "hard_005",
+    "hard_006",
+    "hard_007",
+    "hard_008",
+    "hard_009",
+    "hard_010",
+    "hard_011",
+    "hard_012",
+    "hard_013",
+    "hard_014",
+    "hard_015",
+    "hard_016",
+    "hard_017",
+    "hard_018",
+    "hard_019",
+    "hard_020",
+    "hard_021",
+    "hard_022",
+    "hard_023",
+    "hard_024",
+    "hard_025",
+    "tricky_001",
+    "tricky_002",
+    "tricky_003",
+    "tricky_004",
+    "tricky_005",
+    "tricky_006",
+    "tricky_007",
+    "tricky_008",
+    "tricky_009",
+    "tricky_010",
+    "tricky_011",
+    "tricky_012",
+    "tricky_013",
+    "tricky_014",
+    "tricky_015",
+    "tricky_016",
+    "tricky_017",
+    "tricky_018",
+    "tricky_019",
+    "tricky_020",
+    "tricky_021",
+    "tricky_022",
+    "tricky_023",
+    "tricky_024",
+    "tricky_025"
+  ],
+  "pairwise": [
+    {
+      "metric": "task_quality",
+      "condition_a": "no_subconscious",
+      "condition_b": "random",
+      "mean_a": 0.6066666666666667,
+      "mean_b": 0.6183333333333334,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -0.44485390241372474,
+      "p_value": 0.6569112452610358,
+      "significant": false
+    },
+    {
+      "metric": "task_quality",
+      "condition_a": "no_subconscious",
+      "condition_b": "heuristic",
+      "mean_a": 0.6066666666666667,
+      "mean_b": 0.6225,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -0.6011151637415885,
+      "p_value": 0.5484508798977141,
+      "significant": false
+    },
+    {
+      "metric": "task_quality",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.6066666666666667,
+      "mean_b": 0.6475,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -1.4947528705387227,
+      "p_value": 0.13658078147131814,
+      "significant": false
+    },
+    {
+      "metric": "task_quality",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.6066666666666667,
+      "mean_b": 0.6391666666666667,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -1.2042788287899748,
+      "p_value": 0.22992391260909373,
+      "significant": false
+    },
+    {
+      "metric": "task_quality",
+      "condition_a": "random",
+      "condition_b": "heuristic",
+      "mean_a": 0.6183333333333334,
+      "mean_b": 0.6225,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -0.1581722097792953,
+      "p_value": 0.8744823128186179,
+      "significant": false
+    },
+    {
+      "metric": "task_quality",
+      "condition_a": "random",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.6183333333333334,
+      "mean_b": 0.6475,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -1.067580277776213,
+      "p_value": 0.28701776229076914,
+      "significant": false
+    },
+    {
+      "metric": "task_quality",
+      "condition_a": "random",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.6183333333333334,
+      "mean_b": 0.6391666666666667,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -0.7718992670255724,
+      "p_value": 0.441097235061905,
+      "significant": false
+    },
+    {
+      "metric": "task_quality",
+      "condition_a": "heuristic",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.6225,
+      "mean_b": 0.6475,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -0.911414443580841,
+      "p_value": 0.3631907105359964,
+      "significant": false
+    },
+    {
+      "metric": "task_quality",
+      "condition_a": "heuristic",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.6225,
+      "mean_b": 0.6391666666666667,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -0.6149929031626141,
+      "p_value": 0.5392671075982285,
+      "significant": false
+    },
+    {
+      "metric": "task_quality",
+      "condition_a": "learned_no_search",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.6475,
+      "mean_b": 0.6391666666666667,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.29706809284019037,
+      "p_value": 0.7667261017625746,
+      "significant": false
+    },
+    {
+      "metric": "task_completed",
+      "condition_a": "no_subconscious",
+      "condition_b": "random",
+      "mean_a": 0.99,
+      "mean_b": 0.98,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.5793040827915713,
+      "p_value": 0.5631136383346632,
+      "significant": false
+    },
+    {
+      "metric": "task_completed",
+      "condition_a": "no_subconscious",
+      "condition_b": "heuristic",
+      "mean_a": 0.99,
+      "mean_b": 0.99,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "task_completed",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.99,
+      "mean_b": 1.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -1.0000000000000009,
+      "p_value": 0.31974847413931096,
+      "significant": false
+    },
+    {
+      "metric": "task_completed",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.99,
+      "mean_b": 0.99,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "task_completed",
+      "condition_a": "random",
+      "condition_b": "heuristic",
+      "mean_a": 0.98,
+      "mean_b": 0.99,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -0.5793040827915713,
+      "p_value": 0.5631136383346632,
+      "significant": false
+    },
+    {
+      "metric": "task_completed",
+      "condition_a": "random",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.98,
+      "mean_b": 1.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -1.4214106244380298,
+      "p_value": 0.15833990565973521,
+      "significant": false
+    },
+    {
+      "metric": "task_completed",
+      "condition_a": "random",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.98,
+      "mean_b": 0.99,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -0.5793040827915713,
+      "p_value": 0.5631136383346632,
+      "significant": false
+    },
+    {
+      "metric": "task_completed",
+      "condition_a": "heuristic",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.99,
+      "mean_b": 1.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -1.0000000000000009,
+      "p_value": 0.31974847413931096,
+      "significant": false
+    },
+    {
+      "metric": "task_completed",
+      "condition_a": "heuristic",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.99,
+      "mean_b": 0.99,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "task_completed",
+      "condition_a": "learned_no_search",
+      "condition_b": "learned_with_search",
+      "mean_a": 1.0,
+      "mean_b": 0.99,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 1.0000000000000009,
+      "p_value": 0.31974847413931096,
+      "significant": false
+    },
+    {
+      "metric": "token_efficiency",
+      "condition_a": "no_subconscious",
+      "condition_b": "random",
+      "mean_a": 3329.92,
+      "mean_b": 4057.08,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -3.817947618816489,
+      "p_value": 0.00019227354233862967,
+      "significant": true
+    },
+    {
+      "metric": "token_efficiency",
+      "condition_a": "no_subconscious",
+      "condition_b": "heuristic",
+      "mean_a": 3329.92,
+      "mean_b": 5516.11,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -18.578053102149937,
+      "p_value": 1.4481627488316648e-43,
+      "significant": true
+    },
+    {
+      "metric": "token_efficiency",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_no_search",
+      "mean_a": 3329.92,
+      "mean_b": 5464.73,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -18.51239965178022,
+      "p_value": 8.106538575937652e-43,
+      "significant": true
+    },
+    {
+      "metric": "token_efficiency",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_with_search",
+      "mean_a": 3329.92,
+      "mean_b": 5679.94,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -16.153410985938386,
+      "p_value": 8.419271770550293e-38,
+      "significant": true
+    },
+    {
+      "metric": "token_efficiency",
+      "condition_a": "random",
+      "condition_b": "heuristic",
+      "mean_a": 4057.08,
+      "mean_b": 5516.11,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -8.197134440400935,
+      "p_value": 1.8969380459379935e-13,
+      "significant": true
+    },
+    {
+      "metric": "token_efficiency",
+      "condition_a": "random",
+      "condition_b": "learned_no_search",
+      "mean_a": 4057.08,
+      "mean_b": 5464.73,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -7.977950872044399,
+      "p_value": 7.22191151503163e-13,
+      "significant": true
+    },
+    {
+      "metric": "token_efficiency",
+      "condition_a": "random",
+      "condition_b": "learned_with_search",
+      "mean_a": 4057.08,
+      "mean_b": 5679.94,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -8.21781947285283,
+      "p_value": 4.793829520277156e-14,
+      "significant": true
+    },
+    {
+      "metric": "token_efficiency",
+      "condition_a": "heuristic",
+      "condition_b": "learned_no_search",
+      "mean_a": 5516.11,
+      "mean_b": 5464.73,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.5506862536784362,
+      "p_value": 0.5824720236689083,
+      "significant": false
+    },
+    {
+      "metric": "token_efficiency",
+      "condition_a": "heuristic",
+      "condition_b": "learned_with_search",
+      "mean_a": 5516.11,
+      "mean_b": 5679.94,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -1.2726474255076972,
+      "p_value": 0.2049260547620635,
+      "significant": false
+    },
+    {
+      "metric": "token_efficiency",
+      "condition_a": "learned_no_search",
+      "condition_b": "learned_with_search",
+      "mean_a": 5464.73,
+      "mean_b": 5679.94,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -1.7001940034071834,
+      "p_value": 0.09104302329578728,
+      "significant": false
+    },
+    {
+      "metric": "user_stops",
+      "condition_a": "no_subconscious",
+      "condition_b": "random",
+      "mean_a": 0.01,
+      "mean_b": 0.02,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -0.5793040827915708,
+      "p_value": 0.5631136383346632,
+      "significant": false
+    },
+    {
+      "metric": "user_stops",
+      "condition_a": "no_subconscious",
+      "condition_b": "heuristic",
+      "mean_a": 0.01,
+      "mean_b": 0.01,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "user_stops",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.01,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 1.0,
+      "p_value": 0.31974847413931096,
+      "significant": false
+    },
+    {
+      "metric": "user_stops",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.01,
+      "mean_b": 0.01,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "user_stops",
+      "condition_a": "random",
+      "condition_b": "heuristic",
+      "mean_a": 0.02,
+      "mean_b": 0.01,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.5793040827915708,
+      "p_value": 0.5631136383346632,
+      "significant": false
+    },
+    {
+      "metric": "user_stops",
+      "condition_a": "random",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.02,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 1.4214106244380285,
+      "p_value": 0.1583399056597372,
+      "significant": false
+    },
+    {
+      "metric": "user_stops",
+      "condition_a": "random",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.02,
+      "mean_b": 0.01,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.5793040827915708,
+      "p_value": 0.5631136383346632,
+      "significant": false
+    },
+    {
+      "metric": "user_stops",
+      "condition_a": "heuristic",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.01,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 1.0,
+      "p_value": 0.31974847413931096,
+      "significant": false
+    },
+    {
+      "metric": "user_stops",
+      "condition_a": "heuristic",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.01,
+      "mean_b": 0.01,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "user_stops",
+      "condition_a": "learned_no_search",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.0,
+      "mean_b": 0.01,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -1.0,
+      "p_value": 0.31974847413931096,
+      "significant": false
+    },
+    {
+      "metric": "time_to_completion_ms",
+      "condition_a": "no_subconscious",
+      "condition_b": "random",
+      "mean_a": 44668.84,
+      "mean_b": 56004.04,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -2.9285435606890364,
+      "p_value": 0.0038075500012753976,
+      "significant": true
+    },
+    {
+      "metric": "time_to_completion_ms",
+      "condition_a": "no_subconscious",
+      "condition_b": "heuristic",
+      "mean_a": 44668.84,
+      "mean_b": 69490.16,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -6.748898612070432,
+      "p_value": 1.6085132985145193e-10,
+      "significant": true
+    },
+    {
+      "metric": "time_to_completion_ms",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_no_search",
+      "mean_a": 44668.84,
+      "mean_b": 68484.2,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -6.107943531318084,
+      "p_value": 5.3210427868580015e-9,
+      "significant": true
+    },
+    {
+      "metric": "time_to_completion_ms",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_with_search",
+      "mean_a": 44668.84,
+      "mean_b": 69259.4,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -5.902218735364351,
+      "p_value": 1.6229502349881157e-8,
+      "significant": true
+    },
+    {
+      "metric": "time_to_completion_ms",
+      "condition_a": "random",
+      "condition_b": "heuristic",
+      "mean_a": 56004.04,
+      "mean_b": 69490.16,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -3.5101597545699135,
+      "p_value": 0.0005555405837399096,
+      "significant": true
+    },
+    {
+      "metric": "time_to_completion_ms",
+      "condition_a": "random",
+      "condition_b": "learned_no_search",
+      "mean_a": 56004.04,
+      "mean_b": 68484.2,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -3.078236319267442,
+      "p_value": 0.002377574161875528,
+      "significant": true
+    },
+    {
+      "metric": "time_to_completion_ms",
+      "condition_a": "random",
+      "condition_b": "learned_with_search",
+      "mean_a": 56004.04,
+      "mean_b": 69259.4,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -3.074094715489934,
+      "p_value": 0.0024142732649571398,
+      "significant": true
+    },
+    {
+      "metric": "time_to_completion_ms",
+      "condition_a": "heuristic",
+      "condition_b": "learned_no_search",
+      "mean_a": 69490.16,
+      "mean_b": 68484.2,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.25988951101065466,
+      "p_value": 0.7952224231714484,
+      "significant": false
+    },
+    {
+      "metric": "time_to_completion_ms",
+      "condition_a": "heuristic",
+      "condition_b": "learned_with_search",
+      "mean_a": 69490.16,
+      "mean_b": 69259.4,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.055741854160938444,
+      "p_value": 0.955606471729487,
+      "significant": false
+    },
+    {
+      "metric": "time_to_completion_ms",
+      "condition_a": "learned_no_search",
+      "condition_b": "learned_with_search",
+      "mean_a": 68484.2,
+      "mean_b": 69259.4,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -0.17871861022370408,
+      "p_value": 0.8583437871838814,
+      "significant": false
+    },
+    {
+      "metric": "tool_precision",
+      "condition_a": "no_subconscious",
+      "condition_b": "random",
+      "mean_a": 0.0,
+      "mean_b": 0.1,
+      "n_a": 0,
+      "n_b": 30,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "tool_precision",
+      "condition_a": "no_subconscious",
+      "condition_b": "heuristic",
+      "mean_a": 0.0,
+      "mean_b": 0.41,
+      "n_a": 0,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "tool_precision",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.0,
+      "mean_b": 0.35,
+      "n_a": 0,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "tool_precision",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.0,
+      "mean_b": 0.34,
+      "n_a": 0,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "tool_precision",
+      "condition_a": "random",
+      "condition_b": "heuristic",
+      "mean_a": 0.1,
+      "mean_b": 0.41,
+      "n_a": 30,
+      "n_b": 100,
+      "t_stat": -4.162336678418865,
+      "p_value": 0.00008012745651413169,
+      "significant": true
+    },
+    {
+      "metric": "tool_precision",
+      "condition_a": "random",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.1,
+      "mean_b": 0.35,
+      "n_a": 30,
+      "n_b": 100,
+      "t_stat": -3.4016193240090145,
+      "p_value": 0.0010728372527320175,
+      "significant": true
+    },
+    {
+      "metric": "tool_precision",
+      "condition_a": "random",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.1,
+      "mean_b": 0.34,
+      "n_a": 30,
+      "n_b": 100,
+      "t_stat": -3.275061434120019,
+      "p_value": 0.0015996369544563024,
+      "significant": true
+    },
+    {
+      "metric": "tool_precision",
+      "condition_a": "heuristic",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.41,
+      "mean_b": 0.35,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.8713593687753752,
+      "p_value": 0.38461425513713965,
+      "significant": false
+    },
+    {
+      "metric": "tool_precision",
+      "condition_a": "heuristic",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.41,
+      "mean_b": 0.34,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 1.019959505194572,
+      "p_value": 0.30899403858467045,
+      "significant": false
+    },
+    {
+      "metric": "tool_precision",
+      "condition_a": "learned_no_search",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.35,
+      "mean_b": 0.34,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.1480118294585234,
+      "p_value": 0.8824840606097892,
+      "significant": false
+    },
+    {
+      "metric": "interrupt_rate",
+      "condition_a": "no_subconscious",
+      "condition_b": "random",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "interrupt_rate",
+      "condition_a": "no_subconscious",
+      "condition_b": "heuristic",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "interrupt_rate",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "interrupt_rate",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "interrupt_rate",
+      "condition_a": "random",
+      "condition_b": "heuristic",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "interrupt_rate",
+      "condition_a": "random",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "interrupt_rate",
+      "condition_a": "random",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "interrupt_rate",
+      "condition_a": "heuristic",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "interrupt_rate",
+      "condition_a": "heuristic",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "interrupt_rate",
+      "condition_a": "learned_no_search",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "queue_expiry_rate",
+      "condition_a": "no_subconscious",
+      "condition_b": "random",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 0,
+      "n_b": 3,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "queue_expiry_rate",
+      "condition_a": "no_subconscious",
+      "condition_b": "heuristic",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 0,
+      "n_b": 41,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "queue_expiry_rate",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 0,
+      "n_b": 35,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "queue_expiry_rate",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 0,
+      "n_b": 34,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "queue_expiry_rate",
+      "condition_a": "random",
+      "condition_b": "heuristic",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 3,
+      "n_b": 41,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "queue_expiry_rate",
+      "condition_a": "random",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 3,
+      "n_b": 35,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "queue_expiry_rate",
+      "condition_a": "random",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 3,
+      "n_b": 34,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "queue_expiry_rate",
+      "condition_a": "heuristic",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 41,
+      "n_b": 35,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "queue_expiry_rate",
+      "condition_a": "heuristic",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 41,
+      "n_b": 34,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "queue_expiry_rate",
+      "condition_a": "learned_no_search",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.0,
+      "mean_b": 0.0,
+      "n_a": 35,
+      "n_b": 34,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "latency_mape",
+      "condition_a": "no_subconscious",
+      "condition_b": "random",
+      "mean_a": 0.0,
+      "mean_b": 47.55454855833819,
+      "n_a": 0,
+      "n_b": 30,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "latency_mape",
+      "condition_a": "no_subconscious",
+      "condition_b": "heuristic",
+      "mean_a": 0.0,
+      "mean_b": 34.44123428141064,
+      "n_a": 0,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "latency_mape",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_no_search",
+      "mean_a": 0.0,
+      "mean_b": 37.17021392626529,
+      "n_a": 0,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "latency_mape",
+      "condition_a": "no_subconscious",
+      "condition_b": "learned_with_search",
+      "mean_a": 0.0,
+      "mean_b": 34.63810678532196,
+      "n_a": 0,
+      "n_b": 100,
+      "t_stat": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    {
+      "metric": "latency_mape",
+      "condition_a": "random",
+      "condition_b": "heuristic",
+      "mean_a": 47.55454855833819,
+      "mean_b": 34.44123428141064,
+      "n_a": 30,
+      "n_b": 100,
+      "t_stat": 2.340376912384976,
+      "p_value": 0.02396199822904247,
+      "significant": true
+    },
+    {
+      "metric": "latency_mape",
+      "condition_a": "random",
+      "condition_b": "learned_no_search",
+      "mean_a": 47.55454855833819,
+      "mean_b": 37.17021392626529,
+      "n_a": 30,
+      "n_b": 100,
+      "t_stat": 1.814329056800606,
+      "p_value": 0.0760732198999852,
+      "significant": false
+    },
+    {
+      "metric": "latency_mape",
+      "condition_a": "random",
+      "condition_b": "learned_with_search",
+      "mean_a": 47.55454855833819,
+      "mean_b": 34.63810678532196,
+      "n_a": 30,
+      "n_b": 100,
+      "t_stat": 2.274922522635958,
+      "p_value": 0.02769996717483151,
+      "significant": true
+    },
+    {
+      "metric": "latency_mape",
+      "condition_a": "heuristic",
+      "condition_b": "learned_no_search",
+      "mean_a": 34.44123428141064,
+      "mean_b": 37.17021392626529,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -0.755792808891269,
+      "p_value": 0.45068145323333364,
+      "significant": false
+    },
+    {
+      "metric": "latency_mape",
+      "condition_a": "heuristic",
+      "condition_b": "learned_with_search",
+      "mean_a": 34.44123428141064,
+      "mean_b": 34.63810678532196,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": -0.0556488447873897,
+      "p_value": 0.9556779194479217,
+      "significant": false
+    },
+    {
+      "metric": "latency_mape",
+      "condition_a": "learned_no_search",
+      "condition_b": "learned_with_search",
+      "mean_a": 37.17021392626529,
+      "mean_b": 34.63810678532196,
+      "n_a": 100,
+      "n_b": 100,
+      "t_stat": 0.6796559226347422,
+      "p_value": 0.4975172804661965,
+      "significant": false
+    }
+  ],
+  "by_difficulty": {
+    "typical": {
+      "no_subconscious": {
+        "task_quality": {
+          "mean": 0.5983333333333334,
+          "std": 0.16725237220760217,
+          "ci_lower": 0.5507859575257432,
+          "ci_upper": 0.6458807091409235,
+          "n": 50
+        },
+        "task_completed": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 50
+        },
+        "token_efficiency": {
+          "mean": 3181.76,
+          "std": 723.8473612917157,
+          "ci_lower": 2975.980900664121,
+          "ci_upper": 3387.5390993358797,
+          "n": 50
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "time_to_completion_ms": {
+          "mean": 47358.48,
+          "std": 27675.51849945864,
+          "ci_lower": 39490.73940299183,
+          "ci_upper": 55226.22059700818,
+          "n": 50
+        },
+        "tool_precision": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        },
+        "latency_mape": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        }
+      },
+      "random": {
+        "task_quality": {
+          "mean": 0.625,
+          "std": 0.17189915569278158,
+          "ci_lower": 0.5761316123720688,
+          "ci_upper": 0.6738683876279312,
+          "n": 50
+        },
+        "task_completed": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 50
+        },
+        "token_efficiency": {
+          "mean": 3880.86,
+          "std": 1412.5227108161582,
+          "ci_lower": 3479.300684090464,
+          "ci_upper": 4282.419315909537,
+          "n": 50
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "time_to_completion_ms": {
+          "mean": 51206.56,
+          "std": 25151.052464820696,
+          "ci_lower": 44056.48776056488,
+          "ci_upper": 58356.632239435115,
+          "n": 50
+        },
+        "tool_precision": {
+          "mean": 0.13333333333333333,
+          "std": 0.3518657752744984,
+          "ci_lower": -0.062033415116857116,
+          "ci_upper": 0.3287000817835238,
+          "n": 15
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 2
+        },
+        "latency_mape": {
+          "mean": 45.2680160870208,
+          "std": 29.22149728866083,
+          "ci_lower": 29.043338066892026,
+          "ci_upper": 61.49269410714957,
+          "n": 15
+        }
+      },
+      "heuristic": {
+        "task_quality": {
+          "mean": 0.6266666666666666,
+          "std": 0.1651632875811869,
+          "ci_lower": 0.5797131867214487,
+          "ci_upper": 0.6736201466118845,
+          "n": 50
+        },
+        "task_completed": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 50
+        },
+        "token_efficiency": {
+          "mean": 5382.66,
+          "std": 434.5614073231698,
+          "ci_lower": 5259.120618927288,
+          "ci_upper": 5506.199381072712,
+          "n": 50
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "time_to_completion_ms": {
+          "mean": 71418.94,
+          "std": 27226.811216834463,
+          "ci_lower": 63678.76024719948,
+          "ci_upper": 79159.11975280053,
+          "n": 50
+        },
+        "tool_precision": {
+          "mean": 0.4,
+          "std": 0.4948716593053935,
+          "ci_lower": 0.25931530625877874,
+          "ci_upper": 0.5406846937412213,
+          "n": 50
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 20
+        },
+        "latency_mape": {
+          "mean": 31.783224989394864,
+          "std": 23.4586986925757,
+          "ci_lower": 25.114263898018358,
+          "ci_upper": 38.45218608077137,
+          "n": 50
+        }
+      },
+      "learned_no_search": {
+        "task_quality": {
+          "mean": 0.6416666666666667,
+          "std": 0.1914039903668277,
+          "ci_lower": 0.5872533430113969,
+          "ci_upper": 0.6960799903219366,
+          "n": 50
+        },
+        "task_completed": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 50
+        },
+        "token_efficiency": {
+          "mean": 5412.2,
+          "std": 396.20469869160576,
+          "ci_lower": 5299.564863907344,
+          "ci_upper": 5524.835136092655,
+          "n": 50
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "time_to_completion_ms": {
+          "mean": 70293.66,
+          "std": 27938.676664795705,
+          "ci_lower": 62351.107428614654,
+          "ci_upper": 78236.21257138536,
+          "n": 50
+        },
+        "tool_precision": {
+          "mean": 0.42,
+          "std": 0.49856938190329,
+          "ci_lower": 0.2782640984123742,
+          "ci_upper": 0.5617359015876258,
+          "n": 50
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 21
+        },
+        "latency_mape": {
+          "mean": 36.69240628010141,
+          "std": 29.307429909264588,
+          "ci_lower": 28.360737404752136,
+          "ci_upper": 45.02407515545068,
+          "n": 50
+        }
+      },
+      "learned_with_search": {
+        "task_quality": {
+          "mean": 0.6433333333333333,
+          "std": 0.18135919183373372,
+          "ci_lower": 0.5917755973415479,
+          "ci_upper": 0.6948910693251187,
+          "n": 50
+        },
+        "task_completed": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 50
+        },
+        "token_efficiency": {
+          "mean": 5600.14,
+          "std": 1095.9069305411674,
+          "ci_lower": 5288.589867772847,
+          "ci_upper": 5911.690132227153,
+          "n": 50
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "time_to_completion_ms": {
+          "mean": 76370.18,
+          "std": 31651.01080224253,
+          "ci_lower": 67372.26573761611,
+          "ci_upper": 85368.09426238388,
+          "n": 50
+        },
+        "tool_precision": {
+          "mean": 0.36,
+          "std": 0.48487322138506117,
+          "ci_lower": 0.2221577142857143,
+          "ci_upper": 0.4978422857142857,
+          "n": 50
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 18
+        },
+        "latency_mape": {
+          "mean": 39.47165065810807,
+          "std": 26.435105259189697,
+          "ci_lower": 31.956541199978876,
+          "ci_upper": 46.98676011623726,
+          "n": 50
+        }
+      }
+    },
+    "hard": {
+      "no_subconscious": {
+        "task_quality": {
+          "mean": 0.54,
+          "std": 0.14656562175858798,
+          "ci_lower": 0.47946253558883284,
+          "ci_upper": 0.6005374644111672,
+          "n": 25
+        },
+        "task_completed": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 25
+        },
+        "token_efficiency": {
+          "mean": 3748.28,
+          "std": 616.4064892585087,
+          "ci_lower": 3493.679463676666,
+          "ci_upper": 4002.8805363233346,
+          "n": 25
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "time_to_completion_ms": {
+          "mean": 39516.92,
+          "std": 16290.614030580104,
+          "ci_lower": 32788.24478080919,
+          "ci_upper": 46245.59521919081,
+          "n": 25
+        },
+        "tool_precision": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        },
+        "latency_mape": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        }
+      },
+      "random": {
+        "task_quality": {
+          "mean": 0.5133333333333333,
+          "std": 0.11201025085364417,
+          "ci_lower": 0.4670686193207441,
+          "ci_upper": 0.5595980473459224,
+          "n": 25
+        },
+        "task_completed": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 25
+        },
+        "token_efficiency": {
+          "mean": 4450.52,
+          "std": 1341.3825927005314,
+          "ci_lower": 3896.475333910973,
+          "ci_upper": 5004.564666089028,
+          "n": 25
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "time_to_completion_ms": {
+          "mean": 70821.2,
+          "std": 28219.61129988623,
+          "ci_lower": 59165.37174869499,
+          "ci_upper": 82477.028251305,
+          "n": 25
+        },
+        "tool_precision": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 9
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        },
+        "latency_mape": {
+          "mean": 59.21675465555619,
+          "std": 19.49589084312791,
+          "ci_lower": 44.230913227471866,
+          "ci_upper": 74.20259608364051,
+          "n": 9
+        }
+      },
+      "heuristic": {
+        "task_quality": {
+          "mean": 0.55,
+          "std": 0.07607257743127306,
+          "ci_lower": 0.518578982617787,
+          "ci_upper": 0.5814210173822131,
+          "n": 25
+        },
+        "task_completed": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 25
+        },
+        "token_efficiency": {
+          "mean": 6161.56,
+          "std": 549.6706650349826,
+          "ci_lower": 5934.524028513952,
+          "ci_upper": 6388.595971486049,
+          "n": 25
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "time_to_completion_ms": {
+          "mean": 61764.28,
+          "std": 15403.898382444188,
+          "ci_lower": 55401.85381211525,
+          "ci_upper": 68126.70618788475,
+          "n": 25
+        },
+        "tool_precision": {
+          "mean": 0.2,
+          "std": 0.4082482904638631,
+          "ci_lower": 0.031377126106806014,
+          "ci_upper": 0.36862287389319404,
+          "n": 25
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 5
+        },
+        "latency_mape": {
+          "mean": 35.0516505470725,
+          "std": 21.62540520924631,
+          "ci_lower": 26.119493179445403,
+          "ci_upper": 43.9838079146996,
+          "n": 25
+        }
+      },
+      "learned_no_search": {
+        "task_quality": {
+          "mean": 0.53,
+          "std": 0.15567951410224504,
+          "ci_lower": 0.4656981334952087,
+          "ci_upper": 0.5943018665047913,
+          "n": 25
+        },
+        "task_completed": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 25
+        },
+        "token_efficiency": {
+          "mean": 6049.04,
+          "std": 368.93263612751855,
+          "ci_lower": 5896.65606397389,
+          "ci_upper": 6201.42393602611,
+          "n": 25
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "time_to_completion_ms": {
+          "mean": 61481.96,
+          "std": 17879.090325666275,
+          "ci_lower": 54097.1805318868,
+          "ci_upper": 68866.7394681132,
+          "n": 25
+        },
+        "tool_precision": {
+          "mean": 0.16,
+          "std": 0.3741657386773941,
+          "ci_lower": 0.005454583296689158,
+          "ci_upper": 0.3145454167033108,
+          "n": 25
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 4
+        },
+        "latency_mape": {
+          "mean": 38.609388812114474,
+          "std": 26.72929268217754,
+          "ci_lower": 27.569121762667862,
+          "ci_upper": 49.64965586156109,
+          "n": 25
+        }
+      },
+      "learned_with_search": {
+        "task_quality": {
+          "mean": 0.5433333333333333,
+          "std": 0.13844373104863458,
+          "ci_lower": 0.48615053466100533,
+          "ci_upper": 0.6005161320056613,
+          "n": 25
+        },
+        "task_completed": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 25
+        },
+        "token_efficiency": {
+          "mean": 6096.76,
+          "std": 383.09651525431553,
+          "ci_lower": 5938.525815339358,
+          "ci_upper": 6254.9941846606425,
+          "n": 25
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "time_to_completion_ms": {
+          "mean": 64747.76,
+          "std": 19851.432255801257,
+          "ci_lower": 56548.32442106385,
+          "ci_upper": 72947.19557893615,
+          "n": 25
+        },
+        "tool_precision": {
+          "mean": 0.12,
+          "std": 0.33166247903553997,
+          "ci_lower": -0.01698987034083943,
+          "ci_upper": 0.2569898703408394,
+          "n": 25
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 3
+        },
+        "latency_mape": {
+          "mean": 28.482333702965434,
+          "std": 22.780246255833475,
+          "ci_lower": 19.073180789455975,
+          "ci_upper": 37.89148661647489,
+          "n": 25
+        }
+      }
+    },
+    "tricky": {
+      "no_subconscious": {
+        "task_quality": {
+          "mean": 0.69,
+          "std": 0.2263334969726131,
+          "ci_lower": 0.5965152124104318,
+          "ci_upper": 0.7834847875895681,
+          "n": 25
+        },
+        "task_completed": {
+          "mean": 0.96,
+          "std": 0.2,
+          "ci_lower": 0.877392,
+          "ci_upper": 1.042608,
+          "n": 25
+        },
+        "token_efficiency": {
+          "mean": 3207.88,
+          "std": 1452.623153700459,
+          "ci_lower": 2607.8885325955625,
+          "ci_upper": 3807.8714674044377,
+          "n": 25
+        },
+        "user_stops": {
+          "mean": 0.04,
+          "std": 0.2,
+          "ci_lower": -0.042608,
+          "ci_upper": 0.122608,
+          "n": 25
+        },
+        "time_to_completion_ms": {
+          "mean": 44441.48,
+          "std": 31037.647708226858,
+          "ci_lower": 31621.68999059398,
+          "ci_upper": 57261.27000940603,
+          "n": 25
+        },
+        "tool_precision": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        },
+        "latency_mape": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 0
+        }
+      },
+      "random": {
+        "task_quality": {
+          "mean": 0.71,
+          "std": 0.2206367049145621,
+          "ci_lower": 0.6188682154020893,
+          "ci_upper": 0.8011317845979107,
+          "n": 25
+        },
+        "task_completed": {
+          "mean": 0.92,
+          "std": 0.27688746209726917,
+          "ci_lower": 0.805634402655344,
+          "ci_upper": 1.0343655973446562,
+          "n": 25
+        },
+        "token_efficiency": {
+          "mean": 4016.08,
+          "std": 2249.2739554502177,
+          "ci_lower": 3087.039885440842,
+          "ci_upper": 4945.120114559158,
+          "n": 25
+        },
+        "user_stops": {
+          "mean": 0.08,
+          "std": 0.27688746209726917,
+          "ci_lower": -0.03436559734465605,
+          "ci_upper": 0.19436559734465605,
+          "n": 25
+        },
+        "time_to_completion_ms": {
+          "mean": 50781.84,
+          "std": 30849.326812860385,
+          "ci_lower": 38039.834053216146,
+          "ci_upper": 63523.84594678385,
+          "n": 25
+        },
+        "tool_precision": {
+          "mean": 0.16666666666666666,
+          "std": 0.408248290463863,
+          "ci_lower": -0.2618333333333335,
+          "ci_upper": 0.5951666666666667,
+          "n": 6
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 1
+        },
+        "latency_mape": {
+          "mean": 35.77757059080468,
+          "std": 31.954137214397495,
+          "ci_lower": 2.238305108978153,
+          "ci_upper": 69.3168360726312,
+          "n": 6
+        }
+      },
+      "heuristic": {
+        "task_quality": {
+          "mean": 0.6866666666666668,
+          "std": 0.2703307302244858,
+          "ci_lower": 0.5750092618547451,
+          "ci_upper": 0.7983240714785884,
+          "n": 25
+        },
+        "task_completed": {
+          "mean": 0.96,
+          "std": 0.2,
+          "ci_lower": 0.877392,
+          "ci_upper": 1.042608,
+          "n": 25
+        },
+        "token_efficiency": {
+          "mean": 5137.56,
+          "std": 775.0738717481494,
+          "ci_lower": 4817.423488013144,
+          "ci_upper": 5457.696511986856,
+          "n": 25
+        },
+        "user_stops": {
+          "mean": 0.04,
+          "std": 0.2,
+          "ci_lower": -0.042608,
+          "ci_upper": 0.122608,
+          "n": 25
+        },
+        "time_to_completion_ms": {
+          "mean": 73358.48,
+          "std": 30134.803873760324,
+          "ci_lower": 60911.600607982036,
+          "ci_upper": 85805.35939201796,
+          "n": 25
+        },
+        "tool_precision": {
+          "mean": 0.64,
+          "std": 0.4898979485566356,
+          "ci_lower": 0.43765255132816727,
+          "ci_upper": 0.8423474486718328,
+          "n": 25
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 16
+        },
+        "latency_mape": {
+          "mean": 39.146836599780315,
+          "std": 27.897316728963446,
+          "ci_lower": 27.624128898049253,
+          "ci_upper": 50.66954430151138,
+          "n": 25
+        }
+      },
+      "learned_no_search": {
+        "task_quality": {
+          "mean": 0.7766666666666667,
+          "std": 0.1874536979866999,
+          "ci_lower": 0.6992407912502402,
+          "ci_upper": 0.8540925420830933,
+          "n": 25
+        },
+        "task_completed": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 25
+        },
+        "token_efficiency": {
+          "mean": 4985.48,
+          "std": 790.4943137050386,
+          "ci_lower": 4658.97422866727,
+          "ci_upper": 5311.985771332729,
+          "n": 25
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "time_to_completion_ms": {
+          "mean": 71867.52,
+          "std": 38114.89632470923,
+          "ci_lower": 56124.543222042106,
+          "ci_upper": 87610.4967779579,
+          "n": 25
+        },
+        "tool_precision": {
+          "mean": 0.4,
+          "std": 0.5,
+          "ci_lower": 0.19348,
+          "ci_upper": 0.6065200000000001,
+          "n": 25
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 10
+        },
+        "latency_mape": {
+          "mean": 36.68665433274385,
+          "std": 22.34648867746728,
+          "ci_lower": 27.456660649402764,
+          "ci_upper": 45.916648016084935,
+          "n": 25
+        }
+      },
+      "learned_with_search": {
+        "task_quality": {
+          "mean": 0.7266666666666667,
+          "std": 0.23387833177546413,
+          "ci_lower": 0.630065560510129,
+          "ci_upper": 0.8232677728232044,
+          "n": 25
+        },
+        "task_completed": {
+          "mean": 0.96,
+          "std": 0.2,
+          "ci_lower": 0.877392,
+          "ci_upper": 1.042608,
+          "n": 25
+        },
+        "token_efficiency": {
+          "mean": 5422.72,
+          "std": 1437.0524961415524,
+          "ci_lower": 4829.159836993694,
+          "ci_upper": 6016.280163006307,
+          "n": 25
+        },
+        "user_stops": {
+          "mean": 0.04,
+          "std": 0.2,
+          "ci_lower": -0.042608,
+          "ci_upper": 0.122608,
+          "n": 25
+        },
+        "time_to_completion_ms": {
+          "mean": 59549.48,
+          "std": 40753.65180990942,
+          "ci_lower": 42716.59165643502,
+          "ci_upper": 76382.36834356499,
+          "n": 25
+        },
+        "tool_precision": {
+          "mean": 0.52,
+          "std": 0.5099019513592785,
+          "ci_lower": 0.3093900980105636,
+          "ci_upper": 0.7306099019894364,
+          "n": 25
+        },
+        "interrupt_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 25
+        },
+        "queue_expiry_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 13
+        },
+        "latency_mape": {
+          "mean": 31.126792122106266,
+          "std": 26.616565393776686,
+          "ci_lower": 20.133085951860743,
+          "ci_upper": 42.12049829235179,
+          "n": 25
+        }
+      }
+    }
+  },
+  "excluded_task_ids": []
+}
