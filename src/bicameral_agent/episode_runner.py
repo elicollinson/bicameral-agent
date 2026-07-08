@@ -160,9 +160,11 @@ class EpisodeRunner:
             A validated Episode capturing the full conversation.
         """
         # Episode-scoped degradation counting (issue #82): every
-        # structured-output site funnels through safe_parse_json, whose
-        # degradation warning this handler tallies -- no counter threading
+        # structured-output site funnels through safe_parse_json, which
+        # reports to this context-local counter -- no counter threading
         # through the six components (sim-user, tools, scorer/verifiers).
+        # Context-local (issue #91) so concurrent episodes, each run in its
+        # own contextvars context, never count each other's degradations.
         with count_degradations() as degradations:
             return self._run_episode(task, controller, degradations)
 

@@ -9,7 +9,9 @@ recorded in the episode.
 
 from __future__ import annotations
 
+import contextvars
 import logging
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from typing import Callable
 
@@ -250,51 +252,111 @@ def run_condition(
     condition: str = "",
     on_episode: EpisodeCallback | None = None,
     failure_threshold: float = FAILURE_THRESHOLD,
+    parallel_episodes: int = 1,
 ) -> tuple[list[Episode], list[TaskMetrics], list[EpisodeFailure]]:
     """Run one controller condition over the task pool.
 
     A fresh controller is constructed per episode (via ``controller_factory(idx)``)
     so that decision logs are scoped to a single episode. ``on_episode`` (if
     given) fires after each completed episode, letting callers persist results
-    incrementally so a late crash keeps prior episodes.
+    incrementally so a late crash keeps prior episodes. It is always invoked
+    from the coordinating thread (never concurrently), in completion order —
+    which is task order when ``parallel_episodes`` is 1.
+
+    ``parallel_episodes`` bounds how many episodes run concurrently on a
+    thread pool (issue #91; 1 = sequential, the default). Episodes launch in
+    task order and results are keyed by task index, so the returned episode,
+    metric, and failure lists are in task order regardless of completion
+    order. Each episode runs in a copy of the caller's ``contextvars``
+    context, so per-episode context-local state (degradation counters,
+    episode cost accumulators) never crosses episodes.
 
     A :class:`~bicameral_agent.model_client.TransportExhausted` error (a
     transport failure that outlived the client's retry budget) fails only its
     episode: the failure is recorded and the run continues with the next task.
     Once failures exceed ``failure_threshold`` of the condition's episodes,
     :class:`ConditionAbortedError` is raised instead — a dead network must not
-    produce a near-empty "successful" run.
+    produce a near-empty "successful" run. Under concurrency the abort waits
+    for in-flight episodes to settle (completed ones still reach
+    ``on_episode``) and launches nothing new.
     """
-    episodes: list[Episode] = []
-    metrics: list[TaskMetrics] = []
-    failures: list[EpisodeFailure] = []
-    for idx, task in enumerate(tasks):
+    if parallel_episodes < 1:
+        raise ValueError(f"parallel_episodes must be >= 1, got {parallel_episodes}")
+
+    def _run_one(idx: int) -> tuple[Episode, TaskMetrics]:
         controller = controller_factory(idx)
-        try:
-            episode = runner.run_episode(task, controller)
-        except TransportExhausted as exc:
-            failures.append(
-                EpisodeFailure(
-                    condition=condition,
-                    episode_index=idx,
-                    task_id=task.task_id,
-                    error=str(exc),
+        episode = runner.run_episode(tasks[idx], controller)
+        return episode, extract_task_metrics(episode, list(controller.decisions))
+
+    results: dict[int, tuple[Episode, TaskMetrics]] = {}
+    failures: dict[int, EpisodeFailure] = {}
+    abort_cause: TransportExhausted | None = None
+    fatal: Exception | None = None
+
+    with ThreadPoolExecutor(max_workers=parallel_episodes) as pool:
+        next_idx = 0
+        in_flight: dict[Future, int] = {}
+        while True:
+            # Keep at most parallel_episodes episodes in flight, launched in
+            # task order; stop launching once aborting or failing. Windowed
+            # submission (rather than submitting everything upfront) means a
+            # worker never races ahead of the threshold check — with
+            # parallel_episodes=1 this is exactly the old sequential loop.
+            while (
+                next_idx < len(tasks)
+                and len(in_flight) < parallel_episodes
+                and abort_cause is None
+                and fatal is None
+            ):
+                future = pool.submit(
+                    contextvars.copy_context().run, _run_one, next_idx
                 )
-            )
-            logger.warning(
-                "Episode %d (task %s) in condition %r failed on transport: %s",
-                idx, task.task_id, condition, exc,
-            )
-            if len(failures) / len(tasks) > failure_threshold:
-                raise ConditionAbortedError(
-                    condition, len(failures), len(tasks), failure_threshold
-                ) from exc
-            continue
-        episodes.append(episode)
-        metrics.append(extract_task_metrics(episode, list(controller.decisions)))
-        if on_episode is not None:
-            on_episode(condition, idx, episode)
-    return episodes, metrics, failures
+                in_flight[future] = next_idx
+                next_idx += 1
+            if not in_flight:
+                break
+            done, _ = wait(in_flight, return_when=FIRST_COMPLETED)
+            for future in sorted(done, key=in_flight.__getitem__):
+                idx = in_flight.pop(future)
+                try:
+                    episode, task_metrics = future.result()
+                except TransportExhausted as exc:
+                    failures[idx] = EpisodeFailure(
+                        condition=condition,
+                        episode_index=idx,
+                        task_id=tasks[idx].task_id,
+                        error=str(exc),
+                    )
+                    logger.warning(
+                        "Episode %d (task %s) in condition %r failed on transport: %s",
+                        idx, tasks[idx].task_id, condition, exc,
+                    )
+                    if (
+                        abort_cause is None
+                        and len(failures) / len(tasks) > failure_threshold
+                    ):
+                        abort_cause = exc
+                except Exception as exc:
+                    # Non-transport errors are programming bugs: stop
+                    # launching, let in-flight episodes settle, re-raise.
+                    if fatal is None:
+                        fatal = exc
+                else:
+                    results[idx] = (episode, task_metrics)
+                    if on_episode is not None:
+                        on_episode(condition, idx, episode)
+
+    if fatal is not None:
+        raise fatal
+    if abort_cause is not None:
+        raise ConditionAbortedError(
+            condition, len(failures), len(tasks), failure_threshold
+        ) from abort_cause
+    return (
+        [results[i][0] for i in sorted(results)],
+        [results[i][1] for i in sorted(results)],
+        [failures[i] for i in sorted(failures)],
+    )
 
 
 def _format_summary(summary: MetricSummary, fmt: str) -> str:
@@ -311,12 +373,14 @@ def run_benchmark(
     runner: EpisodeRunner | None = None,
     on_episode: EpisodeCallback | None = None,
     failure_threshold: float = FAILURE_THRESHOLD,
+    parallel_episodes: int = 1,
 ) -> BenchmarkResult:
     """Run all conditions over the task pool and aggregate.
 
     ``on_episode`` is forwarded to :func:`run_condition` for incremental
     persistence of completed episodes, ``failure_threshold`` for the
-    per-condition transport-failure abort.
+    per-condition transport-failure abort, and ``parallel_episodes`` for
+    within-condition episode concurrency.
     """
     runner = runner or EpisodeRunner(client)
     result = BenchmarkResult()
@@ -324,7 +388,7 @@ def run_benchmark(
         logger.info("Running %d episodes for condition %r", len(tasks), condition)
         episodes, metrics, failures = run_condition(
             runner, tasks, factory, condition=condition, on_episode=on_episode,
-            failure_threshold=failure_threshold,
+            failure_threshold=failure_threshold, parallel_episodes=parallel_episodes,
         )
         result.episodes[condition] = episodes
         result.metrics[condition] = metrics

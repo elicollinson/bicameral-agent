@@ -6,6 +6,7 @@ for evaluating agent answers against research QA tasks with scoring rubrics.
 
 from __future__ import annotations
 
+import contextvars
 import hashlib
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -125,6 +126,11 @@ class CachedConcurrentScorer:
     ``_score_cached`` / ``_score_batch_cached`` with a hashable cache key
     per item. Thread-safe; batch scoring dispatches uncached items to a
     ThreadPoolExecutor. Shared by TaskScorer and CoherenceJudge (issue #54).
+
+    Each batch item runs in a copy of the submitting thread's contextvars
+    context (issue #91): pool threads do not inherit context by default, so
+    without the copy, context-scoped per-episode state (degradation
+    counters, episode cost accumulators) would miss work done here.
     """
 
     def __init__(self, max_workers: int = 10) -> None:
@@ -163,7 +169,11 @@ class CachedConcurrentScorer:
         if uncached_indices:
             with ThreadPoolExecutor(max_workers=self._max_workers) as pool:
                 future_to_idx = {
-                    pool.submit(self._score_uncached, items[i]): i
+                    pool.submit(
+                        contextvars.copy_context().run,
+                        self._score_uncached,
+                        items[i],
+                    ): i
                     for i in uncached_indices
                 }
                 for future in as_completed(future_to_idx):

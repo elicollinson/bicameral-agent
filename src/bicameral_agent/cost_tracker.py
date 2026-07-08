@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from contextvars import ContextVar
 from dataclasses import dataclass
 
 from bicameral_agent.model_client import PROVIDERS, ModelClient, ModelResponse
@@ -90,11 +91,29 @@ class CostBudgetExceeded(Exception):
     """Raised when the accumulated cost exceeds the configured budget."""
 
 
+class _EpisodeCosts:
+    """Mutable per-episode accumulator; mutation is guarded by the tracker lock."""
+
+    __slots__ = ("input_cost", "output_cost", "call_count")
+
+    def __init__(self) -> None:
+        self.input_cost = 0.0
+        self.output_cost = 0.0
+        self.call_count = 0
+
+
 class CostTracker:
     """Thread-safe cost tracker with session and episode accumulators.
 
     Session accumulators persist for the lifetime of the tracker.
     Episode accumulators can be reset between episodes via ``reset_episode()``.
+
+    The episode accumulator is context-local (issue #91): concurrent
+    episodes each run in their own ``contextvars`` context, so one
+    episode's ``reset_episode``/``get_episode_cost`` never touches
+    another's accumulator, while threads an episode spawns with a copied
+    context (e.g. the scorer's worker pool) still attribute their calls to
+    that episode. Session accumulators remain shared across all contexts.
     """
 
     def __init__(self) -> None:
@@ -103,13 +122,22 @@ class CostTracker:
         self._session_input_cost: float = 0.0
         self._session_output_cost: float = 0.0
         self._session_call_count: int = 0
-        # Episode-level (reset via reset_episode)
-        self._episode_input_cost: float = 0.0
-        self._episode_output_cost: float = 0.0
-        self._episode_call_count: int = 0
+        # Episode-level (reset via reset_episode); context-local, one
+        # ContextVar per tracker so independent trackers stay isolated.
+        self._episode_costs: ContextVar[_EpisodeCosts | None] = ContextVar(
+            f"episode_costs_{id(self)}", default=None
+        )
         # Budget limits
         self._session_budget: float | None = None
         self._episode_budget: float | None = None
+
+    def _episode(self) -> _EpisodeCosts:
+        """The current context's episode accumulator, created on first use."""
+        costs = self._episode_costs.get()
+        if costs is None:
+            costs = _EpisodeCosts()
+            self._episode_costs.set(costs)
+        return costs
 
     def record_call(
         self,
@@ -139,9 +167,10 @@ class CostTracker:
             self._session_input_cost += input_cost
             self._session_output_cost += output_cost
             self._session_call_count += 1
-            self._episode_input_cost += input_cost
-            self._episode_output_cost += output_cost
-            self._episode_call_count += 1
+            episode = self._episode()
+            episode.input_cost += input_cost
+            episode.output_cost += output_cost
+            episode.call_count += 1
 
     def check_budget(self) -> None:
         """Raise ``CostBudgetExceeded`` if session or episode budget is exceeded."""
@@ -149,7 +178,10 @@ class CostTracker:
             return
         with self._lock:
             session_total = self._session_input_cost + self._session_output_cost
-            episode_total = self._episode_input_cost + self._episode_output_cost
+            episode = self._episode_costs.get()
+            episode_total = (
+                episode.input_cost + episode.output_cost if episode is not None else 0.0
+            )
 
         if self._session_budget is not None and session_total >= self._session_budget:
             raise CostBudgetExceeded(
@@ -171,14 +203,21 @@ class CostTracker:
             )
 
     def get_episode_cost(self) -> CostReport:
-        """Return episode-level cost report."""
+        """Return the current context's episode-level cost report."""
         with self._lock:
-            return CostReport(
-                input_cost=self._episode_input_cost,
-                output_cost=self._episode_output_cost,
-                total=self._episode_input_cost + self._episode_output_cost,
-                call_count=self._episode_call_count,
-            )
+            return self._episode_report()
+
+    def _episode_report(self) -> CostReport:
+        """Snapshot the current context's episode costs (call under the lock)."""
+        episode = self._episode_costs.get()
+        if episode is None:
+            return CostReport(input_cost=0.0, output_cost=0.0, total=0.0, call_count=0)
+        return CostReport(
+            input_cost=episode.input_cost,
+            output_cost=episode.output_cost,
+            total=episode.input_cost + episode.output_cost,
+            call_count=episode.call_count,
+        )
 
     def set_budget(self, max_dollars: float | None) -> None:
         """Set the session-level budget (``None`` to disable)."""
@@ -189,17 +228,10 @@ class CostTracker:
         self._episode_budget = max_dollars
 
     def reset_episode(self) -> CostReport:
-        """Return episode report and zero the episode accumulators."""
+        """Return the current context's episode report and start a fresh one."""
         with self._lock:
-            report = CostReport(
-                input_cost=self._episode_input_cost,
-                output_cost=self._episode_output_cost,
-                total=self._episode_input_cost + self._episode_output_cost,
-                call_count=self._episode_call_count,
-            )
-            self._episode_input_cost = 0.0
-            self._episode_output_cost = 0.0
-            self._episode_call_count = 0
+            report = self._episode_report()
+            self._episode_costs.set(_EpisodeCosts())
             return report
 
 

@@ -127,6 +127,11 @@ def main(argv: list[str] | None = None) -> int:
                         help="Verification metric used to score episodes.")
     parser.add_argument("--iterations", type=int, default=10)
     parser.add_argument("--episodes-per-iteration", type=int, default=50)
+    parser.add_argument("--parallel-episodes", type=int, default=1,
+                        help="Collection episodes run concurrently (bounded "
+                             "thread pool; 1 = sequential). Match the "
+                             "provider's concurrent-request allowance "
+                             "(Ollama Cloud: 3).")
     parser.add_argument("--simulations", type=int, default=50,
                         help="MCTS budget per decision point.")
     parser.add_argument("--eval-tasks", type=int, default=20,
@@ -167,12 +172,16 @@ def main(argv: list[str] | None = None) -> int:
 
     policy, transition = load_models(args)
 
+    if args.parallel_episodes < 1:
+        parser.error(f"--parallel-episodes must be >= 1, got {args.parallel_episodes}")
+
     trainer_config = MCTSTrainerConfig(
         collect_with_search=not args.no_search,
         eval_with_search=not args.no_search,
         retrain_transition=args.retrain_transition,
         max_turns=args.max_turns,
         seed=args.seed,
+        parallel_episodes=args.parallel_episodes,
     )
     pipeline = TrainingDataPipeline(max_turns=args.max_turns)
 

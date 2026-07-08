@@ -14,8 +14,10 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
 from collections import Counter
 from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Iterator
 
 if TYPE_CHECKING:
@@ -63,36 +65,39 @@ def safe_parse_json(response: Any, *, context: str, default: dict | None = None)
         context,
         getattr(response, "finish_reason", "unknown"),
         len(text),
-        extra={"degradation_component": context},
     )
+    for counter in _active_counters.get():
+        counter.add(context)
     return default
 
 
-class DegradationCounter(logging.Handler):
+class DegradationCounter:
     """Tallies ``safe_parse_json`` degradations per component (issue #82).
 
-    ``safe_parse_json`` tags its degradation warning with the caller's
-    *context* string; this handler counts those tags, ignoring any other
-    records. Attach via ``count_degradations`` so counts are scoped to one
-    episode -- a module-level counter would bleed across episodes.
-    ``logging`` serializes ``emit`` per handler, so counting is safe under
-    the scorers' worker threads.
-
-    Assumes NON-OVERLAPPING EPISODES: the handler attaches to this module's
-    global logger, so concurrently running episodes (e.g. ``run_episode`` on
-    a ThreadPool) would count each other's degradations. A ContextVar-based
-    counter would lift that restriction if episode-level parallelism is ever
-    introduced.
+    ``safe_parse_json`` reports each degradation (tagged with the caller's
+    *context* string) to every counter active in the current ``contextvars``
+    context; attach one via ``count_degradations``. Counters live in a
+    ContextVar rather than on a module-level logger, so concurrently running
+    episodes (``run_episode`` on a ThreadPool, issue #91) never observe each
+    other's degradations -- each episode's worker task runs in its own
+    context. Increments are lock-guarded because a scorer's own worker
+    threads (which run in a *copy* of the episode's context) may report
+    concurrently.
     """
 
     def __init__(self) -> None:
-        super().__init__(level=logging.WARNING)
         self.counts: Counter[str] = Counter()
+        self._lock = threading.Lock()
 
-    def emit(self, record: logging.LogRecord) -> None:
-        component = getattr(record, "degradation_component", None)
-        if component is not None:
+    def add(self, component: str) -> None:
+        """Record one degradation attributed to *component*."""
+        with self._lock:
             self.counts[component] += 1
+
+
+_active_counters: ContextVar[tuple[DegradationCounter, ...]] = ContextVar(
+    "llm_output_degradation_counters", default=()
+)
 
 
 @contextmanager
@@ -100,15 +105,20 @@ def count_degradations() -> Iterator[DegradationCounter]:
     """Count safe-parse degradations occurring inside the ``with`` block.
 
     Yields a ``DegradationCounter`` whose ``counts`` maps component context
-    strings (e.g. ``"TaskScorer"``) to degradation counts. The handler is
-    detached on exit, so counters never observe each other's blocks.
+    strings (e.g. ``"TaskScorer"``) to degradation counts. Counters stack:
+    nested blocks count independently, with the outer counter still seeing
+    the inner block's degradations. The stack lives in a ContextVar that is
+    reset on exit, so counters are scoped to their own context -- concurrent
+    episodes each see only their own degradations, and threads spawned with
+    a copied context (``contextvars.copy_context``) inherit their episode's
+    counters.
     """
     counter = DegradationCounter()
-    logger.addHandler(counter)
+    token = _active_counters.set(_active_counters.get() + (counter,))
     try:
         yield counter
     finally:
-        logger.removeHandler(counter)
+        _active_counters.reset(token)
 
 
 def clamp(value: Any, low: float, high: float, default: float) -> float:

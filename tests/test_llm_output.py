@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import contextvars
 import json
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -121,3 +124,49 @@ class TestCountDegradations:
                 safe_parse_json(_response("bad"), context="B")
         assert inner.counts == {"B": 1}
         assert outer.counts == {"A": 1, "B": 1}
+
+    def test_concurrent_episodes_do_not_cross_contaminate(self):
+        """Issue #91: overlapping episode counters each see only their own.
+
+        A barrier holds both threads inside their ``count_degradations``
+        blocks simultaneously, so a regression to a shared module-level
+        counter would deterministically leak counts across threads.
+        """
+        barrier = threading.Barrier(2)
+        results: dict[str, dict[str, int]] = {}
+
+        def episode(name: str, n: int) -> None:
+            with count_degradations() as counter:
+                barrier.wait(timeout=5)
+                for _ in range(n):
+                    safe_parse_json(_response("bad"), context=name)
+                barrier.wait(timeout=5)
+            results[name] = dict(counter.counts)
+
+        threads = [
+            threading.Thread(target=episode, args=("A", 2)),
+            threading.Thread(target=episode, args=("B", 3)),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        assert results == {"A": {"A": 2}, "B": {"B": 3}}
+
+    def test_copied_context_worker_threads_report_to_counter(self):
+        """Threads submitted with a copied context (scorer-pool style, issue
+        #91) attribute their degradations to the submitting episode."""
+        with count_degradations() as counter:
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                futures = [
+                    pool.submit(
+                        contextvars.copy_context().run,
+                        safe_parse_json,
+                        _response("bad"),
+                        context="TaskScorer",
+                    )
+                    for _ in range(3)
+                ]
+                for f in futures:
+                    f.result()
+        assert counter.counts == {"TaskScorer": 3}

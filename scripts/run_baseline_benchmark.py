@@ -115,6 +115,11 @@ def main(argv: list[str] | None = None) -> int:
                              f"(of: {', '.join(CONDITION_NAMES)}; default all). "
                              "Lets an aborted run be resumed per-condition.")
     parser.add_argument("--tasks-per-condition", type=int, default=50)
+    parser.add_argument("--parallel-episodes", type=int, default=1,
+                        help="Episodes run concurrently within a condition "
+                             "(bounded thread pool; 1 = sequential). Match the "
+                             "provider's concurrent-request allowance "
+                             "(Ollama Cloud: 3).")
     parser.add_argument("--max-turns", type=int, default=10)
     parser.add_argument("--random-seed", type=int, default=42)
     parser.add_argument("--random-probability", type=float, default=0.2)
@@ -125,6 +130,8 @@ def main(argv: list[str] | None = None) -> int:
         selected_conditions = parse_conditions(args.conditions)
     except ValueError as exc:
         parser.error(str(exc))
+    if args.parallel_episodes < 1:
+        parser.error(f"--parallel-episodes must be >= 1, got {args.parallel_episodes}")
 
     logging.basicConfig(
         level=logging.WARNING if args.quiet else logging.INFO,
@@ -169,16 +176,22 @@ def main(argv: list[str] | None = None) -> int:
 
     # Persist episodes incrementally: rewrite the condition's parquet after
     # every completed episode so a late crash keeps all prior results.
-    completed: dict[str, list[Episode]] = {}
+    # Episodes are keyed by task index and written sorted, so the file stays
+    # in task order even when --parallel-episodes completes out of order
+    # (run_condition serializes these callbacks on its coordinating thread).
+    completed: dict[str, dict[int, Episode]] = {}
 
-    def persist_episode(condition: str, _idx: int, episode: Episode) -> None:
-        completed.setdefault(condition, []).append(episode)
+    def persist_episode(condition: str, idx: int, episode: Episode) -> None:
+        by_index = completed.setdefault(condition, {})
+        by_index[idx] = episode
         episodes_to_parquet(
-            completed[condition], str(output_dir / f"{condition}.parquet")
+            [by_index[i] for i in sorted(by_index)],
+            str(output_dir / f"{condition}.parquet"),
         )
 
     result = run_benchmark(
-        client, tasks, conditions, runner=runner, on_episode=persist_episode
+        client, tasks, conditions, runner=runner, on_episode=persist_episode,
+        parallel_episodes=args.parallel_episodes,
     )
 
     report_text = format_report(result)

@@ -310,6 +310,54 @@ class TestOfflineIteration:
             trainer.run_iteration(2, 4)
 
 
+class TestParallelCollection:
+    """Issue #91: bounded concurrent collection preserves episode order."""
+
+    def _collect(self, tmp_path, parallel: int) -> list[Episode]:
+        import time
+
+        tasks = [_make_task(f"task-{i}") for i in range(4)]
+        runner = MagicMock(spec=EpisodeRunner)
+
+        def run_episode(task, controller):
+            # Later tasks finish sooner, inverting completion order at N>1.
+            idx = int(task.task_id.split("-")[1])
+            time.sleep((len(tasks) - idx) * 0.01)
+            episode = _build_episode(num_turns=2)
+            return episode.model_copy(update={"metadata": {"task_id": task.task_id}})
+
+        runner.run_episode.side_effect = run_episode
+        trainer = _make_trainer(
+            tmp_path,
+            config=MCTSTrainerConfig(
+                epochs=1, seed=0, parallel_episodes=parallel
+            ),
+            runner=runner,
+            train_tasks=tasks,
+        )
+        return trainer._collect(len(tasks), n_simulations=2, base_seed=0)
+
+    def test_parallel_collect_matches_sequential_order(self, tmp_path):
+        sequential = self._collect(tmp_path / "seq", 1)
+        parallel = self._collect(tmp_path / "par", 3)
+        expected = [f"task-{i}" for i in range(4)]
+        assert [e.metadata["task_id"] for e in sequential] == expected
+        assert [e.metadata["task_id"] for e in parallel] == expected
+
+    def test_parallel_collect_propagates_failures(self, tmp_path):
+        tasks = [_make_task(f"task-{i}") for i in range(3)]
+        runner = MagicMock(spec=EpisodeRunner)
+        runner.run_episode.side_effect = RuntimeError("API meltdown")
+        trainer = _make_trainer(
+            tmp_path,
+            config=MCTSTrainerConfig(epochs=1, seed=0, parallel_episodes=3),
+            runner=runner,
+            train_tasks=tasks,
+        )
+        with pytest.raises(RuntimeError, match="API meltdown"):
+            trainer._collect(3, n_simulations=2, base_seed=0)
+
+
 # ---------------------------------------------------------------------------
 # Live-style collection through the real runner (mocked model client)
 # ---------------------------------------------------------------------------

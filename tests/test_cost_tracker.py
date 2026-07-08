@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import contextvars
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -187,6 +189,53 @@ class TestThreadSafety:
         expected_output = expected_calls * 200 * _PRICING.output_cost_per_token
         assert report.input_cost == pytest.approx(expected_input)
         assert report.output_cost == pytest.approx(expected_output)
+
+
+class TestEpisodeContextIsolation:
+    """Issue #91: episode accumulators are context-local, session shared."""
+
+    def test_concurrent_episodes_have_isolated_episode_costs(self):
+        tracker = CostTracker()
+        barrier = threading.Barrier(2)
+        results: dict[str, int] = {}
+
+        def episode(name: str, n_calls: int) -> None:
+            tracker.reset_episode()
+            barrier.wait(timeout=5)
+            for _ in range(n_calls):
+                tracker.record_call(100, 200, _MODEL)
+            barrier.wait(timeout=5)
+            results[name] = tracker.get_episode_cost().call_count
+
+        threads = [
+            threading.Thread(target=episode, args=("A", 2)),
+            threading.Thread(target=episode, args=("B", 5)),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # Each episode sees only its own calls; the session sees all.
+        assert results == {"A": 2, "B": 5}
+        assert tracker.get_total().call_count == 7
+
+    def test_copied_context_worker_threads_attribute_to_episode(self):
+        """Scorer-pool style: threads submitted with a copied context record
+        into the submitting episode's accumulator."""
+        tracker = CostTracker()
+        tracker.reset_episode()
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [
+                pool.submit(
+                    contextvars.copy_context().run,
+                    tracker.record_call, 100, 200, _MODEL,
+                )
+                for _ in range(3)
+            ]
+            for f in futures:
+                f.result()
+        assert tracker.get_episode_cost().call_count == 3
 
 
 class TestCostTrackedClient:
