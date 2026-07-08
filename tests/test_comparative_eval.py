@@ -7,8 +7,11 @@ skipped when it is unavailable.
 
 from __future__ import annotations
 
+import importlib.util
 import json
-from unittest.mock import MagicMock
+import time
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -273,6 +276,86 @@ class TestComparativeEvaluator:
             {"no_subconscious": lambda _idx: NoSubconsciousController()},
         )
         assert calls == [("no_subconscious", 0, "t1"), ("no_subconscious", 1, "t2")]
+
+
+class _DelayedRunner:
+    """Thread-safe EpisodeRunner stand-in with reversed per-task delays.
+
+    Later tasks finish sooner, so with ``parallel_episodes > 1`` completion
+    order inverts task order; episode content depends only on the task, so
+    a parallel run must collect the exact same episodes as a sequential one.
+    """
+
+    def __init__(self, n_tasks: int, delay_step_s: float = 0.01) -> None:
+        self._n_tasks = n_tasks
+        self._delay_step_s = delay_step_s
+
+    def run_episode(self, task, controller):
+        idx = int(task.task_id[1:])
+        time.sleep((self._n_tasks - idx) * self._delay_step_s)
+        return _episode(quality_score=0.1 * (idx + 1), task_id=task.task_id)
+
+
+class TestParallelEpisodes:
+    """Issue #91 concurrency, reused for the comparative harness.
+
+    run_condition keys results by task index and returns them in task
+    order regardless of completion order, so the paired design needs no
+    extra work here — asserted by the report-identity test below.
+    """
+
+    def _run(self, parallel: int) -> ComparativeResult:
+        tasks = [
+            _task("t0", TaskDifficulty.TYPICAL),
+            _task("t1", TaskDifficulty.TYPICAL),
+            _task("t2", TaskDifficulty.HARD),
+            _task("t3", TaskDifficulty.TRICKY),
+        ]
+        conditions = {
+            "no_subconscious": lambda _idx: NoSubconsciousController(),
+            "random": lambda idx: RandomController(seed=idx),
+        }
+        evaluator = ComparativeEvaluator(
+            _DelayedRunner(len(tasks)), parallel_episodes=parallel
+        )
+        return evaluator.run(tasks, conditions)
+
+    def test_parallel_report_identical_to_sequential(self):
+        seq = _report(self._run(1))
+        par = _report(self._run(3))
+        assert par.to_json() == seq.to_json()
+        assert par.to_markdown() == seq.to_markdown()
+
+    def test_parallel_episodes_stay_in_task_order(self):
+        result = self._run(3)
+        for condition in ("no_subconscious", "random"):
+            assert [
+                e.metadata["task_id"] for e in result.episodes[condition]
+            ] == result.task_ids
+
+    def test_parallel_episodes_forwarded_to_run_condition(self):
+        with patch(
+            "bicameral_agent.comparative_eval.run_condition",
+            return_value=([], [], []),
+        ) as mock_run:
+            ComparativeEvaluator(
+                MagicMock(spec=EpisodeRunner), parallel_episodes=4
+            ).run(
+                [_task("t0")],
+                {"no_subconscious": lambda _idx: NoSubconsciousController()},
+            )
+        assert mock_run.call_args.kwargs["parallel_episodes"] == 4
+
+    def test_default_is_sequential(self):
+        with patch(
+            "bicameral_agent.comparative_eval.run_condition",
+            return_value=([], [], []),
+        ) as mock_run:
+            ComparativeEvaluator(MagicMock(spec=EpisodeRunner)).run(
+                [_task("t0")],
+                {"no_subconscious": lambda _idx: NoSubconsciousController()},
+            )
+        assert mock_run.call_args.kwargs["parallel_episodes"] == 1
 
 
 # ---------------------------------------------------------------------------
@@ -654,3 +737,87 @@ class TestTaskSelection:
     def test_select_raises_on_shortfall(self):
         with pytest.raises(ValueError, match="hard: want 5, have 2"):
             select_tasks(self._dataset(), {TaskDifficulty.HARD: 5})
+
+
+# ---------------------------------------------------------------------------
+# Script wiring: --parallel-episodes
+# ---------------------------------------------------------------------------
+
+
+def _load_comparative_script():
+    """Import scripts/run_comparative_eval.py (not a package) by path."""
+    path = (
+        Path(__file__).resolve().parent.parent / "scripts" / "run_comparative_eval.py"
+    )
+    spec = importlib.util.spec_from_file_location("run_comparative_eval", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class TestScriptParallelEpisodes:
+    """--parallel-episodes resolves CLI > config [run] > 1 and reaches
+    ComparativeEvaluator (issue #91 wiring for the comparative script)."""
+
+    def _evaluator_kwargs(self, tmp_path, extra_args=(), config_toml=None):
+        script = _load_comparative_script()
+        argv = [
+            "--output-dir", str(tmp_path / "out"),
+            "--tasks", "typical=1",
+            "--policy-checkpoint", "policy.pt",
+            "--transition-checkpoint", "transition.pt",
+            "--quiet",
+            *extra_args,
+        ]
+        if config_toml is not None:
+            config_path = tmp_path / "config.toml"
+            config_path.write_text(config_toml)
+            argv += ["--config", str(config_path)]
+        report = MagicMock()
+        report.to_json.return_value = "{}"
+        report.to_markdown.return_value = "md"
+        provenance = {"answerer": {}, "measurement": {}}
+        with (
+            patch.object(script, "learned_condition_factories", return_value={}),
+            patch.object(
+                script,
+                "resolve_runner_clients",
+                return_value=(MagicMock(), MagicMock(), provenance),
+            ),
+            patch.object(script, "EpisodeRunner"),
+            patch.object(script, "ComparativeEvaluator") as mock_evaluator,
+            patch.object(script, "build_report", return_value=report),
+        ):
+            assert script.main(argv) == 0
+        return mock_evaluator.call_args.kwargs
+
+    def test_flag_wins_over_config(self, tmp_path):
+        kwargs = self._evaluator_kwargs(
+            tmp_path,
+            extra_args=("--parallel-episodes", "3"),
+            config_toml="[run]\nparallel_episodes = 5\n",
+        )
+        assert kwargs["parallel_episodes"] == 3
+
+    def test_config_used_when_flag_unset(self, tmp_path):
+        kwargs = self._evaluator_kwargs(
+            tmp_path, config_toml="[run]\nparallel_episodes = 5\n"
+        )
+        assert kwargs["parallel_episodes"] == 5
+
+    def test_default_is_one(self, tmp_path):
+        kwargs = self._evaluator_kwargs(tmp_path)
+        assert kwargs["parallel_episodes"] == 1
+
+    def test_rejects_non_positive(self, tmp_path):
+        script = _load_comparative_script()
+        with pytest.raises(SystemExit):
+            script.main(
+                [
+                    "--output-dir", str(tmp_path / "out"),
+                    "--tasks", "typical=1",
+                    "--policy-checkpoint", "policy.pt",
+                    "--transition-checkpoint", "transition.pt",
+                    "--parallel-episodes", "0",
+                ]
+            )

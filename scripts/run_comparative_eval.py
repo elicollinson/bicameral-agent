@@ -44,7 +44,11 @@ from bicameral_agent.comparative_eval import (
 from bicameral_agent.config import HyperConfig
 from bicameral_agent.episode_runner import EpisodeRunner
 from bicameral_agent.eval_datasets import build_dataset, dataset_names, resolve_metric
-from bicameral_agent.runner_setup import add_model_args, resolve_runner_clients
+from bicameral_agent.runner_setup import (
+    add_model_args,
+    resolve_parallel_episodes,
+    resolve_runner_clients,
+)
 from bicameral_agent.schema import Episode
 from bicameral_agent.serialization import episodes_to_parquet
 
@@ -66,6 +70,12 @@ def main(argv: list[str] | None = None) -> int:
                         help="Task count (split 50/25/25 across "
                              "typical/hard/tricky) or an explicit mix, e.g. "
                              "'typical=50,hard=25,tricky=25'.")
+    parser.add_argument("--parallel-episodes", type=int, default=None,
+                        help="Episodes run concurrently within a condition "
+                             "(bounded thread pool; 1 = sequential). Set this "
+                             "to the provider plan's concurrent-request "
+                             "allowance. Defaults to the config's [run] "
+                             "parallel_episodes (else 1).")
     parser.add_argument("--policy-checkpoint", required=True,
                         help="PolicyValueNetwork checkpoint (.pt) for the "
                              "learned conditions.")
@@ -90,6 +100,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args(argv)
 
+    if args.parallel_episodes is not None and args.parallel_episodes < 1:
+        parser.error(f"--parallel-episodes must be >= 1, got {args.parallel_episodes}")
+
     logging.basicConfig(
         level=logging.WARNING if args.quiet else logging.INFO,
         format="%(asctime)s %(levelname)s %(message)s",
@@ -101,6 +114,7 @@ def main(argv: list[str] | None = None) -> int:
     hyper = (
         HyperConfig.from_toml(args.config) if args.config else HyperConfig.from_defaults()
     ).with_env_overrides()
+    parallel_episodes = resolve_parallel_episodes(args, hyper)
 
     eval_dataset = build_dataset(args.dataset)
     metric = resolve_metric(eval_dataset, args.metric)
@@ -151,18 +165,24 @@ def main(argv: list[str] | None = None) -> int:
 
     # Persist episodes incrementally: rewrite the condition's parquet after
     # every completed episode so a late crash keeps all prior results.
-    completed: dict[str, list[Episode]] = {}
+    # Episodes are keyed by task index and written sorted, so the file stays
+    # in task order even when --parallel-episodes completes out of order
+    # (run_condition serializes these callbacks on its coordinating thread).
+    completed: dict[str, dict[int, Episode]] = {}
 
-    def persist_episode(condition: str, _idx: int, episode: Episode) -> None:
-        completed.setdefault(condition, []).append(episode)
+    def persist_episode(condition: str, idx: int, episode: Episode) -> None:
+        by_index = completed.setdefault(condition, {})
+        by_index[idx] = episode
         episodes_to_parquet(
-            completed[condition], str(output_dir / f"{condition}.parquet")
+            [by_index[i] for i in sorted(by_index)],
+            str(output_dir / f"{condition}.parquet"),
         )
 
     evaluator = ComparativeEvaluator(
         runner,
         on_episode=persist_episode,
         failure_threshold=args.failure_threshold,
+        parallel_episodes=parallel_episodes,
     )
     result = evaluator.run(tasks, conditions)
 
