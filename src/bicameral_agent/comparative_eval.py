@@ -374,10 +374,12 @@ class ComparativeEvaluator:
         *,
         on_episode: EpisodeCallback | None = None,
         failure_threshold: float = FAILURE_THRESHOLD,
+        parallel_episodes: int = 1,
     ) -> None:
         self._runner = runner
         self._on_episode = on_episode
         self._failure_threshold = failure_threshold
+        self._parallel_episodes = parallel_episodes
 
     def run(
         self,
@@ -388,9 +390,14 @@ class ComparativeEvaluator:
 
         ``conditions`` maps condition name to a per-task controller
         factory (called with the task index). Conditions run in dict
-        order; within a condition, tasks run in list order — the same
+        order; within a condition, tasks launch in list order — the same
         list for every condition, which is what makes the comparison
-        paired. Per-episode transport failures are contained by
+        paired. ``parallel_episodes`` bounds within-condition episode
+        concurrency (issue #91); :func:`run_condition` keys results by
+        task index and returns them in task order regardless of
+        completion order, so the pairing invariant (``metrics[c][i]``
+        belongs to ``completed_indices(c)[i]``) holds under concurrency.
+        Per-episode transport failures are contained by
         :func:`~bicameral_agent.baseline_benchmark.run_condition` (which
         raises ``ConditionAbortedError`` past ``failure_threshold``) and
         recorded on the result.
@@ -407,6 +414,7 @@ class ComparativeEvaluator:
                 condition=condition,
                 on_episode=self._on_episode,
                 failure_threshold=self._failure_threshold,
+                parallel_episodes=self._parallel_episodes,
             )
             result.episodes[condition] = episodes
             result.metrics[condition] = metrics
