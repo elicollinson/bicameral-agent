@@ -156,6 +156,46 @@ class TestEpisodeConfig:
 
 
 # ---------------------------------------------------------------------------
+# TestSearchProviderWiring
+# ---------------------------------------------------------------------------
+
+
+class TestSearchProviderWiring:
+    def test_search_provider_threaded_to_gap_scanner(self):
+        """The runner's search_provider reaches the ResearchGapScanner (issue #100)."""
+        sentinel = object()
+        ctrl = MagicMock(spec=Controller)
+        ctrl.decisions = []
+        ctrl.decide.return_value = Action.DO_NOTHING
+        runner = EpisodeRunner(
+            _make_mock_client(),
+            EpisodeConfig(max_turns=2),
+            search_provider=sentinel,
+        )
+
+        with patch(
+            "bicameral_agent.episode_runner.ResearchGapScanner"
+        ) as MockScanner, patch(
+            "bicameral_agent.episode_runner.SimulatedUser"
+        ) as MockSimUser:
+            mock_sim = MagicMock()
+            mock_sim.respond.return_value = UserAction(
+                action_type=ActionType.TASK_COMPLETE,
+                response_delay_ms=100,
+                confidence=0.9,
+            )
+            MockSimUser.return_value = mock_sim
+            runner.run_episode(_make_task(), ctrl)
+
+        MockScanner.assert_called_once_with(sentinel)
+
+    def test_defaults_to_none_for_mock_provider(self):
+        """No search_provider arg keeps the scanner's MockSearchProvider default."""
+        runner = EpisodeRunner(_make_mock_client())
+        assert runner._search_provider is None
+
+
+# ---------------------------------------------------------------------------
 # TestEpisodeRunner
 # ---------------------------------------------------------------------------
 

@@ -43,6 +43,7 @@ from bicameral_agent.runner_setup import (
     add_model_args,
     resolve_parallel_episodes,
     resolve_runner_clients,
+    resolve_search_provider,
 )
 from bicameral_agent.schema import Episode
 from bicameral_agent.serialization import episodes_from_parquet
@@ -119,6 +120,7 @@ def build_runner(args: argparse.Namespace, hyper: HyperConfig) -> tuple[EpisodeR
         cost_tracker=cost_tracker,
         judge_client=judge_client,
         sim_user_client=judge_client,
+        search_provider=resolve_search_provider(args, hyper),
     )
     return runner, cost_tracker
 

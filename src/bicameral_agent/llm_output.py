@@ -66,9 +66,19 @@ def safe_parse_json(response: Any, *, context: str, default: dict | None = None)
         getattr(response, "finish_reason", "unknown"),
         len(text),
     )
-    for counter in _active_counters.get():
-        counter.add(context)
+    report_degradation(context)
     return default
+
+
+def report_degradation(component: str) -> None:
+    """Record one degradation for *component* with every active counter.
+
+    Shared by ``safe_parse_json`` and other degrade-to-default sites (e.g.
+    the Brave search provider's outage fallback, issue #100) so all
+    degradations land in the same episode-scoped counters.
+    """
+    for counter in _active_counters.get():
+        counter.add(component)
 
 
 class DegradationCounter:

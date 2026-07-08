@@ -48,6 +48,7 @@ from bicameral_agent.runner_setup import (
     add_model_args,
     resolve_parallel_episodes,
     resolve_runner_clients,
+    resolve_search_provider,
 )
 from bicameral_agent.schema import Episode
 from bicameral_agent.serialization import episodes_to_parquet
@@ -161,6 +162,7 @@ def main(argv: list[str] | None = None) -> int:
         cost_tracker=cost_tracker,
         judge_client=judge_client,
         sim_user_client=judge_client,
+        search_provider=resolve_search_provider(args, hyper),
     )
 
     # Persist episodes incrementally: rewrite the condition's parquet after

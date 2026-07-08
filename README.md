@@ -111,6 +111,11 @@ Two backends satisfy the same client contract (`src/bicameral_agent/model_client
 - **Gemini** (default) — requires `GEMINI_API_KEY`
 - **Ollama Cloud** — open Gemma-class models; requires `OLLAMA_API_KEY` (see `docs/ollama_cloud.md`)
 
+The research gap scanner can additionally use real web search via the Brave
+Web Search API — requires `BRAVE_API_KEY`; enable with `--search-provider
+brave` or `[tools] search_provider = "brave"` (default `mock` keeps runs
+offline; see `docs/eval_datasets.md`).
+
 Select a backend per run with the `--provider` flag on scripts that support it:
 
 ```bash

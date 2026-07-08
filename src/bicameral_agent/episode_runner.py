@@ -18,7 +18,7 @@ from bicameral_agent.conscious_loop import AssistantResponse, ConsciousLoop
 from bicameral_agent.context_refresher import ContextRefresher
 from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.encoder import StateEncoder
-from bicameral_agent.gap_scanner import ResearchGapScanner
+from bicameral_agent.gap_scanner import ResearchGapScanner, SearchProvider
 from bicameral_agent.heuristic_controller import Action, DecisionLog, FullState, TOOL_IDS
 from bicameral_agent.llm_output import DegradationCounter, count_degradations
 from bicameral_agent.logger import ConversationLogger
@@ -125,8 +125,13 @@ class EpisodeRunner:
         cost_tracker: CostTracker | None = None,
         judge_client: ModelClient | None = None,
         sim_user_client: ModelClient | None = None,
+        search_provider: SearchProvider | None = None,
     ) -> None:
         self._client = client
+        # Search backend for the gap scanner (issue #100); None keeps the
+        # scanner's MockSearchProvider default. Shared across episodes so a
+        # real backend's rate limiting spans --parallel-episodes workers.
+        self._search_provider = search_provider
         self._judge_client = judge_client if judge_client is not None else client
         self._sim_user_client = (
             sim_user_client if sim_user_client is not None else client
@@ -214,7 +219,7 @@ class EpisodeRunner:
         latency_model = ToolLatencyModel()
 
         tools = {
-            TOOL_IDS[Action.SCANNER]: ResearchGapScanner(),
+            TOOL_IDS[Action.SCANNER]: ResearchGapScanner(self._search_provider),
             TOOL_IDS[Action.AUDITOR]: AssumptionAuditor(),
             TOOL_IDS[Action.REFRESHER]: ContextRefresher(),
         }
