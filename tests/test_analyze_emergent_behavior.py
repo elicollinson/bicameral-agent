@@ -141,6 +141,7 @@ def test_runs_with_torch(tmp_path: Path) -> None:
     if importlib.util.find_spec("torch") is None:
         pytest.skip("torch extra not installed")
     from bicameral_agent.policy_value_net import PolicyValueNetwork
+    from bicameral_agent.training_pipeline import STATE_DIM
 
     mcts_dir = tmp_path / "mcts"
     comparative_dir = tmp_path / "comparative"
@@ -151,7 +152,9 @@ def test_runs_with_torch(tmp_path: Path) -> None:
     for it in (0, 1):
         ckpt_dir = mcts_dir / f"iteration-{it:03d}"
         ckpt_dir.mkdir(parents=True)
-        PolicyValueNetwork(input_dim=108, hidden_dim=8).save(ckpt_dir / "policy_value.pt")
+        PolicyValueNetwork(input_dim=STATE_DIM, hidden_dim=8).save(
+            ckpt_dir / "policy_value.pt"
+        )
 
     stats = aeb.run_analysis(
         mcts_dir=mcts_dir, comparative_dir=comparative_dir, out_dir=out_dir, hidden_dim=8

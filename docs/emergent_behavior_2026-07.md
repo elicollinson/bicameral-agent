@@ -35,7 +35,7 @@ value head. The heuristic's action at each point is computed exactly as in
 `mcts_trainer._heuristic_comparison` (a `HeuristicController` deciding on the
 reconstructed `FullState`). "P(invoke)" = 1 − P(DO_NOTHING).
 
-## Dimensions analyzed (6 of 8)
+## Dimensions analyzed (5 of the issue's 8, plus the learned-vs-heuristic comparison)
 
 ### 1. Training dynamics — `training_dynamics.png`, `training_dynamics_degenerate.png`
 Policy entropy collapses 0.67→0.14 nats, KL-from-heuristic 0.583→0.046, argmax
@@ -87,7 +87,11 @@ softened copy of the heuristic that occasionally substitutes REFRESHER.
 
 *(Not analyzed: latency-aware staggering and preemptive slow-tool invocation —
 degenerate here, since episodes invoke a single tool per turn with no
-co-invocation, so there is nothing to stagger or pre-empt.)*
+co-invocation, so there is nothing to stagger or pre-empt. Conditional
+strategies is likewise dismissed for lack of variation, not omitted silently:
+the simulated user produced zero STOP events across all 250 training episodes
+and 254 of 255 follow-ups classify as elaboration (one correction), so there
+is no user-behavior grouping to condition on.)*
 
 ## Where does the final policy still disagree with the heuristic? (criterion 3 probe)
 

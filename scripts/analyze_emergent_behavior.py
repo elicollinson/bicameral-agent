@@ -42,6 +42,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from bicameral_agent.encoder import _QUEUE_DEPTH_CAP
 from bicameral_agent.heuristic_controller import (
     Action,
     FullState,
@@ -53,6 +54,7 @@ from bicameral_agent.signal_classifier import SignalClassifier
 from bicameral_agent.training_pipeline import (
     _ACTION_INDEX,
     _OFF_QUEUE,
+    STATE_DIM,
     TrainingDataPipeline,
 )
 
@@ -69,7 +71,6 @@ ACTION_ORDER: tuple[Action, ...] = (
     Action.DO_NOTHING,
 )
 _DO_NOTHING_IDX = 3
-_QUEUE_DEPTH_CAP = 20.0  # matches encoder._QUEUE_DEPTH_CAP
 
 # Fixed categorical palette (blue/orange is a CVD-safe pair). Color follows
 # the entity, never its rank.
@@ -571,7 +572,9 @@ def run_analysis(
             ckpt = mcts_dir / f"iteration-{it:03d}" / "policy_value.pt"
             if not ckpt.exists():
                 continue
-            net = PolicyValueNetwork.load(str(ckpt), input_dim=108, hidden_dim=hidden_dim)
+            net = PolicyValueNetwork.load(
+                str(ckpt), input_dim=STATE_DIM, hidden_dim=hidden_dim
+            )
             probs = policy_probs(net, ref_states)
             p_inv = 1.0 - probs[:, _DO_NOTHING_IDX]
             gap_iters.append(it)
@@ -586,7 +589,7 @@ def run_analysis(
 
         final_net = PolicyValueNetwork.load(
             str(mcts_dir / f"iteration-{final_it:03d}" / "policy_value.pt"),
-            input_dim=108,
+            input_dim=STATE_DIM,
             hidden_dim=hidden_dim,
         )
         probs = policy_probs(final_net, ref_states)
