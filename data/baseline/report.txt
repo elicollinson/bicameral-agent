@@ -2,48 +2,54 @@
 Baseline Performance Benchmark
 ========================================================================
 
-## Condition: no_subconscious  (n=50)
-  quality_score            mean=1.000 std=0.000 95% CI=[1.000, 1.000] n=50
-  total_tokens             mean=958.4 std=162.7 95% CI=[912.1, 1004.6] n=50
-  total_turns              mean=1.0 std=0.0 95% CI=[1.0, 1.0] n=50
-  user_stops               mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=50
-  wall_clock_ms            mean=6419.0 std=1058.1 95% CI=[6118.2, 6719.8] n=50
-  tool_invocation_count    mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=50
-  tool_cost_usd            mean=0.004 std=0.001 95% CI=[0.004, 0.004] n=50
-  avg_queue_depth          mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=50
-  interrupt_count          mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=50
-  drain_count              mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=50
-  expired_count            mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=50
+## Condition: no_subconscious  (n=45)
+  quality_score            mean=0.639 std=0.414 95% CI=[0.514, 0.763] n=45
+  total_tokens             mean=7272.0 std=9091.0 95% CI=[4539.7, 10004.4] n=45
+  total_turns              mean=2.6 std=1.2 95% CI=[2.3, 3.0] n=45
+  user_stops               mean=0.3 std=0.5 95% CI=[0.2, 0.5] n=45
+  task_completed           mean=0.667 std=0.477 95% CI=[0.523, 0.810] n=45
+  wall_clock_ms            mean=159637.0 std=171756.4 95% CI=[108014.3, 211259.6] n=45
+  tool_invocation_count    mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=45
+  tool_cost_usd            mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=45
+  avg_queue_depth          mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=45
+  interrupt_count          mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=45
+  drain_count              mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=45
+  expired_count            mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=45
   latency_prediction       MAPE=0.00% n_pairs=0
+  transport_failures       n=5 (tasks: frames_hard_006, frames_hard_008, frames_hard_013, frames_hard_016, frames_hard_031)
 
-## Condition: random  (n=50)
-  quality_score            mean=0.997 std=0.024 95% CI=[0.990, 1.003] n=50
-  total_tokens             mean=1283.7 std=575.3 95% CI=[1120.1, 1447.2] n=50
-  total_turns              mean=1.0 std=0.0 95% CI=[1.0, 1.0] n=50
-  user_stops               mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=50
-  wall_clock_ms            mean=6918.0 std=1274.9 95% CI=[6555.6, 7280.5] n=50
-  tool_invocation_count    mean=0.3 std=0.4 95% CI=[0.1, 0.4] n=50
-  tool_cost_usd            mean=0.004 std=0.001 95% CI=[0.004, 0.005] n=50
-  avg_queue_depth          mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=50
-  interrupt_count          mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=50
-  drain_count              mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=50
-  expired_count            mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=50
-  latency_prediction       MAPE=865.34% n_pairs=13
+## Condition: random  (n=49)
+  quality_score            mean=0.556 std=0.442 95% CI=[0.429, 0.683] n=49
+  total_tokens             mean=10156.9 std=10551.1 95% CI=[7125.1, 13188.7] n=49
+  total_turns              mean=2.8 std=1.1 95% CI=[2.5, 3.1] n=49
+  user_stops               mean=0.4 std=0.5 95% CI=[0.2, 0.5] n=49
+  task_completed           mean=0.592 std=0.497 95% CI=[0.449, 0.735] n=49
+  wall_clock_ms            mean=158386.8 std=191388.6 95% CI=[103392.6, 213380.9] n=49
+  tool_invocation_count    mean=0.6 std=0.6 95% CI=[0.4, 0.7] n=49
+  tool_cost_usd            mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=49
+  avg_queue_depth          mean=0.037 std=0.128 95% CI=[0.000, 0.074] n=49
+  interrupt_count          mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=49
+  drain_count              mean=0.1 std=0.3 95% CI=[0.0, 0.2] n=49
+  expired_count            mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=49
+  latency_prediction       MAPE=62.48% n_pairs=27
+  transport_failures       n=1 (tasks: frames_hard_008)
 
-## Condition: heuristic  (n=50)
-  quality_score            mean=0.993 std=0.033 95% CI=[0.984, 1.003] n=50
-  total_tokens             mean=2400.3 std=459.0 95% CI=[2269.8, 2530.8] n=50
-  total_turns              mean=1.0 std=0.1 95% CI=[1.0, 1.1] n=50
-  user_stops               mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=50
-  wall_clock_ms            mean=8967.7 std=2232.3 95% CI=[8333.1, 9602.3] n=50
-  tool_invocation_count    mean=1.0 std=0.0 95% CI=[1.0, 1.0] n=50
-  tool_cost_usd            mean=0.006 std=0.001 95% CI=[0.005, 0.006] n=50
-  avg_queue_depth          mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=50
-  interrupt_count          mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=50
-  drain_count              mean=0.0 std=0.1 95% CI=[-0.0, 0.1] n=50
-  expired_count            mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=50
-  latency_prediction       MAPE=2209.28% n_pairs=50
+## Condition: heuristic  (n=48)
+  quality_score            mean=0.672 std=0.449 95% CI=[0.541, 0.802] n=48
+  total_tokens             mean=10201.1 std=10212.4 95% CI=[7234.5, 13167.8] n=48
+  total_turns              mean=2.6 std=1.0 95% CI=[2.3, 2.9] n=48
+  user_stops               mean=0.3 std=0.5 95% CI=[0.2, 0.5] n=48
+  task_completed           mean=0.667 std=0.476 95% CI=[0.528, 0.805] n=48
+  wall_clock_ms            mean=147312.0 std=141115.7 95% CI=[106318.8, 188305.3] n=48
+  tool_invocation_count    mean=1.1 std=0.5 95% CI=[1.0, 1.2] n=48
+  tool_cost_usd            mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=48
+  avg_queue_depth          mean=0.212 std=0.221 95% CI=[0.148, 0.276] n=48
+  interrupt_count          mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=48
+  drain_count              mean=0.5 std=0.5 95% CI=[0.4, 0.7] n=48
+  expired_count            mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=48
+  latency_prediction       MAPE=74.95% n_pairs=53
+  transport_failures       n=2 (tasks: frames_hard_006, frames_hard_008)
 
 ## Comparisons
-  heuristic > random on quality_score: NO
-  heuristic > no_subconscious on quality_score: NO
+  heuristic > random on quality_score (Welch 95%): NO
+  heuristic > no_subconscious on quality_score (Welch 95%): NO
