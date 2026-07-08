@@ -1,0 +1,261 @@
+{
+  "tasks_per_condition": 50,
+  "max_turns": 10,
+  "conditions": {
+    "no_subconscious": {
+      "condition": "no_subconscious",
+      "n_episodes": 50,
+      "summaries": {
+        "quality_score": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 50
+        },
+        "total_tokens": {
+          "mean": 958.36,
+          "std": 162.70491130652852,
+          "ci_lower": 912.1054000710401,
+          "ci_upper": 1004.6145999289599,
+          "n": 50
+        },
+        "total_turns": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 50
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "wall_clock_ms": {
+          "mean": 6419.02,
+          "std": 1058.0981299733314,
+          "ci_lower": 6118.218350593777,
+          "ci_upper": 6719.8216494062235,
+          "n": 50
+        },
+        "tool_invocation_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "tool_cost_usd": {
+          "mean": 0.00420131,
+          "std": 0.0006613042531271681,
+          "ci_lower": 0.00401331098132201,
+          "ci_upper": 0.00438930901867799,
+          "n": 50
+        },
+        "avg_queue_depth": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "interrupt_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "drain_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "expired_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        }
+      },
+      "latency_mape_percent": 0.0,
+      "latency_n_pairs": 0
+    },
+    "random": {
+      "condition": "random",
+      "n_episodes": 50,
+      "summaries": {
+        "quality_score": {
+          "mean": 0.9966666666666667,
+          "std": 0.02357022603955158,
+          "ci_lower": 0.989966,
+          "ci_upper": 1.0033673333333333,
+          "n": 50
+        },
+        "total_tokens": {
+          "mean": 1283.68,
+          "std": 575.2745729525287,
+          "ci_lower": 1120.1379470432078,
+          "ci_upper": 1447.2220529567924,
+          "n": 50
+        },
+        "total_turns": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 50
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "wall_clock_ms": {
+          "mean": 6918.04,
+          "std": 1274.8934482888349,
+          "ci_lower": 6555.606647932612,
+          "ci_upper": 7280.473352067388,
+          "n": 50
+        },
+        "tool_invocation_count": {
+          "mean": 0.26,
+          "std": 0.44308749769345207,
+          "ci_lower": 0.1340367775332654,
+          "ci_upper": 0.38596322246673465,
+          "n": 50
+        },
+        "tool_cost_usd": {
+          "mean": 0.00448811,
+          "std": 0.000756287193654444,
+          "ci_lower": 0.004273108736098518,
+          "ci_upper": 0.004703111263901482,
+          "n": 50
+        },
+        "avg_queue_depth": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "interrupt_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "drain_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "expired_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        }
+      },
+      "latency_mape_percent": 865.3420230838149,
+      "latency_n_pairs": 13
+    },
+    "heuristic": {
+      "condition": "heuristic",
+      "n_episodes": 50,
+      "summaries": {
+        "quality_score": {
+          "mean": 0.9933333333333333,
+          "std": 0.03299144395369289,
+          "ci_lower": 0.9839543537505853,
+          "ci_upper": 1.0027123129160813,
+          "n": 50
+        },
+        "total_tokens": {
+          "mean": 2400.32,
+          "std": 459.01822648441527,
+          "ci_lower": 2269.827906948563,
+          "ci_upper": 2530.8120930514374,
+          "n": 50
+        },
+        "total_turns": {
+          "mean": 1.02,
+          "std": 0.1414213562373095,
+          "ci_lower": 0.979796,
+          "ci_upper": 1.060204,
+          "n": 50
+        },
+        "user_stops": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "wall_clock_ms": {
+          "mean": 8967.74,
+          "std": 2232.2537235095947,
+          "ci_lower": 8333.143280750724,
+          "ci_upper": 9602.336719249275,
+          "n": 50
+        },
+        "tool_invocation_count": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci_lower": 1.0,
+          "ci_upper": 1.0,
+          "n": 50
+        },
+        "tool_cost_usd": {
+          "mean": 0.00582743,
+          "std": 0.0013065848653287403,
+          "ci_lower": 0.005455987246774456,
+          "ci_upper": 0.006198872753225544,
+          "n": 50
+        },
+        "avg_queue_depth": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "interrupt_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        },
+        "drain_count": {
+          "mean": 0.02,
+          "std": 0.1414213562373095,
+          "ci_lower": -0.020203999999999996,
+          "ci_upper": 0.060203999999999994,
+          "n": 50
+        },
+        "expired_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 50
+        }
+      },
+      "latency_mape_percent": 2209.2754307729115,
+      "latency_n_pairs": 50
+    }
+  }
+}

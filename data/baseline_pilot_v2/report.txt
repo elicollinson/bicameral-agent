@@ -1,0 +1,55 @@
+========================================================================
+Baseline Performance Benchmark
+========================================================================
+
+## Condition: no_subconscious  (n=17)
+  quality_score            mean=0.627 std=0.438 95% CI=[0.402, 0.853] n=17
+  total_tokens             mean=5311.4 std=5315.7 95% CI=[2575.6, 8047.2] n=17
+  total_turns              mean=2.4 std=0.7 95% CI=[2.0, 2.7] n=17
+  user_stops               mean=0.3 std=0.5 95% CI=[0.1, 0.5] n=17
+  task_completed           mean=0.706 std=0.470 95% CI=[0.464, 0.948] n=17
+  wall_clock_ms            mean=196178.2 std=217295.1 95% CI=[84345.0, 308011.5] n=17
+  tool_invocation_count    mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=17
+  tool_cost_usd            mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=17
+  avg_queue_depth          mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=17
+  interrupt_count          mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=17
+  drain_count              mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=17
+  expired_count            mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=17
+  latency_prediction       MAPE=0.00% n_pairs=0
+  transport_failures       n=3 (tasks: frames_hard_001, frames_hard_005, frames_hard_013)
+
+## Condition: random  (n=18)
+  quality_score            mean=0.551 std=0.466 95% CI=[0.319, 0.783] n=18
+  total_tokens             mean=5265.7 std=4219.2 95% CI=[3164.4, 7367.0] n=18
+  total_turns              mean=2.3 std=1.0 95% CI=[1.8, 2.8] n=18
+  user_stops               mean=0.3 std=0.5 95% CI=[0.0, 0.5] n=18
+  task_completed           mean=0.722 std=0.461 95% CI=[0.493, 0.952] n=18
+  wall_clock_ms            mean=153296.4 std=172776.5 95% CI=[67247.0, 239345.9] n=18
+  tool_invocation_count    mean=0.4 std=0.7 95% CI=[0.1, 0.8] n=18
+  tool_cost_usd            mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=18
+  avg_queue_depth          mean=0.028 std=0.118 95% CI=[-0.031, 0.086] n=18
+  interrupt_count          mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=18
+  drain_count              mean=0.1 std=0.2 95% CI=[-0.1, 0.2] n=18
+  expired_count            mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=18
+  latency_prediction       MAPE=52.94% n_pairs=8
+  transport_failures       n=2 (tasks: frames_hard_001, frames_hard_008)
+
+## Condition: heuristic  (n=18)
+  quality_score            mean=0.551 std=0.478 95% CI=[0.313, 0.789] n=18
+  total_tokens             mean=8005.0 std=6725.1 95% CI=[4655.6, 11354.4] n=18
+  total_turns              mean=2.6 std=1.1 95% CI=[2.0, 3.1] n=18
+  user_stops               mean=0.3 std=0.5 95% CI=[0.1, 0.6] n=18
+  task_completed           mean=0.667 std=0.485 95% CI=[0.425, 0.908] n=18
+  wall_clock_ms            mean=149602.2 std=163702.3 95% CI=[68072.0, 231132.3] n=18
+  tool_invocation_count    mean=1.2 std=0.5 95% CI=[0.9, 1.4] n=18
+  tool_cost_usd            mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=18
+  avg_queue_depth          mean=0.167 std=0.221 95% CI=[0.056, 0.277] n=18
+  interrupt_count          mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=18
+  drain_count              mean=0.4 std=0.5 95% CI=[0.1, 0.6] n=18
+  expired_count            mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=18
+  latency_prediction       MAPE=77.03% n_pairs=21
+  transport_failures       n=2 (tasks: frames_hard_006, frames_hard_008)
+
+## Comparisons
+  heuristic > random on quality_score (Welch 95%): NO
+  heuristic > no_subconscious on quality_score (Welch 95%): NO
