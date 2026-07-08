@@ -472,6 +472,25 @@ class TestBatchScoring:
         results = scorer.score_batch([], [])
         assert results == []
 
+    def test_batch_pool_threads_report_to_active_degradation_counter(self):
+        """Issue #91: the batch pool runs items in a copy of the submitting
+        context, so degradations in worker threads still attribute to the
+        episode's context-local counter."""
+        from bicameral_agent.llm_output import count_degradations
+
+        malformed = MagicMock()
+        malformed.content = "not json at all"
+        malformed.finish_reason = "STOP"
+        mock_client = MagicMock()
+        mock_client.generate.return_value = malformed
+        scorer = TaskScorer(client=mock_client, max_workers=4)
+
+        tasks = [_make_task(task_id=f"t_{i}") for i in range(3)]
+        answers = [f"answer {i}" for i in range(3)]
+        with count_degradations() as counter:
+            scorer.score_batch(tasks, answers)
+        assert counter.counts == {"TaskScorer": 3}
+
 
 # ---------------------------------------------------------------------------
 # TestIntegration (requires GEMINI_API_KEY)

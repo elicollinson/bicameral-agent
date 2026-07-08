@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import threading
+import time
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -618,6 +621,208 @@ class TestTransportFailureContainment:
         assert result.failures["random"] == []
         assert result.reports["heuristic"].n_episodes == 3
         assert result.reports["random"].n_episodes == 4
+
+
+class _StubRunner:
+    """Thread-safe stand-in for EpisodeRunner with per-task delays/errors.
+
+    Returns an episode tagged with the task id; later tasks finish sooner
+    (reversed delays) so concurrent completion order inverts task order.
+    """
+
+    def __init__(
+        self,
+        n_tasks: int,
+        fail_task_ids: set[str] | None = None,
+        delay_step_s: float = 0.01,
+    ) -> None:
+        self._n_tasks = n_tasks
+        self._fail_task_ids = fail_task_ids or set()
+        self._delay_step_s = delay_step_s
+        self._lock = threading.Lock()
+        self.call_count = 0
+        self.started_task_ids: list[str] = []
+
+    def run_episode(self, task, controller):
+        with self._lock:
+            self.call_count += 1
+            self.started_task_ids.append(task.task_id)
+        idx = int(task.task_id[1:])
+        time.sleep((self._n_tasks - idx) * self._delay_step_s)
+        if task.task_id in self._fail_task_ids:
+            raise _transport_exhausted()
+        return _make_episode(metadata={"task_id": task.task_id})
+
+
+class TestParallelEpisodes:
+    """Issue #91: bounded episode concurrency within a condition."""
+
+    def test_parallel_output_matches_sequential(self):
+        tasks = [_task(f"t{i}") for i in range(6)]
+
+        def run(parallel):
+            runner = _StubRunner(len(tasks))
+            seen: list[int] = []
+            episodes, metrics, failures = run_condition(
+                runner, tasks, lambda _idx: _StubController(),
+                condition="random",
+                on_episode=lambda cond, idx, ep: seen.append(idx),
+                parallel_episodes=parallel,
+            )
+            return episodes, metrics, failures, seen, runner
+
+        seq_eps, seq_metrics, seq_fail, seq_seen, _ = run(1)
+        par_eps, par_metrics, par_fail, par_seen, par_runner = run(3)
+
+        # Same episodes in task order, regardless of completion order.
+        assert [e.metadata["task_id"] for e in seq_eps] == [t.task_id for t in tasks]
+        assert [e.metadata["task_id"] for e in par_eps] == [t.task_id for t in tasks]
+        assert par_metrics == seq_metrics
+        assert par_fail == seq_fail == []
+        # Sequential callbacks are in task order; parallel fires for every
+        # episode exactly once (completion order may differ).
+        assert seq_seen == list(range(6))
+        assert sorted(par_seen) == list(range(6))
+        assert par_runner.call_count == 6
+
+    def test_parallel_containment_keeps_task_order(self):
+        tasks = [_task(f"t{i}") for i in range(6)]
+        runner = _StubRunner(len(tasks), fail_task_ids={"t2"})
+        episodes, metrics, failures = run_condition(
+            runner, tasks, lambda _idx: _StubController(),
+            condition="random", parallel_episodes=3,
+        )
+        assert [e.metadata["task_id"] for e in episodes] == [
+            "t0", "t1", "t3", "t4", "t5"
+        ]
+        assert len(metrics) == 5
+        (failure,) = failures
+        assert failure.episode_index == 2
+        assert failure.task_id == "t2"
+
+    def test_parallel_threshold_abort_skips_unstarted(self):
+        tasks = [_task(f"t{i}") for i in range(12)]
+        runner = _StubRunner(
+            len(tasks), fail_task_ids={t.task_id for t in tasks}, delay_step_s=0.0
+        )
+        with pytest.raises(ConditionAbortedError) as exc_info:
+            run_condition(
+                runner, tasks, lambda _idx: _StubController(),
+                condition="random", parallel_episodes=3,
+            )
+        # Threshold trips at the 4th failure (4/12 > 30%); at most the
+        # in-flight window (3) can still have started beyond that point.
+        assert exc_info.value.n_failures >= 4
+        assert runner.call_count <= 4 + 3
+        assert isinstance(exc_info.value.__cause__, TransportExhausted)
+
+    def test_parallel_workers_must_be_positive(self):
+        with pytest.raises(ValueError, match="parallel_episodes"):
+            run_condition(
+                MagicMock(spec=EpisodeRunner), [_task()],
+                lambda _idx: _StubController(), parallel_episodes=0,
+            )
+
+    def test_run_benchmark_forwards_parallel_episodes(self):
+        tasks = [_task(f"t{i}") for i in range(3)]
+        runner = _StubRunner(len(tasks))
+        result = run_benchmark(
+            client=MagicMock(),
+            tasks=tasks,
+            conditions={"random": lambda _idx: _StubController()},
+            runner=runner,
+            parallel_episodes=3,
+        )
+        assert [e.metadata["task_id"] for e in result.episodes["random"]] == [
+            "t0", "t1", "t2"
+        ]
+
+
+class _DeterministicClient:
+    """Thread-safe mocked model client keyed purely on request content.
+
+    Sim-user calls (they carry a response_schema) get a clean task_complete
+    JSON, except when the conversation mentions the degradation marker, in
+    which case they get unparseable prose. Answerer calls get plain text.
+    A small sleep encourages episodes to actually overlap under N>1.
+    """
+
+    model = "gemini-3.1-flash-lite-preview"
+
+    DEGRADE_MARKER = "UNPARSEABLE-EPISODE"
+
+    def generate(self, messages, **kwargs):
+        from bicameral_agent.gemini import GeminiResponse
+
+        time.sleep(0.005)
+        text = " ".join(
+            m["content"] if isinstance(m, dict) else m.content for m in messages
+        )
+        if kwargs.get("response_schema") is not None:
+            if self.DEGRADE_MARKER in text:
+                content = "definitely not json"
+            else:
+                content = json.dumps(
+                    {
+                        "action_type": "task_complete",
+                        "response_delay_ms": 100,
+                        "confidence": 0.9,
+                    }
+                )
+        else:
+            content = "A deterministic answer."
+        return GeminiResponse(
+            content=content,
+            input_tokens=10,
+            output_tokens=20,
+            duration_ms=1.0,
+            finish_reason="STOP",
+        )
+
+
+class TestParallelEpisodeIsolation:
+    """Concurrent episodes through the real EpisodeRunner stay isolated."""
+
+    def _run(self, parallel: int) -> list[Episode]:
+        from bicameral_agent.episode_runner import EpisodeConfig
+
+        tasks = [
+            _task("t0"),
+            ResearchQATask(
+                task_id="t1",
+                difficulty=TaskDifficulty.TYPICAL,
+                split=TaskSplit.EVAL,
+                question=f"q {_DeterministicClient.DEGRADE_MARKER}",
+                gold_answer="a",
+                scoring_rubric="rubric",
+            ),
+            _task("t2"),
+        ]
+        runner = EpisodeRunner(
+            _DeterministicClient(), config=EpisodeConfig(max_turns=1)
+        )
+        episodes, _, failures = run_condition(
+            runner, tasks, lambda _idx: _StubController(),
+            condition="no_subconscious", parallel_episodes=parallel,
+        )
+        assert failures == []
+        return episodes
+
+    def test_parallel_run_identical_to_sequential(self):
+        seq = self._run(1)
+        par = self._run(3)
+        for a, b in zip(seq, par):
+            assert a.metadata["task_id"] == b.metadata["task_id"]
+            assert a.metadata["parse_degradations"] == b.metadata["parse_degradations"]
+            assert a.outcome.total_turns == b.outcome.total_turns
+            assert [m.content for m in a.messages] == [m.content for m in b.messages]
+
+    def test_degradation_counts_stay_per_episode(self):
+        episodes = self._run(3)
+        by_task = {e.metadata["task_id"]: e.metadata["parse_degradations"] for e in episodes}
+        assert by_task["t0"] == {}
+        assert by_task["t1"] == {"SimulatedUser.respond": 1}
+        assert by_task["t2"] == {}
 
 
 def _load_benchmark_script():

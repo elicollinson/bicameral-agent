@@ -38,6 +38,7 @@ import dataclasses
 import json
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable, Sequence
 
@@ -45,6 +46,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from bicameral_agent.concurrency import submit_in_context
 from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.episode_runner import EpisodeRunner
 from bicameral_agent.heuristic_controller import FullState, HeuristicController
@@ -89,6 +91,11 @@ class MCTSTrainerConfig:
     ``max_turns`` must match the ``EpisodeConfig.max_turns`` used by the
     runner so the pipeline's completion-fraction features are consistent
     between collection and training.
+
+    ``parallel_episodes`` bounds how many collection episodes run
+    concurrently (issue #91; 1 = sequential). Per-episode seeds and the
+    returned episode order are index-based, so parallelism does not change
+    what is collected — only the wall clock.
     """
 
     epochs: int = 50
@@ -105,6 +112,7 @@ class MCTSTrainerConfig:
     train_ratio: float = 0.8
     max_turns: int = 25
     seed: int = 0
+    parallel_episodes: int = 1
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -389,17 +397,45 @@ class MCTSTrainer:
         if n_episodes < 1:
             msg = f"n_episodes must be >= 1, got {n_episodes}"
             raise ValueError(msg)
-        episodes: list[Episode] = []
-        for i in range(n_episodes):
+        parallel = self._config.parallel_episodes
+        if parallel < 1:
+            msg = f"parallel_episodes must be >= 1, got {parallel}"
+            raise ValueError(msg)
+
+        def _run_one(i: int) -> Episode:
             task = self._train_tasks[i % len(self._train_tasks)]
             controller = self._make_controller(
                 training=True, n_simulations=n_simulations, seed=base_seed + 10 + i
             )
-            episodes.append(self._runner.run_episode(task, controller))
+            episode = self._runner.run_episode(task, controller)
             logger.info(
                 "collected episode %d/%d (task %s)", i + 1, n_episodes, task.task_id
             )
-        return episodes
+            return episode
+
+        if parallel == 1:
+            return [_run_one(i) for i in range(n_episodes)]
+
+        # Issue #91: bounded episode concurrency. Results are keyed by
+        # episode index so the returned list is in collection order (and
+        # per-episode seeds stay index-based) regardless of completion
+        # order. Each episode runs in a copy of the caller's contextvars
+        # context so per-episode counters/cost never cross episodes. Any
+        # failure cancels unstarted episodes and propagates once in-flight
+        # ones settle.
+        episodes: dict[int, Episode] = {}
+        with ThreadPoolExecutor(max_workers=parallel) as pool:
+            futures = {
+                submit_in_context(pool, _run_one, i): i for i in range(n_episodes)
+            }
+            try:
+                for future in as_completed(futures):
+                    episodes[futures[future]] = future.result()
+            except BaseException:
+                for f in futures:
+                    f.cancel()
+                raise
+        return [episodes[i] for i in range(n_episodes)]
 
     def _evaluate(
         self, n_simulations: int, seed: int

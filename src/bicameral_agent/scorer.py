@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from pydantic import BaseModel, Field
 
+from bicameral_agent.concurrency import submit_in_context
 from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.gemini import GeminiClient
 from bicameral_agent.llm_output import coerce_int, safe_parse_json, tokenize
@@ -125,6 +126,11 @@ class CachedConcurrentScorer:
     ``_score_cached`` / ``_score_batch_cached`` with a hashable cache key
     per item. Thread-safe; batch scoring dispatches uncached items to a
     ThreadPoolExecutor. Shared by TaskScorer and CoherenceJudge (issue #54).
+
+    Each batch item runs in a copy of the submitting thread's contextvars
+    context (issue #91): pool threads do not inherit context by default, so
+    without the copy, context-scoped per-episode state (degradation
+    counters, episode cost accumulators) would miss work done here.
     """
 
     def __init__(self, max_workers: int = 10) -> None:
@@ -163,7 +169,7 @@ class CachedConcurrentScorer:
         if uncached_indices:
             with ThreadPoolExecutor(max_workers=self._max_workers) as pool:
                 future_to_idx = {
-                    pool.submit(self._score_uncached, items[i]): i
+                    submit_in_context(pool, self._score_uncached, items[i]): i
                     for i in uncached_indices
                 }
                 for future in as_completed(future_to_idx):
