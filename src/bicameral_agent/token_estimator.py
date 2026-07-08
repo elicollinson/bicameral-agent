@@ -45,16 +45,17 @@ class _ToolProfile:
 # run against a local provider), the auditor makes two (assumption
 # extraction + evidence assessment), and the refresher makes one.
 # Default output-per-call values are anchored to the median recorded
-# output token counts from the #23 baseline run (#44).
+# output token counts from the #46 baseline re-run on the Ollama cloud
+# backend (#44): scanner 1566/2, auditor 1856/2, refresher 1110/1.
 _TOOL_PROFILES: dict[str, _ToolProfile] = {
     TOOL_IDS[Action.SCANNER]: _ToolProfile(
         system_prompt_tokens=500,
-        default_output_per_call=670,
+        default_output_per_call=780,
         num_calls=2,
     ),
     TOOL_IDS[Action.AUDITOR]: _ToolProfile(
         system_prompt_tokens=400,
-        default_output_per_call=750,
+        default_output_per_call=930,
         num_calls=2,
     ),
     TOOL_IDS[Action.REFRESHER]: _ToolProfile(

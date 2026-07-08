@@ -3,8 +3,9 @@
 Models total API call latency as a linear function of input and output
 token counts, using incremental OLS with Welford's variance tracking
 for percentile estimation. Uses priors calibrated against measured
-baseline durations during cold start (< 20 observations) and smoothly
-transitions to learned parameters.
+baseline durations on the current (Ollama cloud) backend during cold
+start (< 20 observations) and smoothly transitions to learned
+parameters.
 """
 
 from __future__ import annotations
@@ -18,15 +19,19 @@ import numpy as np
 # Cold-start threshold: below this, blend priors with learned parameters
 _COLD_START_THRESHOLD = 20
 
-# Priors calibrated against the measured tool durations from the #23
-# baseline run (data/baseline/*.parquet): single API calls complete in
-# roughly 0.9-1.5s with recorded output token counts of ~1000-1500.
-# The old priors (alpha=1000, 25 tok/s) over-predicted 9-23x (#44).
+# Priors calibrated against the measured tool durations from the #46
+# baseline re-run on the Ollama cloud backend (gemma4:31b-cloud; 109
+# tool invocations across data/baseline_full + data/baseline_pilot_v2):
+# single API calls complete in roughly 2-5s, dominated by a large fixed
+# per-call cost (cloud queueing/prefill) that swamps the token terms —
+# measured durations are nearly uncorrelated with context size in this
+# regime. The previous Gemini-era calibration (#67: alpha=700) under-
+# predicted 2-4x on this backend (62-75% MAPE in the #46 report).
 # Note: recorded output token counts are approximate (len/4 estimates),
 # so _PRIOR_OUTPUT_RATE is an *effective* rate on that scale, not a true
 # model decode speed.
-_PRIOR_ALPHA = 700.0  # TTFT intercept (ms)
-_PRIOR_BETA = 0.02  # ms per input token
+_PRIOR_ALPHA = 3000.0  # per-call intercept (ms)
+_PRIOR_BETA = 0.05  # ms per input token
 _PRIOR_OUTPUT_RATE = 2500.0  # effective output tokens per second
 _PRIOR_OVERHEAD = 175.0  # fixed overhead (ms)
 _PRIOR_VARIANCE_FRAC = 0.5  # residual std as fraction of predicted mean
@@ -75,7 +80,8 @@ class APILatencyModel:
     and Welford's algorithm for residual variance tracking.
 
     With fewer than 20 observations, predictions are blended with
-    priors calibrated against the #23 baseline measurements (#44).
+    priors calibrated against the #46 baseline measurements on the
+    Ollama cloud backend (#44).
     """
 
     def __init__(self) -> None:
