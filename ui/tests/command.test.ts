@@ -11,6 +11,7 @@ const base: ExperimentConfig = {
   model: 'gemma4:31b',
   tasksPerCondition: 2,
   maxTurns: 10,
+  parallelEpisodes: 3,
   episodeBudget: 0.5,
   outputDir: 'data/run-x',
   configPath: null,
@@ -32,9 +33,18 @@ describe('buildRunnerArgs', () => {
       '2',
       '--max-turns',
       '10',
+      '--parallel-episodes',
+      '3',
       '--episode-budget',
       '0.5',
     ]);
+  });
+
+  it('always passes --parallel-episodes, including the sequential default', () => {
+    const args = buildRunnerArgs({ ...base, parallelEpisodes: 1 });
+    const i = args.indexOf('--parallel-episodes');
+    expect(i).toBeGreaterThan(-1);
+    expect(args[i + 1]).toBe('1');
   });
 
   it('passes the model tag verbatim (no -cloud rewriting)', () => {

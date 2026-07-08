@@ -13,6 +13,7 @@ from bicameral_agent.config import (
     HyperConfig,
     ModelConfig,
     QueueConfig,
+    RunConfig,
     ToolBudgetConfig,
     ToolsConfig,
     TrainingConfig,
@@ -78,6 +79,10 @@ class TestDefaults:
         cfg = HyperConfig()
         assert cfg.evaluation.num_tasks == 10
         assert cfg.evaluation.random_seed == 42
+
+    def test_run_defaults(self):
+        assert HyperConfig().run.parallel_episodes == 1
+        assert HyperConfig.from_defaults().run.parallel_episodes == 1
 
     def test_from_defaults_matches_constructor(self):
         from_defaults = HyperConfig.from_defaults()
@@ -264,6 +269,14 @@ class TestValidation:
     def test_gamma_negative(self):
         with pytest.raises(ValidationError, match="gamma"):
             TrainingConfig(gamma=-0.1)
+
+    def test_parallel_episodes_zero_rejected(self):
+        with pytest.raises(ValidationError, match="parallel_episodes"):
+            RunConfig(parallel_episodes=0)
+
+    def test_run_unknown_field_rejected(self):
+        with pytest.raises(ValidationError, match="parallel_episode"):
+            RunConfig(parallel_episode=2)
 
 
 class TestFrozen:

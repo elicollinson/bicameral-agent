@@ -35,7 +35,11 @@ from bicameral_agent.eval_datasets import build_dataset, dataset_names, resolve_
 from bicameral_agent.eval_report import EvalReport
 from bicameral_agent.no_subconscious_controller import NoSubconsciousController
 from bicameral_agent.random_controller import RandomController
-from bicameral_agent.runner_setup import add_model_args, resolve_runner_clients
+from bicameral_agent.runner_setup import (
+    add_model_args,
+    resolve_parallel_episodes,
+    resolve_runner_clients,
+)
 from bicameral_agent.schema import Episode
 from bicameral_agent.serialization import episodes_to_parquet
 
@@ -115,11 +119,12 @@ def main(argv: list[str] | None = None) -> int:
                              f"(of: {', '.join(CONDITION_NAMES)}; default all). "
                              "Lets an aborted run be resumed per-condition.")
     parser.add_argument("--tasks-per-condition", type=int, default=50)
-    parser.add_argument("--parallel-episodes", type=int, default=1,
+    parser.add_argument("--parallel-episodes", type=int, default=None,
                         help="Episodes run concurrently within a condition "
-                             "(bounded thread pool; 1 = sequential). Match the "
-                             "provider's concurrent-request allowance "
-                             "(Ollama Cloud: 3).")
+                             "(bounded thread pool; 1 = sequential). Set this "
+                             "to the provider plan's concurrent-request "
+                             "allowance. Defaults to the config's [run] "
+                             "parallel_episodes (else 1).")
     parser.add_argument("--max-turns", type=int, default=10)
     parser.add_argument("--random-seed", type=int, default=42)
     parser.add_argument("--random-probability", type=float, default=0.2)
@@ -130,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
         selected_conditions = parse_conditions(args.conditions)
     except ValueError as exc:
         parser.error(str(exc))
-    if args.parallel_episodes < 1:
+    if args.parallel_episodes is not None and args.parallel_episodes < 1:
         parser.error(f"--parallel-episodes must be >= 1, got {args.parallel_episodes}")
 
     logging.basicConfig(
@@ -144,6 +149,7 @@ def main(argv: list[str] | None = None) -> int:
     hyper = (
         HyperConfig.from_toml(args.config) if args.config else HyperConfig.from_defaults()
     ).with_env_overrides()
+    parallel_episodes = resolve_parallel_episodes(args, hyper)
 
     eval_dataset = build_dataset(args.dataset)
     metric = resolve_metric(eval_dataset, args.metric)
@@ -191,7 +197,7 @@ def main(argv: list[str] | None = None) -> int:
 
     result = run_benchmark(
         client, tasks, conditions, runner=runner, on_episode=persist_episode,
-        parallel_episodes=args.parallel_episodes,
+        parallel_episodes=parallel_episodes,
     )
 
     report_text = format_report(result)

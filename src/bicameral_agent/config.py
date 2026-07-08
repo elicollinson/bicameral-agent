@@ -205,6 +205,19 @@ class EvaluationConfig(BaseModel):
     random_seed: int = 42
 
 
+class RunConfig(BaseModel):
+    """Episode-run execution settings shared by the runner scripts."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    parallel_episodes: int = Field(default=1, ge=1)
+    """Episodes run concurrently (1 = sequential).
+
+    Should match the provider's concurrent-request allowance; overridden
+    by the scripts' ``--parallel-episodes`` flag (CLI > config > 1).
+    """
+
+
 class HyperConfig(BaseModel):
     """Root hyperparameter configuration.
 
@@ -233,6 +246,7 @@ class HyperConfig(BaseModel):
     mcts: MCTSConfig = Field(default_factory=MCTSConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
     cost: CostConfig = Field(default_factory=CostConfig)
+    run: RunConfig = Field(default_factory=RunConfig)
 
     @classmethod
     def from_toml(cls, path: str | Path) -> HyperConfig:

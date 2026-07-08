@@ -3,7 +3,8 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parquetRowCount } from '../src/core/parquet';
 
-// A real artifact committed with the historical baseline run.
+// A real artifact committed with the historical baseline run (the 2026-07
+// re-run holds 45 episodes).
 const BASELINE_PARQUET = path.resolve(
   __dirname,
   '../../data/baseline/no_subconscious.parquet',
@@ -13,7 +14,7 @@ describe('parquetRowCount', () => {
   it.skipIf(!fs.existsSync(BASELINE_PARQUET))(
     'reads the row count of a real runner artifact',
     async () => {
-      expect(await parquetRowCount(BASELINE_PARQUET)).toBe(50);
+      expect(await parquetRowCount(BASELINE_PARQUET)).toBe(45);
     },
   );
 

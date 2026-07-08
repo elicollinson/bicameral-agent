@@ -9,7 +9,11 @@ from unittest.mock import patch
 import pytest
 
 from bicameral_agent.config import HyperConfig
-from bicameral_agent.runner_setup import add_model_args, resolve_runner_clients
+from bicameral_agent.runner_setup import (
+    add_model_args,
+    resolve_parallel_episodes,
+    resolve_runner_clients,
+)
 
 
 @dataclass
@@ -111,3 +115,26 @@ class TestResolveRunnerClients:
         assert judge_client is not client
         assert mock_build.call_count == 2
         assert provenance["measurement"] == {"provider": "gemini", "model": "tag-b"}
+
+
+class TestResolveParallelEpisodes:
+    """CLI flag > config [run].parallel_episodes > default 1."""
+
+    def test_defaults_to_one(self, hyper):
+        args = argparse.Namespace(parallel_episodes=None)
+        assert resolve_parallel_episodes(args, hyper) == 1
+
+    def test_config_used_when_flag_unset(self):
+        args = argparse.Namespace(parallel_episodes=None)
+        hyper = HyperConfig.model_validate({"run": {"parallel_episodes": 5}})
+        assert resolve_parallel_episodes(args, hyper) == 5
+
+    def test_cli_overrides_config(self):
+        args = argparse.Namespace(parallel_episodes=3)
+        hyper = HyperConfig.model_validate({"run": {"parallel_episodes": 5}})
+        assert resolve_parallel_episodes(args, hyper) == 3
+
+    def test_explicit_one_overrides_config(self):
+        args = argparse.Namespace(parallel_episodes=1)
+        hyper = HyperConfig.model_validate({"run": {"parallel_episodes": 5}})
+        assert resolve_parallel_episodes(args, hyper) == 1

@@ -52,6 +52,19 @@ def add_model_args(parser: argparse.ArgumentParser) -> None:
                         help="Optional per-episode cost ceiling in USD.")
 
 
+def resolve_parallel_episodes(args: argparse.Namespace, hyper: HyperConfig) -> int:
+    """Resolve episode concurrency: CLI flag > config ``[run]`` > default 1.
+
+    The ``--parallel-episodes`` flag is registered per-script (the help
+    text differs) with ``default=None`` so an unset flag is distinguishable
+    from an explicit ``1`` and falls through to the config's
+    ``run.parallel_episodes`` (validated >= 1 at config load).
+    """
+    if args.parallel_episodes is not None:
+        return args.parallel_episodes
+    return hyper.run.parallel_episodes
+
+
 def resolve_runner_clients(
     args: argparse.Namespace, hyper: HyperConfig
 ) -> tuple[ModelClient, ModelClient, dict[str, dict[str, str]]]:
