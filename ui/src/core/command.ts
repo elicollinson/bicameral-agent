@@ -15,6 +15,9 @@ export interface ExperimentConfig {
   model: string;
   tasksPerCondition: number;
   maxTurns: number;
+  /** Episodes run concurrently (1 = sequential); should match the
+   * provider's concurrent-request allowance. */
+  parallelEpisodes: number;
   /** Per-episode USD ceiling; null = runner default (no ceiling). */
   episodeBudget: number | null;
   /** Output dir for run artifacts, relative to the repo root. */
@@ -39,6 +42,7 @@ const FLAG_SPECS: FlagSpec[] = [
   { flag: '--model', value: (c) => c.model || null },
   { flag: '--tasks-per-condition', value: (c) => c.tasksPerCondition },
   { flag: '--max-turns', value: (c) => c.maxTurns },
+  { flag: '--parallel-episodes', value: (c) => c.parallelEpisodes },
   { flag: '--episode-budget', value: (c) => c.episodeBudget },
   { flag: '--config', value: (c) => c.configPath },
 ];

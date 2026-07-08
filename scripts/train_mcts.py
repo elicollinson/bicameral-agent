@@ -39,7 +39,11 @@ from bicameral_agent.dataset import (
 from bicameral_agent.episode_runner import EpisodeRunner
 from bicameral_agent.mcts_trainer import MCTSTrainer, MCTSTrainerConfig
 from bicameral_agent.policy_value_net import PolicyValueNetwork
-from bicameral_agent.runner_setup import add_model_args, resolve_runner_clients
+from bicameral_agent.runner_setup import (
+    add_model_args,
+    resolve_parallel_episodes,
+    resolve_runner_clients,
+)
 from bicameral_agent.schema import Episode
 from bicameral_agent.serialization import episodes_from_parquet
 from bicameral_agent.training_pipeline import STATE_DIM, TrainingDataPipeline
@@ -127,11 +131,12 @@ def main(argv: list[str] | None = None) -> int:
                         help="Verification metric used to score episodes.")
     parser.add_argument("--iterations", type=int, default=10)
     parser.add_argument("--episodes-per-iteration", type=int, default=50)
-    parser.add_argument("--parallel-episodes", type=int, default=1,
+    parser.add_argument("--parallel-episodes", type=int, default=None,
                         help="Collection episodes run concurrently (bounded "
-                             "thread pool; 1 = sequential). Match the "
-                             "provider's concurrent-request allowance "
-                             "(Ollama Cloud: 3).")
+                             "thread pool; 1 = sequential). Set this to the "
+                             "provider plan's concurrent-request allowance. "
+                             "Defaults to the config's [run] "
+                             "parallel_episodes (else 1).")
     parser.add_argument("--simulations", type=int, default=50,
                         help="MCTS budget per decision point.")
     parser.add_argument("--eval-tasks", type=int, default=20,
@@ -172,8 +177,12 @@ def main(argv: list[str] | None = None) -> int:
 
     policy, transition = load_models(args)
 
-    if args.parallel_episodes < 1:
+    if args.parallel_episodes is not None and args.parallel_episodes < 1:
         parser.error(f"--parallel-episodes must be >= 1, got {args.parallel_episodes}")
+
+    hyper = (
+        HyperConfig.from_toml(args.config) if args.config else HyperConfig.from_defaults()
+    ).with_env_overrides()
 
     trainer_config = MCTSTrainerConfig(
         collect_with_search=not args.no_search,
@@ -181,7 +190,7 @@ def main(argv: list[str] | None = None) -> int:
         retrain_transition=args.retrain_transition,
         max_turns=args.max_turns,
         seed=args.seed,
-        parallel_episodes=args.parallel_episodes,
+        parallel_episodes=resolve_parallel_episodes(args, hyper),
     )
     pipeline = TrainingDataPipeline(max_turns=args.max_turns)
 
@@ -190,9 +199,6 @@ def main(argv: list[str] | None = None) -> int:
     cost_tracker = None
     train_tasks: list[ResearchQATask] = []
     eval_tasks: list[ResearchQATask] = []
-    hyper = (
-        HyperConfig.from_toml(args.config) if args.config else HyperConfig.from_defaults()
-    ).with_env_overrides()
 
     if offline:
         offline_episodes = []

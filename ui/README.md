@@ -29,7 +29,10 @@ runner and for `data/` discovery.
 ## Screens
 
 - **New experiment** — step-through form: provider (gemini/ollama), model,
-  tasks-per-condition, max turns, per-episode budget, output dir. With
+  tasks-per-condition, max turns, parallel episodes, per-episode budget,
+  output dir. Parallel episodes (default 1) maps to the runner's
+  `--parallel-episodes` and should match the provider plan's
+  concurrent-request allowance. With
   provider=ollama the model picker is populated live from
   `GET https://ollama.com/api/tags` (type to filter); if the request fails it
   falls back to free-text entry, and `tab` switches to free text at any time.

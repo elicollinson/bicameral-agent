@@ -18,6 +18,7 @@ type Step =
   | 'model'
   | 'tasks'
   | 'maxTurns'
+  | 'parallel'
   | 'budget'
   | 'outputDir'
   | 'confirm';
@@ -27,6 +28,7 @@ const STEP_ORDER: Step[] = [
   'model',
   'tasks',
   'maxTurns',
+  'parallel',
   'budget',
   'outputDir',
   'confirm',
@@ -57,6 +59,7 @@ export default function Configure({ pricingKeys, onLaunch, onCancel }: Props) {
   const [catalog, setCatalog] = useState<CatalogState>({ kind: 'loading' });
   const [tasks, setTasks] = useState('5');
   const [maxTurns, setMaxTurns] = useState('10');
+  const [parallel, setParallel] = useState('1');
   const [budget, setBudget] = useState('');
   const [outputDir, setOutputDir] = useState(defaultOutputDir());
 
@@ -91,6 +94,7 @@ export default function Configure({ pricingKeys, onLaunch, onCancel }: Props) {
     model,
     tasksPerCondition: Number(tasks),
     maxTurns: Number(maxTurns),
+    parallelEpisodes: Number(parallel),
     episodeBudget: budget === '' ? null : Number(budget),
     outputDir,
     configPath: null,
@@ -126,8 +130,12 @@ export default function Configure({ pricingKeys, onLaunch, onCancel }: Props) {
     setStep('tasks');
   };
 
+  // Each Field is keyed by its step: consecutive steps render <Field> at the
+  // same tree position, and without a key React reuses the instance, carrying
+  // the previous step's text into the next one.
   const modelField = (
     <Field
+      key="model"
       label="Model tag"
       initialValue={model}
       hint={
@@ -209,6 +217,7 @@ export default function Configure({ pricingKeys, onLaunch, onCancel }: Props) {
     case 'tasks':
       body = (
         <Field
+          key="tasks"
           label="Tasks per condition"
           initialValue={tasks}
           validate={positiveInt}
@@ -223,6 +232,7 @@ export default function Configure({ pricingKeys, onLaunch, onCancel }: Props) {
     case 'maxTurns':
       body = (
         <Field
+          key="maxTurns"
           label="Max turns per episode"
           initialValue={maxTurns}
           validate={positiveInt}
@@ -234,9 +244,26 @@ export default function Configure({ pricingKeys, onLaunch, onCancel }: Props) {
         />
       );
       break;
+    case 'parallel':
+      body = (
+        <Field
+          key="parallel"
+          label="Parallel episodes"
+          initialValue={parallel}
+          hint="Match the provider's concurrent-request allowance; 1 = sequential"
+          validate={positiveInt}
+          onSubmit={(v) => {
+            setParallel(v);
+            next();
+          }}
+          onCancel={back}
+        />
+      );
+      break;
     case 'budget':
       body = (
         <Field
+          key="budget"
           label="Per-episode budget (USD)"
           initialValue={budget}
           hint="Empty = no per-episode ceiling"
@@ -256,6 +283,7 @@ export default function Configure({ pricingKeys, onLaunch, onCancel }: Props) {
     case 'outputDir':
       body = (
         <Field
+          key="outputDir"
           label="Output dir (relative to repo root)"
           initialValue={outputDir}
           validate={(v) => (v.trim() === '' ? 'output dir is required' : null)}
@@ -274,7 +302,7 @@ export default function Configure({ pricingKeys, onLaunch, onCancel }: Props) {
           <Text bold>Ready to launch</Text>
           <Text>
             {'  '}provider={provider} model={model} tasks={tasks} max-turns=
-            {maxTurns} budget={budget || 'none'}
+            {maxTurns} parallel={parallel} budget={budget || 'none'}
           </Text>
           <Text>
             {'  '}output: {outputDir}

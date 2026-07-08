@@ -69,3 +69,8 @@ random_seed = 42
 [cost]
 # session_budget = 1.00   # max dollars per session (unset = unlimited)
 # episode_budget = 0.25   # max dollars per episode (unset = unlimited)
+
+[run]
+parallel_episodes = 1    # episodes run concurrently (1 = sequential); match the
+                         # provider's concurrent-request allowance
+
