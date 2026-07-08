@@ -208,7 +208,7 @@ def main(argv: list[str] | None = None) -> int:
         dataset = ResearchQADataset()
         eval_tasks = select_eval_tasks(dataset, args.eval_tasks)
         held_out = {t.task_id for t in eval_tasks}
-        train_tasks = [t for t in dataset.tasks() if t.task_id not in held_out]
+        train_tasks = [t for t in dataset.tasks if t.task_id not in held_out]
         logger.info(
             "Live mode: %d collection tasks, %d held-out eval tasks",
             len(train_tasks), len(eval_tasks),
