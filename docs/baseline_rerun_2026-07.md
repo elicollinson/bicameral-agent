@@ -99,6 +99,10 @@ action accuracy 0.97 vs 0.58 majority-class baseline, value correlation 0.39 >
 The val/train loss gap exceeds 20% (**FAILS**) — data-limited at 66 episodes.
 **#26 stays open** pending a larger heuristic corpus.
 
+> **Superseded (2026-07):** the refresh on the full 166-episode corpus passes
+> all five criteria and now occupies `data/pretrain/` — see
+> [live_training_and_comparative_2026-07.md](live_training_and_comparative_2026-07.md) §3.
+
 ## 7. Downstream pointers
 
 - `data/baseline/` is the canonical baseline for #26 (policy/value pre-training)
