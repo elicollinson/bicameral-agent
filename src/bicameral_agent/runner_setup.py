@@ -12,7 +12,9 @@ from __future__ import annotations
 import argparse
 import logging
 
-from bicameral_agent.config import HyperConfig
+from bicameral_agent.brave_search import BraveSearchProvider
+from bicameral_agent.config import SEARCH_PROVIDER_NAMES, HyperConfig
+from bicameral_agent.gap_scanner import SearchProvider
 from bicameral_agent.model_client import (
     ModelClient,
     build_client,
@@ -27,8 +29,9 @@ def add_model_args(parser: argparse.ArgumentParser) -> None:
     """Register the model/provider flags shared by episode-running CLIs.
 
     Adds ``--config``, ``--provider``, ``--model``, ``--judge-provider``,
-    ``--judge-model`` and ``--episode-budget``; consume them with
-    :func:`resolve_runner_clients`.
+    ``--judge-model``, ``--episode-budget`` and ``--search-provider``;
+    consume them with :func:`resolve_runner_clients` and
+    :func:`resolve_search_provider`.
     """
     parser.add_argument("--config", default=None,
                         help="Hyperparameter TOML file (defaults to the bundled "
@@ -50,6 +53,13 @@ def add_model_args(parser: argparse.ArgumentParser) -> None:
                              "file; unset uses the judge provider's default).")
     parser.add_argument("--episode-budget", type=float, default=None,
                         help="Optional per-episode cost ceiling in USD.")
+    parser.add_argument("--search-provider", choices=list(SEARCH_PROVIDER_NAMES),
+                        default=None,
+                        help="Search backend for the research gap scanner: "
+                             "'mock' (built-in snippets, offline) or 'brave' "
+                             "(Brave Web Search API; requires BRAVE_API_KEY). "
+                             "Overrides the config's [tools] search_provider; "
+                             "default mock.")
 
 
 def resolve_parallel_episodes(args: argparse.Namespace, hyper: HyperConfig) -> int:
@@ -63,6 +73,25 @@ def resolve_parallel_episodes(args: argparse.Namespace, hyper: HyperConfig) -> i
     if args.parallel_episodes is not None:
         return args.parallel_episodes
     return hyper.run.parallel_episodes
+
+
+def resolve_search_provider(
+    args: argparse.Namespace, hyper: HyperConfig
+) -> SearchProvider | None:
+    """Resolve the gap scanner's search backend: CLI > config > mock.
+
+    Returns ``None`` for "mock" (the scanner constructs its own
+    ``MockSearchProvider`` default, keeping offline runs untouched). For
+    "brave", returns one ``BraveSearchProvider`` shared by every episode,
+    so its client-side ~1 req/s throttle is process-wide under
+    ``--parallel-episodes``; a missing ``BRAVE_API_KEY`` fails fast here,
+    at script startup, rather than mid-run.
+    """
+    name = args.search_provider or hyper.tools.search_provider
+    if name == "brave":
+        logger.info("Gap scanner search backend: brave")
+        return BraveSearchProvider()
+    return None
 
 
 def resolve_runner_clients(

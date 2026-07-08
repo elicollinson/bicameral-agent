@@ -24,6 +24,9 @@ token_threshold = 1000     # interrupt if total pending tokens reach this
 persistent_injection = true  # injected context enters history (false = transient one-generation whisper)
 
 [tools]
+search_provider = "mock"   # gap-scanner search backend: "mock" (offline snippets)
+                           # or "brave" (Brave Web Search API; needs BRAVE_API_KEY)
+
 # Default budget applied to all tools unless overridden below.
 [tools.default_budget]
 max_calls = 10

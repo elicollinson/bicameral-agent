@@ -8,11 +8,13 @@ from unittest.mock import patch
 
 import pytest
 
+from bicameral_agent.brave_search import BraveSearchProvider
 from bicameral_agent.config import HyperConfig
 from bicameral_agent.runner_setup import (
     add_model_args,
     resolve_parallel_episodes,
     resolve_runner_clients,
+    resolve_search_provider,
 )
 
 
@@ -41,6 +43,11 @@ class TestAddModelArgs:
         assert args.judge_provider is None
         assert args.judge_model is None
         assert args.episode_budget is None
+        assert args.search_provider is None
+
+    def test_rejects_unknown_search_provider(self):
+        with pytest.raises(SystemExit):
+            _parse(["--search-provider", "not-a-backend"])
 
     def test_parses_values(self):
         args = _parse(
@@ -115,6 +122,36 @@ class TestResolveRunnerClients:
         assert judge_client is not client
         assert mock_build.call_count == 2
         assert provenance["measurement"] == {"provider": "gemini", "model": "tag-b"}
+
+
+class TestResolveSearchProvider:
+    """CLI flag > config [tools].search_provider > mock (None)."""
+
+    def test_defaults_to_none_for_mock(self, hyper):
+        args = _parse([])
+        assert resolve_search_provider(args, hyper) is None
+
+    def test_config_brave_builds_provider(self, monkeypatch):
+        monkeypatch.setenv("BRAVE_API_KEY", "test-key")
+        args = _parse([])
+        hyper = HyperConfig.model_validate({"tools": {"search_provider": "brave"}})
+        assert isinstance(resolve_search_provider(args, hyper), BraveSearchProvider)
+
+    def test_cli_brave_overrides_config_mock(self, monkeypatch, hyper):
+        monkeypatch.setenv("BRAVE_API_KEY", "test-key")
+        args = _parse(["--search-provider", "brave"])
+        assert isinstance(resolve_search_provider(args, hyper), BraveSearchProvider)
+
+    def test_cli_mock_overrides_config_brave(self):
+        args = _parse(["--search-provider", "mock"])
+        hyper = HyperConfig.model_validate({"tools": {"search_provider": "brave"}})
+        assert resolve_search_provider(args, hyper) is None
+
+    def test_brave_without_key_fails_fast(self, monkeypatch, hyper):
+        monkeypatch.delenv("BRAVE_API_KEY", raising=False)
+        args = _parse(["--search-provider", "brave"])
+        with pytest.raises(ValueError, match="BRAVE_API_KEY"):
+            resolve_search_provider(args, hyper)
 
 
 class TestResolveParallelEpisodes:

@@ -145,3 +145,20 @@ no single gold answer); a validator enforces the pairing.
 measurement-model provenance, per-condition `MetricSummary` aggregates
 (unchanged shape — the ui/ Review screen keeps working), plus per-task
 `results` with each episode's score and verification detail.
+
+## Real web search for the gap scanner (Issue #100)
+
+By default the research gap scanner searches a `MockSearchProvider` — 20
+canned snippets keyword-matched to the query — so the tool arm can only
+rearrange the answerer's own knowledge. `BraveSearchProvider`
+(`src/bicameral_agent/brave_search.py`) puts real web search behind the same
+`SearchProvider` protocol: Brave Web Search API, key from `BRAVE_API_KEY`,
+stdlib-urllib transport with retry on 429/5xx, and a thread-safe ~1 req/s
+client-side throttle sized for the free tier (safe under
+`--parallel-episodes`). A search outage degrades to no results with a warning
+(and a `BraveSearchProvider` entry in the episode's `parse_degradations`
+metadata) — it never kills an episode. Select the backend with
+`--search-provider mock|brave` on `run_baseline_benchmark.py`,
+`run_comparative_eval.py`, and `train_mcts.py`, or via `[tools]
+search_provider` in the config (precedence CLI > config; default `mock`, so
+offline tests and CI are unaffected).

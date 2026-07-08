@@ -120,13 +120,29 @@ class ToolBudgetConfig(BaseModel):
     max_output_tokens: int = 20_000
 
 
+SEARCH_PROVIDER_NAMES = ("mock", "brave")
+"""Search backends selectable for the research gap scanner (issue #100)."""
+
+
 class ToolsConfig(BaseModel):
-    """Tool budget configuration."""
+    """Tool budget and search-backend configuration."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     default_budget: ToolBudgetConfig = Field(default_factory=ToolBudgetConfig)
     budgets: dict[str, ToolBudgetConfig] = Field(default_factory=dict)
+    search_provider: str = "mock"
+    """Gap-scanner search backend: "mock" (offline snippets) or "brave"
+    (Brave Web Search API; requires ``BRAVE_API_KEY``). Overridden by the
+    scripts' ``--search-provider`` flag (CLI > config > mock)."""
+
+    @field_validator("search_provider")
+    @classmethod
+    def _validate_search_provider(cls, v: str) -> str:
+        if v not in SEARCH_PROVIDER_NAMES:
+            msg = f"search_provider must be one of {SEARCH_PROVIDER_NAMES}, got {v!r}"
+            raise ValueError(msg)
+        return v
 
 
 class HeuristicConfig(BaseModel):

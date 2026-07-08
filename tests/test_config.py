@@ -52,6 +52,15 @@ class TestDefaults:
         assert cfg.tools.default_budget.max_input_tokens == 50_000
         assert cfg.tools.default_budget.max_output_tokens == 20_000
         assert cfg.tools.budgets == {}
+        assert cfg.tools.search_provider == "mock"
+
+    def test_tools_search_provider_accepts_brave(self):
+        cfg = HyperConfig.model_validate({"tools": {"search_provider": "brave"}})
+        assert cfg.tools.search_provider == "brave"
+
+    def test_tools_search_provider_rejects_unknown(self):
+        with pytest.raises(ValidationError, match="search_provider"):
+            HyperConfig.model_validate({"tools": {"search_provider": "bing"}})
 
     def test_heuristic_defaults(self):
         cfg = HyperConfig()

@@ -55,6 +55,7 @@ from bicameral_agent.assumption_auditor import (
     RiskLevel,
     SuggestedAction,
 )
+from bicameral_agent.brave_search import BraveSearchProvider
 from bicameral_agent.gap_scanner import (
     GapCategory,
     IdentifiedGap,
@@ -145,6 +146,7 @@ __all__ = [
     "APILatencyModel",
     "AssistantResponse",
     "AssumptionAuditor",
+    "BraveSearchProvider",
     "BudgetExceededError",
     "ChatMessage",
     "CoherenceJudge",
