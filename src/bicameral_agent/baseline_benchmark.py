@@ -9,13 +9,13 @@ recorded in the episode.
 
 from __future__ import annotations
 
-import contextvars
 import logging
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from typing import Callable
 
 from bicameral_agent.ab_test import MetricSummary, compute_summary, welch_t_test_from_stats
+from bicameral_agent.concurrency import submit_in_context
 from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.episode_runner import Controller, EpisodeRunner
 from bicameral_agent.gemini import GeminiClient
@@ -308,10 +308,7 @@ def run_condition(
                 and abort_cause is None
                 and fatal is None
             ):
-                future = pool.submit(
-                    contextvars.copy_context().run, _run_one, next_idx
-                )
-                in_flight[future] = next_idx
+                in_flight[submit_in_context(pool, _run_one, next_idx)] = next_idx
                 next_idx += 1
             if not in_flight:
                 break

@@ -34,7 +34,6 @@ and no torch RNG is consumed (the networks have no stochastic layers).
 
 from __future__ import annotations
 
-import contextvars
 import dataclasses
 import json
 import logging
@@ -47,6 +46,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from bicameral_agent.concurrency import submit_in_context
 from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.episode_runner import EpisodeRunner
 from bicameral_agent.heuristic_controller import FullState, HeuristicController
@@ -426,8 +426,7 @@ class MCTSTrainer:
         episodes: dict[int, Episode] = {}
         with ThreadPoolExecutor(max_workers=parallel) as pool:
             futures = {
-                pool.submit(contextvars.copy_context().run, _run_one, i): i
-                for i in range(n_episodes)
+                submit_in_context(pool, _run_one, i): i for i in range(n_episodes)
             }
             try:
                 for future in as_completed(futures):

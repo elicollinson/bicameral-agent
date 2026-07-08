@@ -6,13 +6,13 @@ for evaluating agent answers against research QA tasks with scoring rubrics.
 
 from __future__ import annotations
 
-import contextvars
 import hashlib
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from pydantic import BaseModel, Field
 
+from bicameral_agent.concurrency import submit_in_context
 from bicameral_agent.dataset import ResearchQATask
 from bicameral_agent.gemini import GeminiClient
 from bicameral_agent.llm_output import coerce_int, safe_parse_json, tokenize
@@ -169,11 +169,7 @@ class CachedConcurrentScorer:
         if uncached_indices:
             with ThreadPoolExecutor(max_workers=self._max_workers) as pool:
                 future_to_idx = {
-                    pool.submit(
-                        contextvars.copy_context().run,
-                        self._score_uncached,
-                        items[i],
-                    ): i
+                    submit_in_context(pool, self._score_uncached, items[i]): i
                     for i in uncached_indices
                 }
                 for future in as_completed(future_to_idx):
