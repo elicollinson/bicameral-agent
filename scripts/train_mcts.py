@@ -41,6 +41,7 @@ from bicameral_agent.mcts_trainer import MCTSTrainer, MCTSTrainerConfig
 from bicameral_agent.policy_value_net import PolicyValueNetwork
 from bicameral_agent.runner_setup import (
     add_model_args,
+    effective_hyper_config,
     resolve_parallel_episodes,
     resolve_runner_clients,
     resolve_search_provider,
@@ -107,7 +108,7 @@ def build_runner(args: argparse.Namespace, hyper: HyperConfig) -> tuple[EpisodeR
     if args.episode_budget is not None:
         cost_tracker.set_episode_budget(args.episode_budget)
 
-    client, judge_client, _provenance = resolve_runner_clients(args, hyper)
+    client, judge_client, provenance = resolve_runner_clients(args, hyper)
 
     runner = EpisodeRunner(
         client,
@@ -116,7 +117,7 @@ def build_runner(args: argparse.Namespace, hyper: HyperConfig) -> tuple[EpisodeR
             score_episode=True,
             metric=args.metric,
         ),
-        hyper_config=hyper,
+        hyper_config=effective_hyper_config(args, hyper, provenance),
         cost_tracker=cost_tracker,
         judge_client=judge_client,
         sim_user_client=judge_client,

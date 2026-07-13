@@ -37,6 +37,7 @@ from bicameral_agent.no_subconscious_controller import NoSubconsciousController
 from bicameral_agent.random_controller import RandomController
 from bicameral_agent.runner_setup import (
     add_model_args,
+    effective_hyper_config,
     resolve_parallel_episodes,
     resolve_runner_clients,
     resolve_search_provider,
@@ -173,7 +174,7 @@ def main(argv: list[str] | None = None) -> int:
             score_episode=True,
             metric=metric,
         ),
-        hyper_config=hyper,
+        hyper_config=effective_hyper_config(args, hyper, provenance),
         cost_tracker=cost_tracker,
         judge_client=judge_client,
         sim_user_client=judge_client,

@@ -776,7 +776,10 @@ class TestScriptParallelEpisodes:
         report = MagicMock()
         report.to_json.return_value = "{}"
         report.to_markdown.return_value = "md"
-        provenance = {"answerer": {}, "measurement": {}}
+        provenance = {
+            "answerer": {"provider": "gemini", "model": "tag-a"},
+            "measurement": {"provider": "gemini", "model": "tag-a"},
+        }
         with (
             patch.object(script, "learned_condition_factories", return_value={}),
             patch.object(

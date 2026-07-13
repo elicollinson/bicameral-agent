@@ -46,6 +46,7 @@ from bicameral_agent.episode_runner import EpisodeRunner
 from bicameral_agent.eval_datasets import build_dataset, dataset_names, resolve_metric
 from bicameral_agent.runner_setup import (
     add_model_args,
+    effective_hyper_config,
     resolve_parallel_episodes,
     resolve_runner_clients,
     resolve_search_provider,
@@ -158,7 +159,7 @@ def main(argv: list[str] | None = None) -> int:
             score_episode=True,
             metric=metric,
         ),
-        hyper_config=hyper,
+        hyper_config=effective_hyper_config(args, hyper, provenance),
         cost_tracker=cost_tracker,
         judge_client=judge_client,
         sim_user_client=judge_client,
