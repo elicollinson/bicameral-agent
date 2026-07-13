@@ -210,3 +210,133 @@ def test_duplicate_task_id_rejected(tmp_path: Path) -> None:
     _write_condition(path, [_payload("t1", 0.5), _payload("t1", 0.7)])
     with pytest.raises(ValueError, match="duplicate task_id"):
         ase.load_condition(path)
+
+
+def _record(
+    task_id: str,
+    quality: float | None,
+    injections: tuple[dict, ...],
+    turn_messages: tuple[tuple[int, str, str], ...],
+) -> ase.EpisodeRecord:
+    return ase.EpisodeRecord(
+        task_id=task_id,
+        quality=quality,
+        n_injections=len(injections),
+        n_consumed=sum(1 for i in injections if i.get("consumed")),
+        n_url_bearing=0,
+        injections=injections,
+        turn_messages=turn_messages,
+    )
+
+
+def _consumed(content: str) -> dict:
+    return {"content": content, "consumed": True, "consumed_at_turn": 2}
+
+
+@pytest.fixture
+def utilization_records() -> dict[str, ase.EpisodeRecord]:
+    """Five consumed-injection episodes covering every utilization rule.
+
+    'verification' appears in three injections, so it crosses the
+    document-frequency cutoff (max(3, ceil(0.25 * 5)) = 3) and must be
+    treated as boilerplate.
+    """
+    return {
+        # Utilized: 'scanderbeg', 'albanian', 'chieftain' are novel and reused.
+        "token_hit": _record(
+            "token_hit",
+            1.0,
+            (_consumed("verification: Scanderbeg the Albanian chieftain fought"),),
+            (
+                (1, "user", "who ended the war?"),
+                (1, "assistant", "The pope ended a war."),
+                (2, "user", "are you sure?"),
+                (2, "assistant", "Per evidence: Scanderbeg, the Albanian chieftain."),
+            ),
+        ),
+        # Utilized via verbatim URL despite only one reused token.
+        "url_hit": _record(
+            "url_hit",
+            0.5,
+            (_consumed("verification of claim: see https://ex.com/b now"),),
+            (
+                (1, "user", "question"),
+                (1, "assistant", "First answer."),
+                (2, "user", "source?"),
+                (2, "assistant", "Per https://ex.com/b the claim holds."),
+            ),
+        ),
+        # Not utilized: injected content ignored in the reply.
+        "ignored": _record(
+            "ignored",
+            0.0,
+            (_consumed("wolfram tantalum discovered near stockholm"),),
+            (
+                (1, "user", "question"),
+                (1, "assistant", "First answer."),
+                (2, "user", "sure?"),
+                (2, "assistant", "Restating the first answer unchanged."),
+            ),
+        ),
+        # Not utilized: 'gallium' was already in the pre-injection transcript
+        # (scanner echo), so only 'xenon' is novel -> below the threshold.
+        "pre_echo": _record(
+            "pre_echo",
+            0.25,
+            (_consumed("gallium xenon measurements"),),
+            (
+                (1, "user", "question"),
+                (1, "assistant", "It involves gallium."),
+                (2, "user", "more?"),
+                (2, "assistant", "Both gallium and xenon are involved."),
+            ),
+        ),
+        # Not utilized: 'verification' is boilerplate, leaving one novel token.
+        "boilerplate": _record(
+            "boilerplate",
+            0.75,
+            (_consumed("verification of the osmium claim"),),
+            (
+                (1, "user", "question"),
+                (1, "assistant", "First answer."),
+                (2, "user", "check?"),
+                (2, "assistant", "After verification, osmium stands."),
+            ),
+        ),
+        # No consumed injection: excluded from the stats entirely.
+        "no_injection": _record("no_injection", 1.0, (), ()),
+    }
+
+
+def test_utilization_classification(utilization_records) -> None:
+    stats = ase.utilization_stats(utilization_records)
+    assert stats["episodes_with_consumed_injections"] == 5
+    assert "no_injection" not in stats["per_episode"]
+    per = stats["per_episode"]
+    assert per["token_hit"]["utilized"] is True
+    assert "scanderbeg" in per["token_hit"]["used_tokens"]
+    assert per["url_hit"]["utilized"] is True
+    assert per["ignored"]["utilized"] is False
+    assert per["pre_echo"]["utilized"] is False
+    assert per["pre_echo"]["used_tokens"] == ["xenon"]
+    assert per["boilerplate"]["utilized"] is False
+    assert per["boilerplate"]["used_tokens"] == ["osmium"]
+    assert stats["utilized_episodes"] == 2
+    assert stats["url_citations"] == 1
+
+
+def test_utilization_quality_split(utilization_records) -> None:
+    stats = ase.utilization_stats(utilization_records)
+    assert stats["quality_utilized"]["n"] == 2
+    assert stats["quality_utilized"]["mean"] == pytest.approx(0.75)
+    assert stats["quality_not_utilized"]["n"] == 3
+    assert stats["quality_not_utilized"]["mean"] == pytest.approx(1.0 / 3)
+
+
+def test_analyze_includes_utilization(runs) -> None:
+    result = _analyze(*runs)
+    stats = result["utilization"]["search"]
+    # Two heuristic episodes carry consumed injections; the fixture payloads
+    # have no messages, so nothing can be detected as utilized.
+    assert stats["episodes_with_consumed_injections"] == 2
+    assert stats["utilized_episodes"] == 0

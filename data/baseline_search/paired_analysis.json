@@ -202,6 +202,578 @@
       }
     }
   },
+  "utilization": {
+    "nosearch": {
+      "episodes_with_consumed_injections": 25,
+      "utilized_episodes": 16,
+      "url_citations": 0,
+      "quality_utilized": {
+        "mean": 0.5052083333333334,
+        "n": 16
+      },
+      "quality_not_utilized": {
+        "mean": 0.6666666666666666,
+        "n": 9
+      },
+      "per_episode": {
+        "crepe_tricky_004": {
+          "utilized": true,
+          "used_tokens": [
+            "procedure",
+            "psychological"
+          ],
+          "quality": 0.75
+        },
+        "crepe_tricky_006": {
+          "utilized": true,
+          "used_tokens": [
+            "actual",
+            "alliances",
+            "analysis",
+            "casualty",
+            "cort",
+            "critical",
+            "firearms",
+            "general",
+            "historical",
+            "political",
+            "practice",
+            "rates",
+            "role",
+            "success",
+            "tlaxcalans",
+            "weapons"
+          ],
+          "quality": 1.0
+        },
+        "crepe_tricky_007": {
+          "utilized": true,
+          "used_tokens": [
+            "insider",
+            "success",
+            "theft"
+          ],
+          "quality": 1.0
+        },
+        "crepe_tricky_010": {
+          "utilized": false,
+          "used_tokens": [],
+          "quality": 1.0
+        },
+        "crepe_tricky_011": {
+          "utilized": true,
+          "used_tokens": [
+            "clinical",
+            "diffusion",
+            "disrupts",
+            "distinguish",
+            "lacks",
+            "mentioned"
+          ],
+          "quality": 1.0
+        },
+        "frames_hard_003": {
+          "utilized": true,
+          "used_tokens": [
+            "formation",
+            "informal",
+            "predictions",
+            "prior",
+            "shift"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_005": {
+          "utilized": true,
+          "used_tokens": [
+            "chain",
+            "chart",
+            "enter",
+            "euphony's",
+            "logic"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_010": {
+          "utilized": false,
+          "used_tokens": [],
+          "quality": 1.0
+        },
+        "frames_hard_012": {
+          "utilized": true,
+          "used_tokens": [
+            "corporate",
+            "works"
+          ],
+          "quality": 1.0
+        },
+        "frames_hard_013": {
+          "utilized": false,
+          "used_tokens": [],
+          "quality": 1.0
+        },
+        "frames_hard_015": {
+          "utilized": true,
+          "used_tokens": [
+            "exhaustive",
+            "number",
+            "players"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_016": {
+          "utilized": false,
+          "used_tokens": [
+            "birthplace"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_017": {
+          "utilized": true,
+          "used_tokens": [
+            "accurate",
+            "official",
+            "range",
+            "result",
+            "verified"
+          ],
+          "quality": 0.25
+        },
+        "frames_hard_018": {
+          "utilized": true,
+          "used_tokens": [
+            "mayors",
+            "uniqueness"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_019": {
+          "utilized": false,
+          "used_tokens": [
+            "incorporation"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_021": {
+          "utilized": true,
+          "used_tokens": [
+            "classified",
+            "genera",
+            "publication"
+          ],
+          "quality": 0.08333333333333333
+        },
+        "frames_hard_022": {
+          "utilized": false,
+          "used_tokens": [],
+          "quality": 0.0
+        },
+        "frames_hard_024": {
+          "utilized": true,
+          "used_tokens": [
+            "bhave's",
+            "link"
+          ],
+          "quality": 1.0
+        },
+        "frames_hard_025": {
+          "utilized": true,
+          "used_tokens": [
+            "birth",
+            "position",
+            "rognoni's"
+          ],
+          "quality": 1.0
+        },
+        "frames_hard_026": {
+          "utilized": true,
+          "used_tokens": [
+            "loss",
+            "professional"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_028": {
+          "utilized": true,
+          "used_tokens": [
+            "archival",
+            "different",
+            "direct",
+            "positions",
+            "records",
+            "reports"
+          ],
+          "quality": 1.0
+        },
+        "frames_hard_029": {
+          "utilized": false,
+          "used_tokens": [],
+          "quality": 1.0
+        },
+        "frames_hard_031": {
+          "utilized": true,
+          "used_tokens": [
+            "data",
+            "individual",
+            "lead"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_035": {
+          "utilized": false,
+          "used_tokens": [
+            "ferraris'"
+          ],
+          "quality": 1.0
+        },
+        "frames_hard_037": {
+          "utilized": false,
+          "used_tokens": [
+            "calculation"
+          ],
+          "quality": 1.0
+        }
+      }
+    },
+    "search": {
+      "episodes_with_consumed_injections": 30,
+      "utilized_episodes": 24,
+      "url_citations": 0,
+      "quality_utilized": {
+        "mean": 0.5451388888888888,
+        "n": 24
+      },
+      "quality_not_utilized": {
+        "mean": 0.4305555555555556,
+        "n": 6
+      },
+      "per_episode": {
+        "crepe_tricky_001": {
+          "utilized": true,
+          "used_tokens": [
+            "depends",
+            "detailed",
+            "distinction",
+            "level"
+          ],
+          "quality": 1.0
+        },
+        "crepe_tricky_002": {
+          "utilized": true,
+          "used_tokens": [
+            "actual",
+            "danger",
+            "evidence",
+            "high",
+            "humidity",
+            "inhaled",
+            "occurs",
+            "quantitative",
+            "reaches",
+            "response",
+            "site",
+            "upper"
+          ],
+          "quality": 1.0
+        },
+        "crepe_tricky_003": {
+          "utilized": true,
+          "used_tokens": [
+            "failure",
+            "focuses",
+            "phenomenon",
+            "stalling"
+          ],
+          "quality": 0.16666666666666666
+        },
+        "crepe_tricky_004": {
+          "utilized": true,
+          "used_tokens": [
+            "bans",
+            "behind",
+            "landmark",
+            "less",
+            "philosophy",
+            "photograph"
+          ],
+          "quality": 1.0
+        },
+        "crepe_tricky_005": {
+          "utilized": true,
+          "used_tokens": [
+            "final",
+            "metabolic",
+            "type"
+          ],
+          "quality": 1.0
+        },
+        "crepe_tricky_006": {
+          "utilized": true,
+          "used_tokens": [
+            "combat",
+            "counters",
+            "defenses",
+            "estimate",
+            "exact",
+            "high",
+            "historians",
+            "local",
+            "relied",
+            "style"
+          ],
+          "quality": 0.25
+        },
+        "crepe_tricky_007": {
+          "utilized": false,
+          "used_tokens": [
+            "industry"
+          ],
+          "quality": 0.5833333333333334
+        },
+        "frames_hard_002": {
+          "utilized": true,
+          "used_tokens": [
+            "building's",
+            "category",
+            "estimate",
+            "general",
+            "more",
+            "ranking"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_003": {
+          "utilized": true,
+          "used_tokens": [
+            "accurate",
+            "occurred",
+            "officially",
+            "relocated"
+          ],
+          "quality": 1.0
+        },
+        "frames_hard_005": {
+          "utilized": true,
+          "used_tokens": [
+            "enter",
+            "prior"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_007": {
+          "utilized": true,
+          "used_tokens": [
+            "contradiction",
+            "discovery"
+          ],
+          "quality": 1.0
+        },
+        "frames_hard_008": {
+          "utilized": true,
+          "used_tokens": [
+            "findings",
+            "friends",
+            "geller",
+            "show",
+            "source"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_010": {
+          "utilized": true,
+          "used_tokens": [
+            "albanian",
+            "dominated",
+            "ottoman",
+            "scanderbeg",
+            "source",
+            "struggle",
+            "turks"
+          ],
+          "quality": 1.0
+        },
+        "frames_hard_011": {
+          "utilized": false,
+          "used_tokens": [
+            "appeared"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_012": {
+          "utilized": true,
+          "used_tokens": [
+            "archival",
+            "artists",
+            "primary",
+            "publishing",
+            "releases",
+            "rights",
+            "share",
+            "signed",
+            "wave"
+          ],
+          "quality": 1.0
+        },
+        "frames_hard_013": {
+          "utilized": true,
+          "used_tokens": [
+            "accepted",
+            "birth",
+            "discovery",
+            "gadolin's",
+            "process"
+          ],
+          "quality": 1.0
+        },
+        "frames_hard_017": {
+          "utilized": true,
+          "used_tokens": [
+            "accurate",
+            "current",
+            "figure",
+            "official",
+            "remains",
+            "verified"
+          ],
+          "quality": 0.6666666666666666
+        },
+        "frames_hard_019": {
+          "utilized": false,
+          "used_tokens": [],
+          "quality": 1.0
+        },
+        "frames_hard_020": {
+          "utilized": false,
+          "used_tokens": [],
+          "quality": 1.0
+        },
+        "frames_hard_021": {
+          "utilized": true,
+          "used_tokens": [
+            "additional",
+            "assigned",
+            "classifications",
+            "contested",
+            "revisions",
+            "taxonomic"
+          ],
+          "quality": 0.3333333333333333
+        },
+        "frames_hard_022": {
+          "utilized": true,
+          "used_tokens": [
+            "accurate",
+            "factual",
+            "person",
+            "referring",
+            "search",
+            "titles",
+            "verify",
+            "winners"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_023": {
+          "utilized": true,
+          "used_tokens": [
+            "arrow",
+            "broken",
+            "calculation",
+            "criteria",
+            "edmond",
+            "figures",
+            "list"
+          ],
+          "quality": 0.3333333333333333
+        },
+        "frames_hard_024": {
+          "utilized": true,
+          "used_tokens": [
+            "documented",
+            "findings",
+            "model",
+            "promoted",
+            "text"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_025": {
+          "utilized": false,
+          "used_tokens": [
+            "rognoni's"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_026": {
+          "utilized": true,
+          "used_tokens": [
+            "2024",
+            "boxing",
+            "career",
+            "date",
+            "dates",
+            "fury's",
+            "loss",
+            "oleksandr",
+            "professional",
+            "riyadh",
+            "time",
+            "usyk"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_027": {
+          "utilized": true,
+          "used_tokens": [
+            "count",
+            "incorrectly",
+            "listed",
+            "missed",
+            "recognized",
+            "terminology",
+            "widely"
+          ],
+          "quality": 0.3333333333333333
+        },
+        "frames_hard_028": {
+          "utilized": true,
+          "used_tokens": [
+            "archival",
+            "attacking",
+            "different",
+            "greatest",
+            "lack",
+            "shackleton",
+            "shirt",
+            "time"
+          ],
+          "quality": 1.0
+        },
+        "frames_hard_029": {
+          "utilized": false,
+          "used_tokens": [],
+          "quality": 0.0
+        },
+        "frames_hard_034": {
+          "utilized": true,
+          "used_tokens": [
+            "birth",
+            "date",
+            "original"
+          ],
+          "quality": 0.0
+        },
+        "frames_hard_035": {
+          "utilized": true,
+          "used_tokens": [
+            "birth",
+            "date"
+          ],
+          "quality": 1.0
+        }
+      }
+    }
+  },
   "transport_failures": {
     "nosearch": {
       "no_subconscious": 5,
