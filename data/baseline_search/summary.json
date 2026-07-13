@@ -1,0 +1,1178 @@
+{
+  "dataset": "hard_benchmark",
+  "metric": "llm_judge",
+  "answerer": {
+    "provider": "ollama",
+    "model": "gemma4:31b-cloud"
+  },
+  "measurement": {
+    "provider": "ollama",
+    "model": "gemma4:31b-cloud"
+  },
+  "tasks_per_condition": 50,
+  "max_turns": 6,
+  "conditions": {
+    "no_subconscious": {
+      "condition": "no_subconscious",
+      "n_episodes": 40,
+      "summaries": {
+        "quality_score": {
+          "mean": 0.7375,
+          "std": 0.3757945049778003,
+          "ci_lower": 0.6172907798235361,
+          "ci_upper": 0.857709220176464,
+          "n": 40
+        },
+        "total_tokens": {
+          "mean": 4945.15,
+          "std": 4878.763039689045,
+          "ci_lower": 3384.5303191416538,
+          "ci_upper": 6505.769680858346,
+          "n": 40
+        },
+        "total_turns": {
+          "mean": 2.3,
+          "std": 0.6868732574462859,
+          "ci_lower": 2.0802828472902677,
+          "ci_upper": 2.519717152709732,
+          "n": 40
+        },
+        "user_stops": {
+          "mean": 0.175,
+          "std": 0.38480764425479264,
+          "ci_lower": 0.05190765505859808,
+          "ci_upper": 0.2980923449414019,
+          "n": 40
+        },
+        "task_completed": {
+          "mean": 0.825,
+          "std": 0.3848076442547927,
+          "ci_lower": 0.7019076550585981,
+          "ci_upper": 0.9480923449414018,
+          "n": 40
+        },
+        "wall_clock_ms": {
+          "mean": 212984.0,
+          "std": 215729.1591908231,
+          "ci_lower": 143976.514121022,
+          "ci_upper": 281991.48587897804,
+          "n": 40
+        },
+        "tool_invocation_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 40
+        },
+        "tool_cost_usd": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 40
+        },
+        "avg_queue_depth": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 40
+        },
+        "interrupt_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 40
+        },
+        "drain_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 40
+        },
+        "expired_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 40
+        }
+      },
+      "latency_mape_percent": 0.0,
+      "latency_n_pairs": 0
+    },
+    "random": {
+      "condition": "random",
+      "n_episodes": 45,
+      "summaries": {
+        "quality_score": {
+          "mean": 0.5092592592592593,
+          "std": 0.4381658793455638,
+          "ci_lower": 0.37756528352060376,
+          "ci_upper": 0.6409532349979148,
+          "n": 45
+        },
+        "total_tokens": {
+          "mean": 7681.822222222222,
+          "std": 7460.974455881292,
+          "ci_lower": 5439.371508243533,
+          "ci_upper": 9924.272936200912,
+          "n": 45
+        },
+        "total_turns": {
+          "mean": 2.422222222222222,
+          "std": 0.8915994027305619,
+          "ci_lower": 2.154245468105329,
+          "ci_upper": 2.690198976339115,
+          "n": 45
+        },
+        "user_stops": {
+          "mean": 0.35555555555555557,
+          "std": 0.4840903163082632,
+          "ci_lower": 0.21005865272405955,
+          "ci_upper": 0.5010524583870516,
+          "n": 45
+        },
+        "task_completed": {
+          "mean": 0.6222222222222222,
+          "std": 0.4903101471559001,
+          "ci_lower": 0.47485590351112683,
+          "ci_upper": 0.7695885409333176,
+          "n": 45
+        },
+        "wall_clock_ms": {
+          "mean": 228889.75555555554,
+          "std": 238406.74998034115,
+          "ci_lower": 157234.85446025274,
+          "ci_upper": 300544.65665085835,
+          "n": 45
+        },
+        "tool_invocation_count": {
+          "mean": 0.5333333333333333,
+          "std": 0.5877538136452587,
+          "ci_lower": 0.35667960440740787,
+          "ci_upper": 0.7099870622592588,
+          "n": 45
+        },
+        "tool_cost_usd": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 45
+        },
+        "avg_queue_depth": {
+          "mean": 0.011111111111111112,
+          "std": 0.07453559924999299,
+          "ci_lower": -0.011291111111111111,
+          "ci_upper": 0.03351333333333333,
+          "n": 45
+        },
+        "interrupt_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 45
+        },
+        "drain_count": {
+          "mean": 0.022222222222222223,
+          "std": 0.14907119849998599,
+          "ci_lower": -0.022582222222222222,
+          "ci_upper": 0.06702666666666666,
+          "n": 45
+        },
+        "expired_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 45
+        }
+      },
+      "latency_mape_percent": 65.46139015589183,
+      "latency_n_pairs": 24
+    },
+    "heuristic": {
+      "condition": "heuristic",
+      "n_episodes": 47,
+      "summaries": {
+        "quality_score": {
+          "mean": 0.599290780141844,
+          "std": 0.44560328545123373,
+          "ci_lower": 0.4683979699659637,
+          "ci_upper": 0.7301835903177243,
+          "n": 47
+        },
+        "total_tokens": {
+          "mean": 11482.382978723404,
+          "std": 9359.848320847363,
+          "ci_lower": 8732.993803338199,
+          "ci_upper": 14231.77215410861,
+          "n": 47
+        },
+        "total_turns": {
+          "mean": 2.702127659574468,
+          "std": 1.2668841204518664,
+          "ci_lower": 2.329989418885282,
+          "ci_upper": 3.074265900263654,
+          "n": 47
+        },
+        "user_stops": {
+          "mean": 0.2978723404255319,
+          "std": 0.462267267743469,
+          "ci_lower": 0.16208460343432746,
+          "ci_upper": 0.43366007741673634,
+          "n": 47
+        },
+        "task_completed": {
+          "mean": 0.6382978723404256,
+          "std": 0.48568785444140605,
+          "ci_lower": 0.49563050382730245,
+          "ci_upper": 0.7809652408535487,
+          "n": 47
+        },
+        "wall_clock_ms": {
+          "mean": 232729.3829787234,
+          "std": 265148.96119962726,
+          "ci_lower": 154843.7529132044,
+          "ci_upper": 310615.0130442424,
+          "n": 47
+        },
+        "tool_invocation_count": {
+          "mean": 1.148936170212766,
+          "std": 0.3598745798587226,
+          "ci_lower": 1.0432255603350309,
+          "ci_upper": 1.2546467800905012,
+          "n": 47
+        },
+        "tool_cost_usd": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 47
+        },
+        "avg_queue_depth": {
+          "mean": 0.26666666666666666,
+          "std": 0.2206435471053415,
+          "ci_lower": 0.2018541868876031,
+          "ci_upper": 0.33147914644573023,
+          "n": 47
+        },
+        "interrupt_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 47
+        },
+        "drain_count": {
+          "mean": 0.6808510638297872,
+          "std": 0.5558535535444332,
+          "ci_lower": 0.5175730179868274,
+          "ci_upper": 0.844129109672747,
+          "n": 47
+        },
+        "expired_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "n": 47
+        }
+      },
+      "latency_mape_percent": 60.72042556492186,
+      "latency_n_pairs": 54
+    }
+  },
+  "results": [
+    {
+      "task_id": "frames_hard_002",
+      "condition": "no_subconscious",
+      "score": 0.25,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_003",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_004",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_005",
+      "condition": "no_subconscious",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_007",
+      "condition": "no_subconscious",
+      "score": 0.6666666666666666,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_009",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_010",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_011",
+      "condition": "no_subconscious",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_012",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_001",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_002",
+      "condition": "no_subconscious",
+      "score": 0.3333333333333333,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_003",
+      "condition": "no_subconscious",
+      "score": 0.3333333333333333,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_004",
+      "condition": "no_subconscious",
+      "score": 0.75,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_005",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_006",
+      "condition": "no_subconscious",
+      "score": 0.25,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_007",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_008",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_009",
+      "condition": "no_subconscious",
+      "score": 0.5833333333333334,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_010",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_011",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_012",
+      "condition": "no_subconscious",
+      "score": 0.5,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_013",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_014",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_015",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_017",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_019",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_020",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_021",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_022",
+      "condition": "no_subconscious",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_023",
+      "condition": "no_subconscious",
+      "score": 0.08333333333333333,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_025",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_026",
+      "condition": "no_subconscious",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_028",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_029",
+      "condition": "no_subconscious",
+      "score": 0.25,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_030",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_032",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_033",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_035",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_036",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_037",
+      "condition": "no_subconscious",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_001",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_002",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_003",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_004",
+      "condition": "random",
+      "score": 0.25,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_005",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_007",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_008",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_009",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_010",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_012",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_001",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_002",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_003",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_004",
+      "condition": "random",
+      "score": 0.5833333333333334,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_005",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_006",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_007",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_008",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_009",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_010",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_011",
+      "condition": "random",
+      "score": 0.75,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_012",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_013",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_013",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_014",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_015",
+      "condition": "random",
+      "score": 0.9166666666666666,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_017",
+      "condition": "random",
+      "score": 0.5,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_018",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_019",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_020",
+      "condition": "random",
+      "score": 0.25,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_021",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_023",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_024",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_025",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_026",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_027",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_028",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_029",
+      "condition": "random",
+      "score": 0.3333333333333333,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_030",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_032",
+      "condition": "random",
+      "score": 0.6666666666666666,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_033",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_034",
+      "condition": "random",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_035",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_036",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_037",
+      "condition": "random",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_001",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_002",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_003",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_004",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_005",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_006",
+      "condition": "heuristic",
+      "score": 0.25,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_007",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_008",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_009",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_010",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_011",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_012",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_001",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_002",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_003",
+      "condition": "heuristic",
+      "score": 0.16666666666666666,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_004",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_005",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_006",
+      "condition": "heuristic",
+      "score": 0.25,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_007",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_008",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_009",
+      "condition": "heuristic",
+      "score": 0.5833333333333334,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_010",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_011",
+      "condition": "heuristic",
+      "score": 0.75,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_012",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "crepe_tricky_013",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_013",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_014",
+      "condition": "heuristic",
+      "score": 0.9166666666666666,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_015",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_017",
+      "condition": "heuristic",
+      "score": 0.6666666666666666,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_019",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_020",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_021",
+      "condition": "heuristic",
+      "score": 0.3333333333333333,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_022",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_023",
+      "condition": "heuristic",
+      "score": 0.3333333333333333,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_024",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_025",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_026",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_027",
+      "condition": "heuristic",
+      "score": 0.3333333333333333,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_028",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_029",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_030",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_031",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_033",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_034",
+      "condition": "heuristic",
+      "score": 0.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_035",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_036",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    },
+    {
+      "task_id": "frames_hard_037",
+      "condition": "heuristic",
+      "score": 1.0,
+      "detail": null
+    }
+  ],
+  "failures": [
+    {
+      "task_id": "frames_hard_001",
+      "condition": "no_subconscious",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_006",
+      "condition": "no_subconscious",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_008",
+      "condition": "no_subconscious",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_013",
+      "condition": "no_subconscious",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_016",
+      "condition": "no_subconscious",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_018",
+      "condition": "no_subconscious",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_024",
+      "condition": "no_subconscious",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_027",
+      "condition": "no_subconscious",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_031",
+      "condition": "no_subconscious",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_034",
+      "condition": "no_subconscious",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_006",
+      "condition": "random",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_011",
+      "condition": "random",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_016",
+      "condition": "random",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_022",
+      "condition": "random",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_031",
+      "condition": "random",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_016",
+      "condition": "heuristic",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_018",
+      "condition": "heuristic",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    },
+    {
+      "task_id": "frames_hard_032",
+      "condition": "heuristic",
+      "error": "transport error persisted after 4 attempts: TimeoutError: The read operation timed out"
+    }
+  ]
+}

@@ -1,0 +1,272 @@
+2026-07-13 13:54:29,546 INFO Selected 50 tasks from dataset 'hard_benchmark' (metric 'llm_judge')
+2026-07-13 13:54:29,546 INFO Answerer: ollama/gemma4:31b-cloud; measurement (judge + sim-user): ollama/gemma4:31b-cloud
+2026-07-13 13:54:29,546 INFO Gap scanner search backend: brave
+2026-07-13 13:54:29,546 INFO Running 50 episodes for condition 'no_subconscious'
+2026-07-13 14:02:37,270 WARNING Episode 7 (task frames_hard_008) in condition 'no_subconscious' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:07:14,583 WARNING Episode 0 (task frames_hard_001) in condition 'no_subconscious' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:08:09,546 WARNING Episode 25 (task frames_hard_013) in condition 'no_subconscious' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:11:49,665 WARNING Episode 5 (task frames_hard_006) in condition 'no_subconscious' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:12:26,891 WARNING Episode 28 (task frames_hard_016) in condition 'no_subconscious' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:13:45,326 WARNING Episode 30 (task frames_hard_018) in condition 'no_subconscious' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:19:57,595 WARNING Episode 36 (task frames_hard_024) in condition 'no_subconscious' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:24:47,870 WARNING Episode 46 (task frames_hard_034) in condition 'no_subconscious' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:28:31,162 WARNING Episode 39 (task frames_hard_027) in condition 'no_subconscious' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:35:20,058 WARNING Episode 43 (task frames_hard_031) in condition 'no_subconscious' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:35:20,059 INFO Running 50 episodes for condition 'random'
+2026-07-13 14:35:54,726 INFO tool_llm_call: tool_id=context_refresher, input_tokens=1041, output_tokens=200, duration_ms=1765.8
+2026-07-13 14:35:54,727 WARNING ContextRefresher: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:36:04,002 INFO tool_llm_call: tool_id=context_refresher, input_tokens=937, output_tokens=200, duration_ms=5715.4
+2026-07-13 14:36:04,002 WARNING ContextRefresher: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:36:49,388 INFO tool_llm_call: tool_id=assumption_auditor, input_tokens=481, output_tokens=1000, duration_ms=24723.0
+2026-07-13 14:36:49,388 WARNING assumption_auditor._extract_assumptions: unparseable structured LLM output (finish_reason=length, 750 chars); degrading to default
+2026-07-13 14:37:19,716 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1191, output_tokens=1000, duration_ms=12979.8
+2026-07-13 14:37:19,716 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:37:42,595 INFO tool_llm_call: tool_id=context_refresher, input_tokens=1134, output_tokens=154, duration_ms=9809.7
+2026-07-13 14:37:45,299 INFO tool_llm_call: tool_id=context_refresher, input_tokens=2192, output_tokens=200, duration_ms=5727.7
+2026-07-13 14:37:45,299 WARNING ContextRefresher: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:37:54,127 INFO tool_llm_call: tool_id=context_refresher, input_tokens=2113, output_tokens=200, duration_ms=4605.5
+2026-07-13 14:37:54,127 WARNING ContextRefresher: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:38:15,536 WARNING TaskScorer: unparseable structured LLM output (finish_reason=stop, 531 chars); degrading to default
+2026-07-13 14:39:58,009 INFO tool_llm_call: tool_id=assumption_auditor, input_tokens=1228, output_tokens=1000, duration_ms=26620.8
+2026-07-13 14:39:58,010 WARNING assumption_auditor._extract_assumptions: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:40:51,518 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=2172, output_tokens=1000, duration_ms=32193.9
+2026-07-13 14:40:51,519 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 761 chars); degrading to default
+2026-07-13 14:42:44,870 INFO tool_llm_call: tool_id=assumption_auditor, input_tokens=1248, output_tokens=1000, duration_ms=53377.3
+2026-07-13 14:42:44,871 WARNING assumption_auditor._extract_assumptions: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:43:28,028 WARNING Episode 5 (task frames_hard_006) in condition 'random' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:44:31,118 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1454, output_tokens=1000, duration_ms=37693.2
+2026-07-13 14:44:31,118 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:44:31,456 INFO tool_llm_call: tool_id=assumption_auditor, input_tokens=407, output_tokens=1000, duration_ms=38703.3
+2026-07-13 14:44:31,457 WARNING assumption_auditor._extract_assumptions: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:44:33,293 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=2867, output_tokens=1000, duration_ms=38662.8
+2026-07-13 14:44:33,293 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:44:35,206 INFO tool_llm_call: tool_id=context_refresher, input_tokens=588, output_tokens=200, duration_ms=10377.3
+2026-07-13 14:44:35,206 WARNING ContextRefresher: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:46:44,075 INFO tool_llm_call: tool_id=context_refresher, input_tokens=763, output_tokens=200, duration_ms=31463.2
+2026-07-13 14:46:44,075 WARNING ContextRefresher: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:47:03,859 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1978, output_tokens=859, duration_ms=23792.3
+2026-07-13 14:48:10,106 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1779, output_tokens=400, duration_ms=62305.7
+2026-07-13 14:48:10,106 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1350 chars); degrading to default
+2026-07-13 14:51:46,726 WARNING Episode 28 (task frames_hard_016) in condition 'random' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:52:37,718 INFO tool_llm_call: tool_id=assumption_auditor, input_tokens=524, output_tokens=1000, duration_ms=40686.1
+2026-07-13 14:52:37,719 WARNING assumption_auditor._extract_assumptions: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:53:41,435 INFO tool_llm_call: tool_id=assumption_auditor, input_tokens=656, output_tokens=1000, duration_ms=39705.9
+2026-07-13 14:53:41,435 WARNING assumption_auditor._extract_assumptions: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:54:53,657 WARNING Episode 34 (task frames_hard_022) in condition 'random' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:55:15,766 WARNING Episode 10 (task frames_hard_011) in condition 'random' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 14:55:33,834 INFO tool_llm_call: tool_id=context_refresher, input_tokens=1192, output_tokens=200, duration_ms=15529.5
+2026-07-13 14:55:33,834 WARNING ContextRefresher: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:55:41,865 INFO tool_llm_call: tool_id=context_refresher, input_tokens=491, output_tokens=200, duration_ms=10541.5
+2026-07-13 14:55:41,865 WARNING ContextRefresher: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:55:59,559 INFO tool_llm_call: tool_id=context_refresher, input_tokens=635, output_tokens=200, duration_ms=11980.5
+2026-07-13 14:55:59,559 WARNING ContextRefresher: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:56:10,183 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=593, output_tokens=1000, duration_ms=28557.4
+2026-07-13 14:56:10,183 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:56:29,861 INFO tool_llm_call: tool_id=context_refresher, input_tokens=513, output_tokens=121, duration_ms=14059.5
+2026-07-13 14:57:22,595 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=549, output_tokens=758, duration_ms=47555.0
+2026-07-13 14:57:49,363 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1076, output_tokens=400, duration_ms=25245.4
+2026-07-13 14:57:49,364 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1614 chars); degrading to default
+2026-07-13 14:58:47,086 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1177, output_tokens=1000, duration_ms=9402.0
+2026-07-13 14:58:47,087 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 14:59:35,221 INFO tool_llm_call: tool_id=assumption_auditor, input_tokens=699, output_tokens=1000, duration_ms=7717.1
+2026-07-13 14:59:35,221 WARNING assumption_auditor._extract_assumptions: unparseable structured LLM output (finish_reason=length, 200 chars); degrading to default
+2026-07-13 15:03:56,908 WARNING Episode 43 (task frames_hard_031) in condition 'random' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 15:03:56,910 INFO Running 50 episodes for condition 'heuristic'
+2026-07-13 15:04:49,433 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=834, output_tokens=930, duration_ms=30849.2
+2026-07-13 15:04:55,643 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=518, output_tokens=1000, duration_ms=52213.4
+2026-07-13 15:04:55,644 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 15:05:03,654 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=548, output_tokens=1000, duration_ms=33409.9
+2026-07-13 15:05:03,654 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 653 chars); degrading to default
+2026-07-13 15:05:22,796 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=672, output_tokens=766, duration_ms=17022.8
+2026-07-13 15:05:25,284 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=469, output_tokens=467, duration_ms=4053.2
+2026-07-13 15:05:27,945 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=539, output_tokens=645, duration_ms=18369.0
+2026-07-13 15:05:28,346 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=800, output_tokens=869, duration_ms=16213.3
+2026-07-13 15:05:30,089 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1259, output_tokens=229, duration_ms=1907.7
+2026-07-13 15:05:30,508 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1185, output_tokens=400, duration_ms=5975.6
+2026-07-13 15:05:30,509 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1477 chars); degrading to default
+2026-07-13 15:05:40,771 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1516, output_tokens=400, duration_ms=5731.0
+2026-07-13 15:05:40,771 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1486 chars); degrading to default
+2026-07-13 15:05:44,128 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1403, output_tokens=400, duration_ms=5466.3
+2026-07-13 15:05:44,128 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1429 chars); degrading to default
+2026-07-13 15:05:59,962 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1653, output_tokens=400, duration_ms=66492.9
+2026-07-13 15:05:59,963 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1449 chars); degrading to default
+2026-07-13 15:06:04,779 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=640, output_tokens=732, duration_ms=16203.6
+2026-07-13 15:06:11,735 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1098, output_tokens=190, duration_ms=5180.2
+2026-07-13 15:06:16,183 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=506, output_tokens=925, duration_ms=15285.3
+2026-07-13 15:06:21,670 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=430, output_tokens=603, duration_ms=6044.3
+2026-07-13 15:06:24,247 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1486, output_tokens=400, duration_ms=4134.5
+2026-07-13 15:06:24,248 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1386 chars); degrading to default
+2026-07-13 15:06:25,319 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=565, output_tokens=289, duration_ms=2895.9
+2026-07-13 15:06:58,664 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1101, output_tokens=850, duration_ms=18312.0
+2026-07-13 15:07:06,493 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1247, output_tokens=960, duration_ms=28242.9
+2026-07-13 15:07:08,121 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=434, output_tokens=1000, duration_ms=58027.4
+2026-07-13 15:07:08,122 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 15:07:09,464 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1680, output_tokens=400, duration_ms=6880.0
+2026-07-13 15:07:09,465 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1572 chars); degrading to default
+2026-07-13 15:07:11,118 WARNING SimulatedUser.respond: unparseable structured LLM output (finish_reason=stop, 368 chars); degrading to default
+2026-07-13 15:07:16,827 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=2111, output_tokens=400, duration_ms=5436.9
+2026-07-13 15:07:16,828 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1579 chars); degrading to default
+2026-07-13 15:07:25,045 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1142, output_tokens=833, duration_ms=8865.7
+2026-07-13 15:07:36,695 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=2186, output_tokens=400, duration_ms=6683.0
+2026-07-13 15:07:36,695 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1615 chars); degrading to default
+2026-07-13 15:07:50,886 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1145, output_tokens=984, duration_ms=8827.3
+2026-07-13 15:07:59,271 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1932, output_tokens=400, duration_ms=4670.8
+2026-07-13 15:07:59,271 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1714 chars); degrading to default
+2026-07-13 15:08:00,845 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1018, output_tokens=923, duration_ms=8558.7
+2026-07-13 15:08:11,009 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=2035, output_tokens=400, duration_ms=6372.5
+2026-07-13 15:08:11,009 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1654 chars); degrading to default
+2026-07-13 15:08:18,518 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1180, output_tokens=759, duration_ms=6629.5
+2026-07-13 15:08:24,046 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1415, output_tokens=1000, duration_ms=8006.1
+2026-07-13 15:08:24,046 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 1293 chars); degrading to default
+2026-07-13 15:08:25,207 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1353, output_tokens=400, duration_ms=2695.8
+2026-07-13 15:08:25,208 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1765 chars); degrading to default
+2026-07-13 15:08:36,085 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1219, output_tokens=951, duration_ms=8830.3
+2026-07-13 15:08:43,813 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1193, output_tokens=1000, duration_ms=23724.7
+2026-07-13 15:08:43,813 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 1446 chars); degrading to default
+2026-07-13 15:08:45,750 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=2039, output_tokens=400, duration_ms=4669.7
+2026-07-13 15:08:45,750 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1780 chars); degrading to default
+2026-07-13 15:08:59,977 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=913, output_tokens=1000, duration_ms=10509.1
+2026-07-13 15:08:59,978 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 789 chars); degrading to default
+2026-07-13 15:09:05,342 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1157, output_tokens=1000, duration_ms=10128.7
+2026-07-13 15:09:05,343 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 960 chars); degrading to default
+2026-07-13 15:09:21,080 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=995, output_tokens=1000, duration_ms=10557.7
+2026-07-13 15:09:21,080 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 988 chars); degrading to default
+2026-07-13 15:09:21,919 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=369, output_tokens=468, duration_ms=5024.0
+2026-07-13 15:09:37,041 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=749, output_tokens=1000, duration_ms=14589.4
+2026-07-13 15:09:37,042 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 15:09:49,836 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=560, output_tokens=879, duration_ms=5741.4
+2026-07-13 15:09:52,134 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1362, output_tokens=1000, duration_ms=9301.2
+2026-07-13 15:09:52,134 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 434 chars); degrading to default
+2026-07-13 15:09:56,470 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1581, output_tokens=400, duration_ms=2573.5
+2026-07-13 15:09:56,471 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1216 chars); degrading to default
+2026-07-13 15:10:17,165 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=712, output_tokens=789, duration_ms=6025.3
+2026-07-13 15:10:21,990 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1250, output_tokens=400, duration_ms=2946.4
+2026-07-13 15:10:21,990 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1364 chars); degrading to default
+2026-07-13 15:10:46,922 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=443, output_tokens=923, duration_ms=18579.9
+2026-07-13 15:10:50,665 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=614, output_tokens=602, duration_ms=4747.0
+2026-07-13 15:10:53,333 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1302, output_tokens=400, duration_ms=2495.7
+2026-07-13 15:10:53,334 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1467 chars); degrading to default
+2026-07-13 15:10:57,536 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1497, output_tokens=400, duration_ms=3590.2
+2026-07-13 15:10:57,537 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1225 chars); degrading to default
+2026-07-13 15:10:58,029 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=784, output_tokens=1000, duration_ms=7639.5
+2026-07-13 15:10:58,029 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 15:11:27,951 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=530, output_tokens=1000, duration_ms=87387.7
+2026-07-13 15:11:27,951 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 15:12:14,062 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=531, output_tokens=599, duration_ms=21580.5
+2026-07-13 15:13:38,191 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1636, output_tokens=400, duration_ms=81401.3
+2026-07-13 15:13:38,191 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1209 chars); degrading to default
+2026-07-13 15:13:39,454 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=620, output_tokens=612, duration_ms=23565.1
+2026-07-13 15:14:30,347 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1471, output_tokens=400, duration_ms=46914.5
+2026-07-13 15:14:30,347 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1415 chars); degrading to default
+2026-07-13 15:14:41,073 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=448, output_tokens=966, duration_ms=39090.6
+2026-07-13 15:15:00,474 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1792, output_tokens=400, duration_ms=15469.8
+2026-07-13 15:15:00,474 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1213 chars); degrading to default
+2026-07-13 15:16:18,479 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=456, output_tokens=624, duration_ms=8546.0
+2026-07-13 15:16:23,592 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=434, output_tokens=584, duration_ms=7812.8
+2026-07-13 15:16:24,187 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1440, output_tokens=18, duration_ms=1184.8
+2026-07-13 15:16:33,791 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1293, output_tokens=400, duration_ms=6242.4
+2026-07-13 15:16:33,791 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1211 chars); degrading to default
+2026-07-13 15:16:40,076 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=298, output_tokens=650, duration_ms=7771.3
+2026-07-13 15:16:53,774 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1176, output_tokens=310, duration_ms=11971.2
+2026-07-13 15:17:05,637 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=2198, output_tokens=1000, duration_ms=16040.1
+2026-07-13 15:17:05,637 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 541 chars); degrading to default
+2026-07-13 15:17:10,717 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1967, output_tokens=710, duration_ms=6355.8
+2026-07-13 15:17:29,840 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1518, output_tokens=400, duration_ms=15208.9
+2026-07-13 15:17:29,841 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1151 chars); degrading to default
+2026-07-13 15:17:55,411 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=671, output_tokens=727, duration_ms=24340.6
+2026-07-13 15:18:04,030 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=2142, output_tokens=686, duration_ms=25688.4
+2026-07-13 15:18:07,003 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1341, output_tokens=266, duration_ms=7650.1
+2026-07-13 15:18:12,261 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1668, output_tokens=400, duration_ms=4291.3
+2026-07-13 15:18:12,262 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1238 chars); degrading to default
+2026-07-13 15:18:22,331 WARNING SimulatedUser.respond: unparseable structured LLM output (finish_reason=length, 862 chars); degrading to default
+2026-07-13 15:18:30,513 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=595, output_tokens=626, duration_ms=8242.3
+2026-07-13 15:18:46,873 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=986, output_tokens=330, duration_ms=14593.5
+2026-07-13 15:18:50,219 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=523, output_tokens=297, duration_ms=8395.9
+2026-07-13 15:18:55,961 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=692, output_tokens=400, duration_ms=4987.2
+2026-07-13 15:18:55,961 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1289 chars); degrading to default
+2026-07-13 15:19:00,260 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=487, output_tokens=1000, duration_ms=13114.4
+2026-07-13 15:19:00,260 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 15:19:42,474 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=491, output_tokens=1000, duration_ms=22960.1
+2026-07-13 15:19:42,474 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 15:19:55,367 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1899, output_tokens=869, duration_ms=15772.9
+2026-07-13 15:20:00,296 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1138, output_tokens=400, duration_ms=3150.8
+2026-07-13 15:20:00,296 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1277 chars); degrading to default
+2026-07-13 15:20:31,786 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=542, output_tokens=933, duration_ms=20352.3
+2026-07-13 15:20:43,683 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=495, output_tokens=891, duration_ms=18168.5
+2026-07-13 15:21:01,041 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1600, output_tokens=400, duration_ms=26436.5
+2026-07-13 15:21:01,041 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1378 chars); degrading to default
+2026-07-13 15:21:42,135 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1117, output_tokens=400, duration_ms=56752.0
+2026-07-13 15:21:42,135 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1406 chars); degrading to default
+2026-07-13 15:21:51,455 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=393, output_tokens=720, duration_ms=12283.8
+2026-07-13 15:24:43,252 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=588, output_tokens=1000, duration_ms=74095.5
+2026-07-13 15:24:43,253 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 15:24:50,080 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1239, output_tokens=769, duration_ms=31987.7
+2026-07-13 15:24:54,848 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=3144, output_tokens=1000, duration_ms=33864.0
+2026-07-13 15:24:54,848 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 15:24:58,459 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=1351, output_tokens=400, duration_ms=5493.0
+2026-07-13 15:24:58,459 WARNING gap_scanner._rank_results: unparseable structured LLM output (finish_reason=length, 1355 chars); degrading to default
+2026-07-13 15:25:15,981 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=429, output_tokens=1000, duration_ms=37990.0
+2026-07-13 15:25:15,981 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 794 chars); degrading to default
+2026-07-13 15:26:05,450 WARNING Episode 28 (task frames_hard_016) in condition 'heuristic' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 15:27:21,534 WARNING Episode 44 (task frames_hard_032) in condition 'heuristic' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 15:27:31,911 INFO tool_llm_call: tool_id=context_refresher, input_tokens=944, output_tokens=200, duration_ms=2282.2
+2026-07-13 15:27:31,912 WARNING ContextRefresher: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 15:30:01,849 WARNING Episode 30 (task frames_hard_018) in condition 'heuristic' failed on transport: transport error persisted after 4 attempts: TimeoutError: The read operation timed out
+2026-07-13 15:30:35,611 INFO tool_llm_call: tool_id=research_gap_scanner, input_tokens=4861, output_tokens=1000, duration_ms=9648.3
+2026-07-13 15:30:35,612 WARNING gap_scanner._identify_gaps: unparseable structured LLM output (finish_reason=length, 0 chars); degrading to default
+2026-07-13 15:32:29,312 INFO Wrote summary.json and report.txt to data/baseline_search
+========================================================================
+Baseline Performance Benchmark
+========================================================================
+
+## Condition: no_subconscious  (n=40)
+  quality_score            mean=0.738 std=0.376 95% CI=[0.617, 0.858] n=40
+  total_tokens             mean=4945.1 std=4878.8 95% CI=[3384.5, 6505.8] n=40
+  total_turns              mean=2.3 std=0.7 95% CI=[2.1, 2.5] n=40
+  user_stops               mean=0.2 std=0.4 95% CI=[0.1, 0.3] n=40
+  task_completed           mean=0.825 std=0.385 95% CI=[0.702, 0.948] n=40
+  wall_clock_ms            mean=212984.0 std=215729.2 95% CI=[143976.5, 281991.5] n=40
+  tool_invocation_count    mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=40
+  tool_cost_usd            mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=40
+  avg_queue_depth          mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=40
+  interrupt_count          mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=40
+  drain_count              mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=40
+  expired_count            mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=40
+  latency_prediction       MAPE=0.00% n_pairs=0
+  transport_failures       n=10 (tasks: frames_hard_001, frames_hard_006, frames_hard_008, frames_hard_013, frames_hard_016, frames_hard_018, frames_hard_024, frames_hard_027, frames_hard_031, frames_hard_034)
+
+## Condition: random  (n=45)
+  quality_score            mean=0.509 std=0.438 95% CI=[0.378, 0.641] n=45
+  total_tokens             mean=7681.8 std=7461.0 95% CI=[5439.4, 9924.3] n=45
+  total_turns              mean=2.4 std=0.9 95% CI=[2.2, 2.7] n=45
+  user_stops               mean=0.4 std=0.5 95% CI=[0.2, 0.5] n=45
+  task_completed           mean=0.622 std=0.490 95% CI=[0.475, 0.770] n=45
+  wall_clock_ms            mean=228889.8 std=238406.7 95% CI=[157234.9, 300544.7] n=45
+  tool_invocation_count    mean=0.5 std=0.6 95% CI=[0.4, 0.7] n=45
+  tool_cost_usd            mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=45
+  avg_queue_depth          mean=0.011 std=0.075 95% CI=[-0.011, 0.034] n=45
+  interrupt_count          mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=45
+  drain_count              mean=0.0 std=0.1 95% CI=[-0.0, 0.1] n=45
+  expired_count            mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=45
+  latency_prediction       MAPE=65.46% n_pairs=24
+  transport_failures       n=5 (tasks: frames_hard_006, frames_hard_011, frames_hard_016, frames_hard_022, frames_hard_031)
+
+## Condition: heuristic  (n=47)
+  quality_score            mean=0.599 std=0.446 95% CI=[0.468, 0.730] n=47
+  total_tokens             mean=11482.4 std=9359.8 95% CI=[8733.0, 14231.8] n=47
+  total_turns              mean=2.7 std=1.3 95% CI=[2.3, 3.1] n=47
+  user_stops               mean=0.3 std=0.5 95% CI=[0.2, 0.4] n=47
+  task_completed           mean=0.638 std=0.486 95% CI=[0.496, 0.781] n=47
+  wall_clock_ms            mean=232729.4 std=265149.0 95% CI=[154843.8, 310615.0] n=47
+  tool_invocation_count    mean=1.1 std=0.4 95% CI=[1.0, 1.3] n=47
+  tool_cost_usd            mean=0.000 std=0.000 95% CI=[0.000, 0.000] n=47
+  avg_queue_depth          mean=0.267 std=0.221 95% CI=[0.202, 0.331] n=47
+  interrupt_count          mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=47
+  drain_count              mean=0.7 std=0.6 95% CI=[0.5, 0.8] n=47
+  expired_count            mean=0.0 std=0.0 95% CI=[0.0, 0.0] n=47
+  latency_prediction       MAPE=60.72% n_pairs=54
+  transport_failures       n=3 (tasks: frames_hard_016, frames_hard_018, frames_hard_032)
+
+## Comparisons
+  heuristic > random on quality_score (Welch 95%): NO
+  heuristic > no_subconscious on quality_score (Welch 95%): NO
