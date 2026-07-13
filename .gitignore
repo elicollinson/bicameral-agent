@@ -216,6 +216,9 @@ data/latency/
 !data/mcts_training/run.log
 !data/comparative/run.log
 
+# Search-experiment run log is a committed artifact of the #101 rerun.
+!data/baseline_search/run.log
+
 # Externally-sourced benchmark data, not redistributed (issue #42).
 # Fetch with: python scripts/fetch_hard_benchmark.py  (see docs/hard_benchmark.md)
 data/external/
