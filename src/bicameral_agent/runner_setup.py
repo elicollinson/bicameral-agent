@@ -13,7 +13,7 @@ import argparse
 import logging
 
 from bicameral_agent.brave_search import BraveSearchProvider
-from bicameral_agent.config import SEARCH_PROVIDER_NAMES, HyperConfig
+from bicameral_agent.config import SEARCH_PROVIDER_NAMES, HyperConfig, ModelConfig
 from bicameral_agent.gap_scanner import SearchProvider
 from bicameral_agent.model_client import (
     ModelClient,
@@ -75,6 +75,11 @@ def resolve_parallel_episodes(args: argparse.Namespace, hyper: HyperConfig) -> i
     return hyper.run.parallel_episodes
 
 
+def _search_provider_name(args: argparse.Namespace, hyper: HyperConfig) -> str:
+    """Resolve the gap scanner's search backend name: CLI > config > mock."""
+    return args.search_provider or hyper.tools.search_provider
+
+
 def resolve_search_provider(
     args: argparse.Namespace, hyper: HyperConfig
 ) -> SearchProvider | None:
@@ -87,7 +92,7 @@ def resolve_search_provider(
     ``--parallel-episodes``; a missing ``BRAVE_API_KEY`` fails fast here,
     at script startup, rather than mid-run.
     """
-    name = args.search_provider or hyper.tools.search_provider
+    name = _search_provider_name(args, hyper)
     if name == "brave":
         logger.info("Gap scanner search backend: brave")
         return BraveSearchProvider()
@@ -137,3 +142,36 @@ def resolve_runner_clients(
         "measurement": {"provider": judge_provider, "model": judge_client.model},
     }
     return client, judge_client, provenance
+
+
+def effective_hyper_config(
+    args: argparse.Namespace,
+    hyper: HyperConfig,
+    provenance: dict[str, dict[str, str]],
+) -> HyperConfig:
+    """Overlay the CLI-resolved runtime values onto *hyper* (issue #103).
+
+    ``EpisodeRunner`` stamps ``hyper_config.to_dict()`` into every episode's
+    ``metadata.hyperparameters``, so handing it the loaded config verbatim
+    records the config-file defaults whenever a CLI flag overrides them.
+    Pass this copy -- answerer ``[model]``, ``[measurement_model]``,
+    ``run.parallel_episodes`` and ``tools.search_provider`` replaced by the
+    resolved values -- as the runner's ``hyper_config`` instead.
+    ``provenance`` is the mapping returned by :func:`resolve_runner_clients`.
+    """
+    answerer = provenance["answerer"]
+    measurement = provenance["measurement"]
+    return hyper.model_copy(update={
+        "model": hyper.model.model_copy(
+            update={"provider": answerer["provider"], "name": answerer["model"]}
+        ),
+        "measurement_model": (hyper.measurement_model or ModelConfig()).model_copy(
+            update={"provider": measurement["provider"], "name": measurement["model"]}
+        ),
+        "run": hyper.run.model_copy(
+            update={"parallel_episodes": resolve_parallel_episodes(args, hyper)}
+        ),
+        "tools": hyper.tools.model_copy(
+            update={"search_provider": _search_provider_name(args, hyper)}
+        ),
+    })
